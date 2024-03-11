@@ -38,3 +38,30 @@
 - **File location:** if the files reside on different file systems, use soft links.
 - **Data integrity:** If both references must always point to the same data, use hard links (assuming they're on the same file system).
 - **Link updates:** If the original file might be moved, soft links might require manual updates to reflect the new location.
+
+
+
+## Redirection
+
+I/O redirection allows us to change where output goes and where input comes from.
+
+
+
+A standard output of many programs consists of two types:
+
+- The program's results: that is the data the program is designed to produce
+- Status and error messages that tell us how the program is getting along
+
+
+
+E.g. *ls* displays its results and its error messages on the screen.
+
+###### ls Sends
+
+- their results to standard output (stdout).
+
+- status messages to standard error (stderr).
+
+**By default, both standard output and standard error are linked to the screen and not saved into a disk file.**
+
+Many programs take input from standard input (stdin) which is by default attached to the keyboard.
