@@ -65,3 +65,38 @@ E.g. *ls* displays its results and its error messages on the screen.
 **By default, both standard output and standard error are linked to the screen and not saved into a disk file.**
 
 Many programs take input from standard input (stdin) which is by default attached to the keyboard.
+
+
+
+## Difference Between > And |
+
+The redirection operator connects a command with a file, while the pipeline operator connects the output of one command with the input of a second command.
+
+**Redirection:**
+
+- **Destination:** Files. Redirection sends the output (stdout or stderr) of a command to a file.
+- **Functionality:** Saves or captures the output for later use or analysis.
+  - Examples:
+    - `ls > filelist.txt` - Saves the directory listing to a file named "filelist.txt".
+    - `cat errors.log 2> error_messages.txt` - Captures error messages (stderr) to a separate file "error_messages.txt".
+
+**Pipelines:**
+
+- **Destination:** Another command. Pipelines use the `|` symbol to connect the output of one command as the input for the next.
+- **Functionality:** Chains commands together for processing in a single line.
+  - Example:
+    - `ls | grep .txt` - Shows only files with the ".txt" extension by piping the directory listing (ls) to grep for filtering.
+
+Here's a table summarizing the key differences:
+
+| Feature       | Redirection              | Pipelines                |
+| :------------ | :----------------------- | :----------------------- |
+| Destination   | Files                    | Another command          |
+| Functionality | Saves/captures output    | Chains commands together |
+| Symbol        | `>`, `>>`, `<` (various) | `                        |
+
+**In simpler terms:**
+
+- Think of redirection as taking output and putting it in a box (file) for later.
+- Think of pipelines as taking output and feeding it directly to another tool (command) for further work.
+- pen_spark

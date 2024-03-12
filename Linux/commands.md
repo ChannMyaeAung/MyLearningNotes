@@ -326,7 +326,7 @@ $ cat ls-output.txt
 
 
 
-Suppose we have downloaded a large file that has been split into multiple parts and we want the join them back together
+Suppose we have downloaded a large file that has been split into multiple parts and we want to join them back together
 
 if the files were named as follows:
 
@@ -378,3 +378,53 @@ The quick brown fox jumped over the lazy dog.
 ```
 
 Using the < redirection operator, we change the source of standard input from the keyboard to the file *lazy_dog.txt* .
+
+
+
+#### Pipelines
+
+In Linux, a pipeline is a way to connect commands together. Imagine it like a kitchen assembly line. The output (like chopped vegetables) from one tool (like a knife) goes directly into the next tool (like a pan) for further processing.
+
+In Linux, the pipe symbol "|" connects the output of one command (the knife) to the input of another (the pan). This lets you automate complex tasks without needing temporary files. It's a powerful way to streamline your work!
+
+```bash
+$ ls -l /usr/bin | less
+```
+
+
+
+#### Filters
+
+Pipelines are often used to perform complex operations on data. It is possible to put several commands together into a pipeline referred to as filters.
+
+Filters take input, change it somehow and then output it.
+
+
+
+```bash
+$ ls /bin /usr/bin | sort | less
+
+** including sort in our pipeline, we changed the data to produce a single, sorted list.
+```
+
+
+
+#### Report or Omit Repeated Lines - uniq
+
+- Often used in conjunction with sort
+- accepts a sorted list of data from standard input or a single filename argument
+- **Main Functionality:** removes any duplicates from the list
+
+```bash
+$ ls /bin /usr/bin | sort | uniq | less
+// Removes any duplicates from the output of the sort command.
+```
+
+
+
+To see the list of dupicates,
+
+```bash
+$ ls /bin /usr/bin | sort | uniq -d | less
+```
+
