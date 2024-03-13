@@ -1,5 +1,33 @@
 # Essentials of Linux
 
+### Linux Is About Imagination
+
+```
+When I am asked to explain the difference between Windows and Linux, I
+often use a toy analogy.
+Windows is like a Game Boy. You go to the store and buy one all shiny
+new in the box. You take it home, turn it on, and play with it. Pretty graphics,
+cute sounds. After a while, though, you get tired of the game that came with
+it, so you go back to the store and buy another one. This cycle repeats over
+and over. Finally, you go back to the store and say to the person behind the
+counter, “I want a game that does this!” only to be told that no such game
+exists because there is no “market demand” for it. Then you say, “But I only
+need to change this one thing!” The person behind the counter says you can’t
+change it. The games are all sealed up in their cartridges. You discover that
+your toy is limited to the games that others have decided you need.
+Linux, on the other hand, is like the world’s largest Erector Set. You open
+it, and it’s just a huge collection of parts. There’s a lot of steel struts, screws,
+nuts, gears, pulleys, motors, and a few suggestions on what to build. So, you
+start to play with it. You build one of the suggestions and then another. After a
+while you discover that you have your own ideas of what to make. You don’t
+ever have to go back to the store, as you already have everything you need.
+The Erector Set takes on the shape of your imagination. It does what you want.
+Your choice of toys is, of course, a personal thing, so which toy would you
+find more satisfying?
+```
+
+
+
 ## Soft Links (Symbolic links or Symlinks)
 
 - **Concept :**  A soft link is a separate file that contains the path to the original file. It's like a shortcut that points to another location.
@@ -99,4 +127,39 @@ Here's a table summarizing the key differences:
 
 - Think of redirection as taking output and putting it in a box (file) for later.
 - Think of pipelines as taking output and feeding it directly to another tool (command) for further work.
-- pen_spark
+
+
+
+Pathname Expa nsion of Hidden Files
+
+```
+As we know, filenames that begin with a period character are hidden. Pathname
+expansion also respects this behavior. An expansion such as the following does
+not reveal hidden files:
+echo * 
+
+It might appear at first glance that we could include hidden files in an
+expansion by starting the pattern with a leading period, like this:
+echo .*
+
+
+It almost works. However, if we examine the results closely, we will see
+that the names . and .. will also appear in the results. Because these names
+refer to the current working directory and its parent directory, using this pattern
+will likely produce an incorrect result. We can see this if we try the following
+command:
+ls -d .* | less
+
+To better perform pathname expansion in this situation, we have to
+employ a more specific pattern.
+echo .[!.]*
+
+This pattern expands into every filename that begins with only one period
+followed by any other characters. This will work correctly with most hidden files
+
+(though it still won’t include filenames with multiple leading periods). The ls com-
+mand with the -A option (“almost all”) will provide a correct listing of hidden files.
+
+ls -A
+```
+

@@ -428,3 +428,242 @@ To see the list of dupicates,
 $ ls /bin /usr/bin | sort | uniq -d | less
 ```
 
+
+
+#### Print Line, Word, and Byte Counts - wc
+
+The wc (word count) command is used to display the number of lines, words and bytes contained in files.
+
+```bash
+$ wc ls-output.txt
+2  18 112 ls-output.txt
+// (lines, words and bytes)
+```
+
+
+
+Adding it to a pipeline is a handy way to count things.
+
+```bash
+$ ls /bin /usr/bin | sort | uniq | wc -l
+1420
+```
+
+
+
+#### Print Lines Matching a Pattern - grep
+
+grep is a powerful program used to find text patterns within files.
+
+```bash
+$ grep pattern filename
+```
+
+
+
+- It prints out the lines containing a pattern.
+- advanced patterns are called regular expression.
+
+```bash
+$ ls /bin /usr/bin | sort | uniq | grep zip
+bunzip2
+bzip2
+bzip2recover
+funzip
+gpg-zip
+gunzip
+gzip
+preunzip
+prezip
+prezip-bin
+streamzip
+unzip
+unzipsfx
+zip
+zipcloak
+zipdetails
+zipgrep
+zipinfo
+zipnote
+zipsplit
+
+```
+
+
+
+Handy options:
+
+- -i, causes grep to ignore case when performing the search (normally searches are case sensitive)
+- -v. which tells grep to print only those lines that do not match the pattern.
+
+
+
+#### Print First/Last Part of Files - head/tail
+
+- Used to print the first or last 10 lines of a file by default.
+
+- Can be adjusted with -n option.
+
+  ```bash
+  $ head -n 5 ls-output.txt
+  total 192828
+  -rwxr-xr-x 1 root root       51648 Jan  8 22:56 [
+  -rwxr-xr-x 1 root root       35344 Jun  6  2023 aa-enabled
+  -rwxr-xr-x 1 root root       35344 Jun  6  2023 aa-exec
+  -rwxr-xr-x 1 root root       31248 Jun  6  2023 aa-features-abi
+  
+  $ tail -n 5 ls-output.txt
+  -rwxr-xr-x 1 root root      875096 Mar 25  2022 zstd
+  lrwxrwxrwx 1 root root           4 Mar  8 21:37 zstdcat -> zstd
+  -rwxr-xr-x 1 root root        3869 Mar 25  2022 zstdgrep
+  -rwxr-xr-x 1 root root          30 Mar 25  2022 zstdless
+  lrwxrwxrwx 1 root root           4 Mar  8 21:37 zstdmt -> zstd
+  
+  ```
+
+  These can be used in pipelines as well:
+
+  ```bash
+  $ ls /usr/bin | tail -n 5
+  zstd
+  zstdcat
+  zstdgrep
+  zstdless
+  zstdmt
+  
+  ```
+
+  
+
+Tail has an option that allows you to view files in real time.
+
+```bash
+$ tail -f /var/log/messages
+```
+
+
+
+Using the -f option, tail continues to monitor the file and when new lines are appended, they immediately appear on the display. This continues until you type CTRL-C.
+
+Here are some synonyms for "strange" depending on the specific nuance you want to convey.
+
+
+
+#### Read from Stdin and Output to Stdout and Files - tee
+
+- Reads standard input and copies it to both standard output (allowing the data to continue down the pipeline) and to one or more files.
+- Useful for capturing a pipeline's contents at an intermediate state of processing.
+
+```bash
+**tee to capture the entire directory listing to the file ls.txt before grep filters the pipeline's contents:
+
+$ ls /usr/bin | tee ls.txt | grep zip
+bunzip2
+bzip2
+bzip2recover
+funzip
+gpg-zip
+gunzip
+gzip
+preunzip
+prezip
+prezip-bin
+streamzip
+unzip
+unzipsfx
+zip
+zipcloak
+zipdetails
+zipgrep
+zipinfo
+zipnote
+zipsplit
+
+```
+
+
+
+#### Expansion
+
+Each time we type a command and press the ENTER key, bash performs several substitutions upon the text before it carries out our command. The process that makes this happen is called expansion.
+
+With expansion, we enter something, and it is expanded into something else before the shell acts upon it.
+
+
+
+#### Display a line of text - echo
+
+Echo is a shell builtin that performs a very simple task. It prints its text arguments on standard output.
+
+
+
+```bash
+$ echo this is a test
+this is a test
+
+$ echo *
+Desktop directory... Documents Downloads github.com ls-error.txt ls-output.txt ls.txt Music Pictures Public snap Templates Videos
+
+```
+
+**Note:** Why didn't echo print *? Because * means match any characters in a file name. The shell expands the * into something else (in this instance, the names of the files in the current working directory) before the echo command is executed. When the ENTER key is pressed, the shell automatically expands any qualifying characters on the command line before the command is carried out, so the echo command never saw the *, only its expanded result.
+
+
+
+#### Pathname Expansion
+
+The mechanism by which wildcards work is called pathname expansion.
+
+```bash
+$ ls
+Desktop  Documents  github.com  ls-output.txt  Music  Public Templates
+directory...  Downloads  ls-error.txt  ls.txt    Pictures  snap    Videos
+
+$ echo D*
+Desktop Documents Downloads
+
+$ echo *s
+Documents Downloads Pictures Templates Videos
+
+$ echo [[:upper:]]*
+Desktop Documents Downloads Music Pictures Public Templates Videos
+
+$ echo /usr/*/share
+/usr/local/share
+```
+
+**Note:** Check essentials.md file for "Pathname expansion of Hidden Files"
+
+
+
+#### Tilde Expansion - ~
+
+- Replaces the tilde with the actual directory path it represents
+- ~ stands for your home directory
+
+```bash
+$ echo ~
+/home/chan
+
+// If user "foo" has an account, then it expands into this:
+$ echo ~foo
+/home/foo
+```
+
+
+
+#### Arithmetic Expansion
+
+$((expression))
+
+```bash
+$ echo $((2 + 2))
+4
+
+
+$ echo $(((5**2) * 3))
+75
+
+
+```
+
