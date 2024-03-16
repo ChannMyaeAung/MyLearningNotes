@@ -660,10 +660,226 @@ $((expression))
 $ echo $((2 + 2))
 4
 
+**Spaces are not significant in arithmetic expressions,
+** expressions may be nested.
+$ echo $(($((5**2)) * 3))
+75
 
 $ echo $(((5**2) * 3))
 75
 
+**Example using the division and remainder operators.
+
+$ echo Five divided by two equals $((5/2))
+Five divided by two equals 2
+$ echo with $((5%2)) left over.
+with 1 left over.
+
+```
+
+
+
+
+
+#### Brace Expansion
+
+- Create multiple text strings from a pattern containing  braces.
+
+  ```bash
+  $ echo Front-{A,B,C}-Back
+  Front-A-Back Front-B-Back Front-C-Back
+  ```
+
+  
+
+- May contain either a comma-separated list of strings or a range of integers or single characters.
+
+  ```bash
+  $ echo Number_{1..5}
+  Number_1 Number_2 Number_3 Number_4 Number_5
+  ```
+
+- In bash version 4.0 and newer, integers may also be zero-padded like so:
+
+  ```bash
+  $ echo {01..15}
+  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
+  
+  $ echo {001..15}
+  001 002 003 004 005 006 007 008 009 010 011 012 013 014 015
+  
+  $ echo {Z..A}
+  Z Y X W V U T S R Q P O N M L K J I H G F E D C B A
+  
+  $ echo a{A{1,2},B{3,4}}b
+  aA1b aA2b aB3b aB4b
+  
+  ```
+
+- Optimal Usage:
+
+  - To make lists of files or directories to be created.
+
+  - Imagine being a photographer and wanted to organize a large collection of images into years and months and sort them in chronological order.
+
+    ```bash
+    $ mkdir Photos
+    $ cd Photos
+    
+    **Year-Month format
+    $ mkdir {2007..2009}-{01..12}
+    
+    $ ls
+    2007-01 2007-07 2008-01 2008-07 2009-01 2009-07
+    2007-02 2007-08 2008-02 2008-08 2009-02 2009-08
+    2007-03 2007-09 2008-03 2008-09 2009-03 2009-09
+    2007-04 2007-10 2008-04 2008-10 2009-04 2009-10
+    2007-05 2007-11 2008-05 2008-11 2009-05 2009-11
+    2007-06 2007-12 2008-06 2008-12 2009-06 2009-12
+    ```
+
+    
+
+#### Pathname Expansion
+
+- More useful in shell scripts than directly on the command line.
+
+- Many of its capabilities have to do with the system's ability to store small chunks of data called variables and to give each chunk a name.
+
+  ```bash
+  $ echo $USER
+  chan
+  ```
+
+  
+
+​	To see a list of available variables	
+
+```bash
+$ printenv | less
+```
+
+
+
+- Unlike any other types of expansion, if there is a mistype, the expansion will still take place but will result in an empty string. (In other expansions, the expansion will not take place and the echo command will simply display the mistyped pattern.)
+
+```bash
+$ echo $SUSER
+$ 
+```
+
+
+
+
+
+#### Quoting
+
+```bash
+$ echo this is a      test
+this is a test
+// word splitting by the shell removed extra whitespace from the echo command's list of arguments.
+
+$ echo The total is $100.00
+The total is 00.00
+// parameter expansion substituted an empty string for the value of $1 because it was an undefined variable.
+
+// The shell provides a mechanism called quoting to selectively suppress unwanted expansions.
+```
+
+
+
+#### Double Quotes
+
+- By placing text inside double quote, all the special characters used by the shell lose their special meaning and are treated as ordinary characters.
+- The exceptions are $ , \, and `. (word splitting, pathname expansion, tilde expansion, and brace expansion are suppressed.) (parameter expansions, arithmetic expansion and command substitution are still carried out.)
+
+
+
+Say we are the unfortunate victim of a file called *two words.txt*. If we tried to use this on the command line, word splitting would cause this to be treated as two separate arguments rather than the desired single argument.
+
+
+
+```bash
+$ ls -l two words.txt
+ls: cannot access two: No such file or directory
+ls: cannot access words.txt: No such file or directory
+```
+
+
+
+Double quotes stop the word splitting,
+
+```bash
+$ ls -l "two words.txt"
+-rw-rw-r-- 1 me me 18 2018-02-20 13:03 two words.txt
+```
+
+
+
+Parameter expansion, arithmetic expansion and command substitution still take place within double quotes.
+
+```bash
+$ echo "$USER $((2+2)) $(cal)"
+chan 4      March 2024       
+Su Mo Tu We Th Fr Sa  
+                1  2  
+ 3  4  5  6  7  8  9  
+10 11 12 13 14 15 16  
+17 18 19 20 21 22 23  
+24 25 26 27 28 29 30  
+31            
+```
+
+
+
+```bash
+$ echo "this is a     test"
+this is a     test
+// word splitting is suppressed and the embedded spaces are not treated as delimiters.
+```
+
+
+
+- Newlines are considered delimiters by the word-splitting mechanism causes an interesting, albeit subtle, effect on command substitution.
+
+  ```bash
+  $ echo $(cal)
+  March 2024 Su Mo Tu We Th Fr Sa 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+  
+  $ echo "$(cal)"
+  March 2024       
+  Su Mo Tu We Th Fr Sa  
+                  1  2  
+   3  4  5  6  7  8  9  
+  10 11 12 13 14 15 16  
+  17 18 19 20 21 22 23  
+  24 25 26 27 28 29 30  
+  31        
+  ```
+
+  In the first instance, the unquoted command substitution resulted in a command line containing 38 arguments.
+
+  In the second, it resulted in a command line with one argument that includes the embedded spaces and newlines.
+
+
+
+#### Single Quotes
+
+- Single quotes are used when the need to suppress all expansions.
+
+
+
+##### Comparison of unquoted, double quotes and single quotes
+
+```bash
+$ echo text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER
+text /home/chan/lazy_dog.txt /home/chan/ls-error.txt /home/chan/ls-output.txt /home/chan/ls.txt a b foo 4 chan
+
+$ echo "text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER"
+text ~/*.txt {a,b} foo 4 chan
+
+$ echo 'text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER'
+text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER
 
 ```
 
