@@ -883,3 +883,66 @@ text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER
 
 ```
 
+
+
+#### Escaping Characters
+
+- The escaping character "\\" is used when we want to quote only a single character, inside double quotes to selectively prevent an expansion.
+
+```bash
+$ echo "The balance for user $USER is: \$5.00"
+The balance for user chan is: $5.00
+
+```
+
+- It is possible to use characters in filenames that normally have special meaning to the shell with "\\"
+
+​	($, !, &, spaces)
+
+
+
+```bash
+$ mv bad\&filenme good_filename
+```
+
+
+
+**Note:** Within single quotes, the backslash loses its special meaning and is treated as an ordinary character.
+
+
+
+#### Backslash Escape Sequences
+
+​	In addition to its role as the escape character, backslash is also used as part of a notation to represent certain special characters called control codes.
+
+
+
+Backslash Escape Sequences
+
+| Escape sequence | Meaning                                                  |
+| --------------- | -------------------------------------------------------- |
+| \a              | Bell (an alert that causes the computer to beep)         |
+| \b              | Backspace                                                |
+| \n              | Newline; on Unix-like systems, this produces a line feed |
+| \r              | Carriage return                                          |
+| \f              | Tab                                                      |
+
+
+
+- Adding -e to echo will enable interpretation of escape sequences. You can also place them inside $'  '. 
+- Below is using the sleep command that just waits for the specified number of seconds and then exits, we can create a primitive countdown timer;
+
+
+
+```bash
+$ sleep 10; echo -e "Time's up \a"
+Time's up //After 10 seconds
+```
+
+We could also do this:
+
+```bash
+$ sleep 10; echo "Time's up" $'\a'
+Time's up //After 10 seconds
+```
+
