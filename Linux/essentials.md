@@ -163,3 +163,161 @@ mand with the -A option (“almost all”) will provide a correct listing of hid
 ls -A
 ```
 
+
+
+
+
+#### Permissions
+
+-rwx------ 
+
+A regular file that is readable, writable, and executable by the file’s owner. No one else has any access.
+
+
+
+-rw------- 
+
+A regular file that is readable and writable by the file’s owner. No one else has any access.
+
+
+
+-rw-r--r-- A regular file that is readable and writable by the file’s owner.
+Members of the file’s owner group may read the file. The file is world-readable.
+
+
+
+-rwxr-xr-x 
+
+A regular file that is readable, writable, and executable by the file’s
+owner. The file may be read and executed by everybody else.
+
+
+
+-rw-rw---- 
+
+A regular file that is readable and writable by the file’s owner and members of the file’s group owner only.
+
+
+
+lrwxrwxrwx 
+
+A symbolic link. All symbolic links have “dummy” permissions. The real permissions are kept with the actual file pointed to by the symbolic link.
+
+
+
+drwxrwx--- 
+
+A directory. The owner and the members of the owner group may
+enter the directory and create, rename, and remove files within the
+directory.
+
+drwxr-x--- 
+
+A directory. The owner may enter the directory and create, rename,
+and delete files within the directory. Members of the owner group
+may enter the directory but cannot create, delete, or rename files.
+
+
+
+```
+What the Heck Is Octal?
+
+Octal (base 8) and its cousin, hexadecimal (base 16), are number systems
+often used to express numbers on computers. We humans, owing to the fact
+that we (or at least most of us) were born with 10 fingers, count using a base
+10 number system. Computers, on the other hand, were born with only one
+finger and thus do all their counting in binary (base 2). Their number system
+has only two numerals, 0 and 1. So, in binary, counting looks like this:
+0, 1, 10, 11, 100, 101, 110, 111, 1000, 1001, 1010, 1011. . .
+In octal, counting is done with the numerals zero through seven, like so:
+0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21. . .
+Hexadecimal counting uses the numerals zero through nine plus the letters
+A through F.
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, 10, 11, 12, 13. . .
+While we can see the sense in binary (since computers have only one
+finger), what are octal and hexadecimal good for? The answer has to do with
+human convenience. Many times, small portions of data are represented on
+computers as bit patterns. Take, for example, an RGB color. On most computer
+displays, each pixel is composed of three color components: eight bits of red,
+eight bits of green, and eight bits of blue. A lovely medium blue would be a
+24-digit number.
+
+010000110110111111001101
+
+How would you like to read and write those kinds of numbers all day? I
+didn’t think so. Here’s where another number system would help. Each digit in
+
+a hexadecimal number represents four digits in binary. In octal, each digit rep-
+resents three binary digits. So, our 24-digit medium blue could be condensed
+
+to a six-digit hexadecimal number, 436FCD.
+Because the digits in the hexadecimal number “line up” with the bits in
+the binary number, we can see that the red component of our color is 43, the
+green 6F, and the blue CD.
+These days, hexadecimal notation (often spoken as hex) is more common
+than octal, but as we will soon see, octal’s capability to express three bits of
+binary will be very useful . . .
+```
+
+
+
+File Modes in Binary and Octal
+
+| Octal | Binary | File mode |
+| ----- | ------ | --------- |
+| 0     | 000    | ---       |
+| 1     | 001    | --x       |
+| 2     | 010    | -w-       |
+| 3     | 011    | -wx       |
+| 4     | 100    | r--       |
+| 5     | 101    | r--x      |
+| 6     | 110    | rw-       |
+| 7     | 111    | rwx       |
+
+
+
+By using three octal digits, we can set the file mode for the owner, group owner, and world
+
+```bash
+$ > foo.txt
+$ ls -l foo.txt
+-rw-rw-r-- 1 chan chan 0 Mar 18 22:15 foo.txt
+$ chmod 600 foo.txt
+$ ls -l foo.txt
+-rw------- 1 chan chan 0 Mar 18 22:15 foo.txt
+
+```
+
+​	By passing the argument 600, we were able to set the permissions of the owner to read and write while removing all permissions from the group owner and world.
+
+A few common ones: 700(rwx), 6(rw-), 5(r-x), 4(r--) and 0(---)
+
+chmod also supports a symbolic notation for specifying file modes. Symbolic notation is divided into three parts.
+
+- Who the change will affect
+
+- Which operation will be performed
+
+- What permission will be set
+
+  To specify who is affected, a combination of the characters u, g, o and a is used.
+
+| Symbol | Meaning                                                 |
+| ------ | ------------------------------------------------------- |
+| u      | Short for "user" but means the file or directory owner. |
+| g      | Group owner.                                            |
+| o      | Short for "others" but means world                      |
+| a      | Short for "all." This is a combination of u, g and o.   |
+
+
+
+chmod Symbolic Notation Examples
+
+| Notation   | Meaning                                                      |
+| ---------- | ------------------------------------------------------------ |
+| u+x        | Add execute permission for the owner.                        |
+| u-x        | Remove execute permission from the owner.                    |
+| o-rw       | Remove the read and write permissions from anyone besides the owner and group owner. |
+| go-rw      | Set the group owner and anyone besides the owner to have read and write permissions. If either the group owner or the world previously had execute permission, it is removed. |
+| u+x, go-rx | Add execute permission for the owner and set the permissions for the group and others to read and execute. Multiple specifications may be separated by commas. |
+|            |                                                              |

@@ -946,3 +946,134 @@ $ sleep 10; echo "Time's up" $'\a'
 Time's up //After 10 seconds
 ```
 
+
+
+### Permissions
+
+- **id:** Display user identity
+- **chmod:** Change a file's mode
+- **umask:** Set the default file permissions
+- **su:** Run a shell as another user
+- **sudo:** Execute a command as another user
+- **chown:** Change a file's owner
+- **chgrp:** Change a file's group ownership
+- **passwd:** Change a user's password
+
+
+
+**Note:** Also check in essentials.md
+
+
+
+##### Set Default Permissions - umask
+
+- controls the default permissions given to a file when it is 
+
+- It uses octal notation to express a mask of bits to be removed from a file's mode attributes.
+
+```bash
+$ rm -f foo.txt
+$ umask
+0002 (0022 is another common default value)
+$ > foo.txt
+$ ls -l foo.txt
+-rw-rw-r-- 1 chan chan 0 Mar 19 14:56 foo.txt
+
+**We can see that both the owner and group get read and write permission while world gets only read permission. The reason that the world does not have write permission is because of the value of the mask
+
+```
+
+
+
+Let's repeat our example, this time setting the mask ourselves
+
+```bash
+$ rm foo.txt
+$ umask 0000
+$ > foo.txt
+$ > ls -l foo.txt
+-rw-rw-rw- 1 chan chan 0 Mar 19 15:22 foo.txt
+
+```
+
+When we set the mask to 0000 (effectively turning it off), the file is now word writable. To understand how this works, we have to look at octal numbers again. If we take the mask, expand it into binary, and then compare it to the attributes, we can see what happens.
+
+| Original file mode | --- rw- rw- rw- |
+| ------------------ | --------------- |
+| Mask               | 000 000 000 010 |
+| Result             | --- rw- rw- r-- |
+
+where the 1 appears in our mask, an attribute was removed- in this case, the world write permission. That's what the mask does. Everywhere a 1 appears in the binary value of the mask, an attribute is unset.
+
+
+
+If we look at a mask value of 0022, we can see what it does.
+
+| Original file mode | --- rw- rw- rw- |
+| ------------------ | --------------- |
+| Mask               | 000 000 010 010 |
+| Result             | --- rw- r-- r-- |
+
+
+
+Again where a 1 appears in the binary value, the corresponding attribute is unset.
+
+Clean up:
+
+```bash
+$ rm foo.txt; umask 0002
+```
+
+ Most of the time we won't have to change the mask; the default provided by your distribution will be fine. In some high-security situations, however, we will want to control it.
+
+
+
+#### Some special Permissions
+
+Though we usually see an octal permission mask expressed as a three-digit number, it is more technically correct to express it in four digits because in addition to read, write and execute permissions, there are some other, less used, permissions settings.
+
+
+
+1. **setuid bit (octal 4000) ** - if applied to an executable file it changes the *effective user ID* from that of the real user (the user actually running the program) to that of the program's owner.
+   - given to a few programs owned by the superuser
+   - When an ordinary user runs a program that is *setuid root*, the program runs with the effective privileges of the superuser.
+   - This allows the program to access files and directories that an ordinary user would normally be prohibited from accessing.
+   - For example, the `passwd` command has the SUID permission, allowing regular users to change their passwords even though password file is typically only writable by the root user.
+
+2. **setgid bit (octal 2000): ** changes the effective groupd ID from the real group ID of the real user to that of the file owner.
+   - If the setgit bit is set on a directory, newly created files in the directory will be given the group ownership of the directory rather the group ownership of the file.
+   - This is useful in a shared directory when members of a common group need access to all the files in the directory, regardless of the file owner's primary group.
+
+3. **sticky bit (octal 1000):**  On files, Linux ignores the sticky bit, but if applied to a directory, it prevents users from deleting or renaming files unless the user is either the owner of the directory, the owner of the file or the superuser.
+
+   - This is often used to control access to a shared directory such as */temp*.
+
+   
+
+```bash
+** assigning setuid to a program
+$ chmod u+s program
+
+
+** assigning setgid to a directory
+$ chmod g+s dir
+
+** assigning the sticky bit to a directory
+$ chmod +t dir
+```
+
+
+
+When viewing the output from ls, we can determine the special permissions.
+
+```bash
+** an example of a program that is setuid
+-rwsr-xr-x
+
+** an example of a directory that has the setgid attribute
+drwxrwsr-x
+
+** an example of a directory with the sticky bit set
+drwxrwxrwt
+```
+
