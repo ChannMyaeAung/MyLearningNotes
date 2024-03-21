@@ -162,3 +162,8 @@ $ cd
 $ rm -r playground
 ```
 
+
+
+#### Exercising Our Privileges
+
+(Note to myself): Refer to page 129 on google drive.

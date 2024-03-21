@@ -11,7 +11,7 @@
 | CTRL-E | Move cursor to the end of the line.                          |
 | CTRL-F | Move cursor forward one character; same as the right arrow key. |
 | CTRL-B | Move cursor backward one character; same as the left arrow key. |
-| ALT-F  | Move cursor backward one word                                |
+| ALT-F  | Move cursor forward one word                                 |
 | ALT-B  | Move cursor backward one word                                |
 | CTRL-L | Clear the screen and move the cursor to the top-left corner. The clear command does the same thing. |
 

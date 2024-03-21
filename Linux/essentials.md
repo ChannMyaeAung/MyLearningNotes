@@ -181,7 +181,9 @@ A regular file that is readable and writable by the file’s owner. No one else 
 
 
 
--rw-r--r-- A regular file that is readable and writable by the file’s owner.
+-rw-r--r-- 
+
+A regular file that is readable and writable by the file’s owner.
 Members of the file’s owner group may read the file. The file is world-readable.
 
 
@@ -321,3 +323,186 @@ chmod Symbolic Notation Examples
 | go-rw      | Set the group owner and anyone besides the owner to have read and write permissions. If either the group owner or the world previously had execute permission, it is removed. |
 | u+x, go-rx | Add execute permission for the owner and set the permissions for the group and others to read and execute. Multiple specifications may be separated by commas. |
 |            |                                                              |
+
+
+
+#### Changing Identities
+
+- When we want to gain superuser privileges to carry out some administrative task.
+- Three ways to take on an alternate identity
+  - Log out and log back in as the alternate user.
+  - Use the  `su` command.
+  - Use the `sudo` command.
+
+
+
+#### su: Run a shell with substitute User and Group IDs
+
+The `su` command allows you to assume the identity of another user and either start a new shell session with that user's ID or issue a single command as that user.
+
+The `su` command is used to start a shell as another user.
+
+```bash
+su [-[l]] [user]
+
+
+** if the -l option is included, the resulting shell session is a login shell for the specified user. This means the user's environment is loaded and the working directory is changed to the user's home directory.
+** if the user is not specified, the superuser is assumed.
+```
+
+```bash
+$ su -
+// -l is abbreviated as -
+Password:
+[root@~]# 
+
+```
+
+Indicating that the shell has superuser priviledges (# instead of $) and the current working directory is now the home directory for the superuser (normally /root)
+
+Enter **exit** to return to the previous shell.
+
+````bash
+# exit
+$ 
+````
+
+
+
+**Note:** The root account is disabled by default in Ubuntu. so there is no root password, that's why `su` failed with an authentication error. The initial user account is granted full access to superuser privileges via `sudo` and may grant similar powers to subsequent user accounts.
+
+Use `sudo` to become root:
+
+````bash
+sudo -i
+[sudo] password for chan: 
+root@CMA:~# exit
+logout
+
+````
+
+
+
+#### sudo: Execute a Commmand As Another User
+
+- The administrator can configure `sudo` to allow an ordinary user to execute commands as a different user (usually the superuser) in a controlled way.
+- In particular, a user may be restricted to one or more specific commands and no others.
+- The use of `sudo` does not require access to the superuser's password. Authenticating using `sudo` requires the user's password.
+
+
+
+Let's say the `sudo` has been configured to allow us to run a fictitious backup program called backup_script which requires superuser privileges. 
+
+```bash
+$ sudo backup_script
+Password:
+System Backup Starting...
+```
+
+
+
+One important difference between `su` and `sudo` is that `sudo` does not start a new shell nor does it load another user's environment.
+
+
+
+- To start an interactive superuser session, specify the -i option.
+
+  ```bash
+  $ sudo -l
+  User me may run the following commands on this host:
+  (ALL) ALL
+  ```
+
+  
+
+
+
+#### chown: Change File Owner and Group
+
+- Used to change the owner and group owner of a file or directory.
+
+- Superuser privileges are required to use this command.
+
+- The syntax of chown looks like this:
+
+  ```bash
+  chown [owner][:[group]] file...
+  ```
+
+  ```bash
+  chown [options] newowner:newgroup file(s)
+  ```
+
+  
+
+  chown can change the file owner and/or the file group owner depending on the first argument of the command.
+
+- You can specify both the new owner and group using the `newowner:newgroup` syntax.
+
+  ```bash
+  chown user:group filename
+  ```
+
+- **Changing Owner Only:**
+
+  If you want to change the owner and keep the group the same, you can omit the group part.
+
+  ```bash
+  chown user filename
+  ```
+
+- **Changing Group Only:**
+
+  Similarly, if you only want to change the group and keep the owner the same, you can specify the group without specifying  the owner.
+
+  ```bash
+  chown :group filename
+  ```
+
+  
+
+- chown Argument Examples
+
+
+
+| Argument   | Results                                                      |
+| ---------- | ------------------------------------------------------------ |
+| bob        | Changes the ownership of the file from its current owner to user bob. |
+| bob::users | Changes the ownership of the file from its current owner to user bob and changes the file group owner to group users. |
+| :admins    | Changes the group owner to the group admins. The file owner is unchanged. |
+| bob:       | Changes the file owner from the current owner to user bob and changes the group owner to the login group of user bob. |
+
+##### Examples
+
+Let's say we have two users: janet, who has access to superuser privileges, and tony, who does not. User janet wants to copy a file from her home directory to the home directory of tony. Because janet wants tony to be able to edit the file, janet changes the ownership of the copied file from janet to tony.
+
+```bash
+[janet@linuxbox ~]$ sudo cp myfile.txt ~tony
+Password:
+
+[janet@linuxbox ~]$ sudo ls -l ~tony/myfile.txt
+-rw-r--r-- 1 root root root 2018-03-20 14:30 /home/tony/myfile.txt
+
+[janet@linuxbox ~]$ sudo chown tony: ~tony/myfile.txt
+[janet@linuxbox ~]$ sudo ls -l ~tony/myfile.txt
+-rw-r--r-- 1 tony tony tony 2018-03-20 14:30 /home/tony/myfile.txt
+```
+
+- Janet copy the file from her directory to the home directory of user tony.
+- Janet changes the ownership of the file from root(a result of using sudo) to tony.
+- Using the trailing colon in the first argument, janet also changed the group ownership of the file to the login group of tony which happens to be group tony.
+
+**Note:** after the first use of `sudo`, janet was not prompted for her password. This is because `sudo` in most configurations "trusts" you for several minutes until its timer runs out.
+
+
+
+Let's say you have a file named "example.txt" and you want to change its permissions to give read and write permissions to the owner and only read permissions to others. and also change the owner to "user" and the group to "group"
+
+```bash
+// Change permissions
+chmod 640 example.txt
+
+//Change owner and group
+chown user:group example.txt
+```
+

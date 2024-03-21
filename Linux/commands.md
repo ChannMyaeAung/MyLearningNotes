@@ -1028,6 +1028,55 @@ $ rm foo.txt; umask 0002
 
 
 
+#### chmod- Change the permissions
+
+- used to change the permissions(read, write, execute) of files and directories in Linux.
+
+- Refers to the essentials.md file as well.
+
+  ```bash
+  $ chmod [options] mode file(s)
+  ```
+
+
+
+1. Changing Permissions Numerically:
+
+   You can use numeric representations to set permissions. The digits represent permissions for the owner, group and others respectively with each digit ranging from 0 to 7.
+
+   - 0: No permissions
+   - 1: Execute permission
+   - 2: Write permission
+   - 3: Write and execute permissions
+   - 4: Read permission
+   - 5: Read and execute permissions
+   - 6: Read and write permissions
+   - 7: Read, write and execute permissions
+
+For example, to give read, write and execute permissions to the owner and only read permission to others:
+
+```bash
+$ chmod 754 filename
+```
+
+
+
+2. Changing Permissions Symbolically:
+
+   You can also use symbolic representations to set permissions. The symbols include 'u' for user(user), 'g' for group, 'o' for others and 'a' for all(user, group and others).
+
+   - +: Adds permissions
+   - -: Removes permissions
+   - =: Sets permissions explicitly
+
+For example, to give read and write permissions to the owner, and only execute permissions to others:
+
+```bash
+$ chmod u=rw,go=x filename
+```
+
+
+
 #### Some special Permissions
 
 Though we usually see an octal permission mask expressed as a three-digit number, it is more technically correct to express it in four digits because in addition to read, write and execute permissions, there are some other, less used, permissions settings.
@@ -1075,5 +1124,44 @@ drwxrwsr-x
 
 ** an example of a directory with the sticky bit set
 drwxrwxrwt
+```
+
+
+
+#### Changing Your Password
+
+- passwd: setting passwords for yourself and for other users if you have access to superuser privileges.
+
+  ```bash
+  $ passwd
+  Changing password for chan.
+  Current password: 
+  New password: 
+  BAD PASSWORD: The password is the same as the old one
+  New password: 
+  BAD PASSWORD: The password contains the user name in some form
+  New password: 
+  BAD PASSWORD: The password is shorter than 8 characters
+  passwd: Have exhausted maximum number of retries for service
+  passwd: password unchanged
+  ```
+
+- The passwd command will try to enforce use of "strong" passwords which aren't too short, or are similar to previous passwords or dictionary words or are too easily guessed.
+
+
+
+#### Processes
+
+Modern operating systems are usually multitasking, meaning they create the illusion of doing more than one thing at once by rapidly switching from one executing program to another. The karnel manages this through the use of processes. Processes are how Linux organizes the different programs waiting for their turn at the CPU.
+
+```bash
+$ ps // Report a snapshot of current processes
+$ top // Display tasks
+$ jobs // List active jobs
+$ bg // Place a job in the background
+$ fg // Place a job in the foreground
+$ kill // Send a signal to a process
+$ killall // Kill processes by name
+$ shutdown // Shut down or reboot the system
 ```
 
