@@ -1165,3 +1165,374 @@ $ killall // Kill processes by name
 $ shutdown // Shut down or reboot the system
 ```
 
+#### How a Process Works
+
+- kernel initiates a few of its own processes and launches `init`
+- `init` runs a series of shell scripts located in `/etc` called `init scripts` which start all the system services implemented as `daemon programs` programs that just sit in the background and do their thing without having any user interface.
+- Like files, processes also have owners and user IDs, effective user IDs and so on.
+
+
+
+#### Viewing Processes
+
+```bash
+$ ps
+PID TTY          TIME CMD
+4035 pts/0    00:00:00 bash
+5183 pts/0    00:00:00 ps
+```
+
+- `ps` show just the process associated with the current terminal session. To see more, we need to add some options.
+
+- TIME field is the amount of CPU time consumed by the process.
+
+- TTY is short for "teletype" and refers to the `controlling terminal` for the process.
+
+- If we add an option, we can get a bigger picture of what the system is doing.
+
+  ```bash
+  $ ps x
+  --LIST OF PROCESSES WILL APPEAR--
+  ```
+
+  Add the `x` option tells `ps` to show all of our processes regardless of what terminal they are controlled by. The presence of a `?` in the TTY column indicates no controlling terminal.
+
+​	A new column titled STAT has been added to the output. STAT is short for `state` and reveals the current status of the process as shown in the table below.
+
+| State | Meaning                                                      |
+| ----- | ------------------------------------------------------------ |
+| R     | Running. This means the process is running or ready to run.  |
+| S     | Sleeping. The process is not running; rather, it is waiting for an event, such as a keystroke or network packet. |
+| D     | Uninterruptible sleep. The process is waiting for I/O such as a disk drive. |
+| T     | Stopped. The process has been instructed to stop.            |
+| Z     | A defunct or "zombie" process. This is a child process that has terminated but has not been cleaned up by its parent. |
+| <     | A high-priority process. It's possible to grant more importance to a process, giving it more time on the CPU. This property of a process is called *niceness*. A process with high priority is said to be less nice because it's taking more of the CPU's time, which leaves less for everybody else. |
+| N     | A low-priority process. A process with low priority (a nice process) will get processor time only after other processes with higher priority have been serviced. |
+
+- Another popular set of options is `aux` which gives us even more information.
+
+  ```bash
+  $ ps aux
+  USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+  root           1  0.0  0.0 166904 11968 ?        Ss   18:59   0:01 /sbin/init spla
+  root           2  0.0  0.0      0     0 ?        S    18:59   0:00 [kthreadd]
+  root           3  0.0  0.0      0     0 ?        I<   18:59   0:00 [rcu_gp]
+  root           4  0.0  0.0      0     0 ?        I<   18:59   0:00 [rcu_par_gp]
+  ......
+  ```
+
+USER - User ID. This is the owner of the process.
+
+VSZ - Virtual memory size.
+
+RSS - Resident set size. This is the amount of physical memory (RAM) the process is using in kilobytes.
+
+START- Time when the process started. For values over 24 hours, a date is used.
+
+###### Viewing Processes Dynamically with top
+
+- `top` command provide a more dynamic view of the machine's activity.
+- `ps` provides only a snapshot of the machine's state at the moment the `ps` command is executed.
+
+```bash
+$ top
+**Displays a continuously updating display of the system processes.
+```
+
+- The name `top` comes from the fact that the `top` program is used to see the "top" processes on the system.
+- The `top` display consists of two parts:
+  - a system summary at the top of the display
+  - followed by a table of processes sorted by CPU activity.
+
+Table - `top` information Fields
+
+| Row  | Field         | Meaning                                                      |
+| ---- | ------------- | ------------------------------------------------------------ |
+| 1    | top           | The is the name of the program                               |
+|      | 14:59:20      | This is the current time of day.                             |
+|      | up 6:30       | This is called uptime. It is the amount of time since the machine was last booted. In this example, the system has been up for six and a half hours. |
+|      | 2 users       | There are two users logged in.                               |
+|      | load average: | load average refers to the number of processes that are waiting to run; that is, the number of processes that are in a runnable state and are sharing the CPU. Three values are shown, each for a different period of time. The first is the average for the last 60 seconds, the next the previous 5 minutes, and finally the previous 15 minutes. Value less than 1.0 indicate that the machine is not busy. |
+| 2    | Tasks:        | This summarizes the number of processes and their various process states. |
+| 3    | Cpu(s):       | This row describes the character of the activities that the CPU is performing. |
+|      | 0.7%us        | 0.7 percent of the CPU is being used for `user processes`. This means processes outside the kernel. |
+|      | 1.0%sy        | 1.0 percent of the CPU is being used for system (kernel) processes. |
+|      | 0.0% ni       | 0.0 percent of the CPU is being used by "nice" (low-priority) processes. |
+|      | 98.3%id       | 98,3 percent of the CPU is idle/.                            |
+|      | 0.0%wa        | 0.0 percent of the CPU is waiting for I/O.                   |
+| 4.   | Mem:          | This shows how physical RAM is being used.                   |
+| 5    | Swap:         | This shows how swap space (virtual memory) is being used.    |
+|      |               |                                                              |
+
+- `top` is better than the graphical versions because it is faster and it consumes far fewer system resources.
+- `top` is similar to `Task Manager` in Windows.
+
+
+
+#### Controlling Processes
+
+```bash
+$ xlogo
+```
+
+
+
+- **Interrupting a Process:**
+
+  ```bash
+  $ xlogo
+  // return to the terminal window and press CTRL-C
+  $  
+  ```
+
+  
+
+  In a terminal, pressing CTRL-C interrupts a program. Many but not all command line programs can be interrupted by using this technique.
+
+- **Putting a Process in the Background:**
+
+  - an ampersand (&) character is used
+
+  ```bash
+  $ xlogo &
+  [1] 6049
+  $
+  ```
+
+​	
+
+​	After entering the command, the xlogo window appeared  and the shell prompt returned. but some funny numbers were printed too. This message is part of a shell feature called `job control`. With this message, the shell is telling us that we have started job number ([1]) and that it has PID 6049. If we run `ps`, we can see our process
+
+```bash
+$ ps
+PID TTY          TIME CMD
+   3835 pts/0    00:00:00 bash
+   6049 pts/0    00:00:00 xlogo
+   6050 pts/0    00:00:00 ps
+
+```
+
+
+
+The shell's job control facility also gives us a way to list the jobs that have been launched from our terminal. Using the `jobs` command, we can see this list:
+
+```bash
+$ jobs
+[1]+  Running                 xlogo &
+
+```
+
+
+
+- **Returning a Process to the Foreground:**
+
+  - A process in the background is immune from terminal keyboard input, including any attempt to interrupt it with CTRL-C. To return the foreground, use the `fg` command in this way
+
+    ```bash
+    $ fg %1
+    xlogo
+    ```
+
+  - The `fg` command followed by a percent sign and the job number (called a jobspec) does the trick. If we have only one background job, the jobspec is optional. To terminate xlogo, press CTRL-C.
+
+- **Stopping (Pausing) a Process:**
+
+  - To stop a foreground process and place it in the background, press CTRL-Z.
+
+  - type xlogo, press ENTER and then press CTRL-Z
+
+    ```bash
+    $ xlogo
+    ^Z
+    [1]+  Stopped                 xlogo
+    $
+    ```
+
+  - We can either continue the program's execution in the foreground, using the `fg` command, or resume the program's execution in the background with the `bg` command.
+
+    ```bash
+    $ bg %1
+    [1]+ xlogo &
+    $
+    ```
+
+    As with the `fg` command, the jobspec is optional if there is only one job.
+
+    Moving a process from the foreground to the background is handy if we launch a graphical program from the command line but forget to place it in the background by appending the trailing &.
+
+  **Note:** Why would we want to launch a graphical program program from the command line? There are two reasons.
+
+  - The program you want to run might not be listed on the window manager's menus (such as xlogo).
+  - By launching a program from the command line, you might be able to see error messages that would otherwise be invisible if the program were launched graphically. Sometimes, a program will fail to start up when launched from the graphical menu. By launching it from the command line instead, we may see an error message that will reveal the problem. Also, some programs have interesting and useful command line options.
+
+#### Signals
+
+The `kill` command is used to 'kill' processes. This allows  us to terminate programs that need killing (that is, some kind of pausing or termination).
+
+```bash
+$ xlogo &
+[1] 7624
+$ kill 7624
+$ ps
+PID TTY          TIME CMD
+   3835 pts/0    00:00:00 bash
+   7625 pts/0    00:00:00 ps
+[1]+  Terminated              xlogo
+
+```
+
+
+
+**Note:** The `kill` command doesn't exactly "kill" processes; rather, it sends them signals. Signals are one of several ways that the operating system communicates with programs. When the terminal receives one of these keystrokes, it sends a signal to the program in the foreground. In the case of CTRL-C, a signal called INT (interrupt) is sent; with CTRL-Z, a signal called TSTP (terminal stop) is sent. Programs, in turn, "listen" fro signals and may act upon them as they are received. The fact that a program can listen and act upon signals allows a program to do things such as save work in progress when it is sent a termination signal.
+
+
+
+- **Sending Signals to Processes with `kill`:**
+
+  The `kill` command is used to send signals to programs. Its most common syntax looks like this:
+
+  ```bash
+  kill -signal PID...
+  ```
+
+  If no signal is specified on the command line, the the TERM (terminate) signal is sent by default. The kill command is most often used to send signals listed in the table below.
+
+  | Number | Name | Meaning                                                      |
+  | ------ | ---- | ------------------------------------------------------------ |
+  | 1      | HUP  | Hang up. This is a vestige of the good old days when terminals were attached to remote computers with phone lines and modems. The signal is used  to indicate programs that the controlling terminal has "hung up". The effect of the signal can be demonstrated by closing a terminal session. The foreground program running on the terminal will be sent the signal and will terminate. This signal is also used by many daemon programs to cause a reinitialization. This means that when a daemon is sent this signal, it will restart and reread its configuration file. The Apache web server is an example of a daemon that uses the HUP signal in this way. |
+  | 2      | INT  | Interrupt. This performs the same function as CTRL-C sent from the terminal. It will usually terminate a program. |
+  | 9      | KILL | Kill. This signal is special. Whereas programs may choose to handle signals sent to them in different ways, including ignoring them all together, the KILL signal is never actually sent to the target program. |
+  | 15     | TERM | Terminate. This is the default signal sent by the kill command. If a program is still "alive" enough to receive signals, it will terminate. |
+  | 18     | CONT | Continue. This will restore a process after a STOP or TSTP signal. This signal is sent by the `bg` and `fg` command. |
+  | 19     | STOP | Stop. This signal causes a process to pause without terminating. Like the KILL signal, it is not sent to the target process, and thus it cannot be ignored. |
+  | 20     | TSTP | Terminal stop. This is the signal sent by the terminal when CTRL-Z is pressed. Unlike the STOP signal, the TTP signal is received by the program, but the program may choose to ignore it. |
+
+
+
+​	Let's try the kill command.
+
+```bash
+$ xlogo &
+[1] 12169
+$ kill -1 12169
+$ ps
+PID TTY          TIME CMD
+   3835 pts/0    00:00:00 bash
+  12171 pts/0    00:00:00 ps
+[1]+  Hangup                  xlogo
+
+**We can press ENTER again to display the message
+[1]+  Hangup                  xlogo
+
+```
+
+
+
+Signals may be specified either by number or by name including the name prefixed with the letters SIG.
+
+```bash
+chan@CMA:~$ xlogo &
+[1] 12190
+chan@CMA:~$ kill -INT 12190
+chan@CMA:~$ 
+[1]+  Interrupt               xlogo
+chan@CMA:~$ xlogo &
+[1] 12191
+chan@CMA:~$ kill -SIGINT 12191
+chan@CMA:~$ 
+[1]+  Interrupt               xlogo
+chan@CMA:~$ 
+
+```
+
+
+
+We can also use jobspecs in place of PIDs.
+
+Processes, like files, have owners and you must be the owner of a process or the superuser to  send it signals with `kill`.
+
+Other signals frequently used by the system.
+
+| Number | Name  | Meaning                                                      |
+| ------ | ----- | ------------------------------------------------------------ |
+| 3      | QUIT  | Quit.                                                        |
+| 11     | SEGV  | Segmentation violation. This signal is sent if a program makes illegal use of memory; that is if it tried to write somewhere it was not allowed to write. |
+| 28     | WINCH | Window change. This is the signal sent by the system when a window changes size. Some programs, such as top and less will respond to this signal by redrawing themselves to fit the new window dimensions. |
+
+To display a complete list of signals,
+
+```bash
+$ kill -l
+```
+
+
+
+- **Sending Signals to Multiple Processes with `killall`:**
+
+  It's is also possible to send signals to multiple processes matching a specified program or username by using the `killall` command.
+
+  Here is the syntax:
+
+  ```bash
+  $ killall [-u user] [-signal] name...
+  ```
+
+  ```bash
+  chan@CMA:~$ xlogo &
+  [1] 12425
+  chan@CMA:~$ xlogo &
+  [2] 12426
+  chan@CMA:~$ killall xlogo
+  chan@CMA:~$ 
+  [1]-  Terminated              xlogo
+  [2]+  Terminated              xlogo
+  chan@CMA:~$ 
+  ```
+
+  
+
+#### Shutting Down the System
+
+The process of shutting down the system involves the orderly termination of all the processes on the system as well as performing some vital housekeeping chores (such as syncing all of the mounted file stystems) before the system powers off.
+
+Four commands can perform this function:
+
+- halt
+
+- poweroff
+
+- reboot
+
+- shutdown
+
+  ```bash
+  $ sudo reboot
+  
+  ```
+
+
+
+The `shutdown` command is a bit more interesting. With it, we can specify which of the actions to perform (halt, power down, or reboot) and provide a time delay to the shutdown event. 
+
+```bash
+$ sudo shutdown -h now
+
+** To reboot the system
+$ sudo shutdown -r now
+```
+
+
+
+Once the shutdown command is executed, a message is "broadcast" to all logged-in users warning them of the impending event.
+
+
+
+#### More Process-Related Commands
+
+| Command | Description                                                  |
+| ------- | ------------------------------------------------------------ |
+| pstree  | Outputs a process list arranged in a tree-like pattern showing the parent-child relationships between processes. |
+| vmstat  | Outputs a snapshot of system resource usage including memory, swap, and disk I/O. To see a continuous display, follow the command with a time delay (in seconds) for updates. Here's an example: vmstat 5. Terminate the output with CTRL-C |
+| xload   | A graphical program that draws a graph showing system load over time. |
+| tload   | Similar to the xload program but draws the graph in the terminal. Terminate the output with CTRL-C. |
+
