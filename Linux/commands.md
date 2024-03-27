@@ -996,7 +996,7 @@ $ > ls -l foo.txt
 
 ```
 
-When we set the mask to 0000 (effectively turning it off), the file is now word writable. To understand how this works, we have to look at octal numbers again. If we take the mask, expand it into binary, and then compare it to the attributes, we can see what happens.
+When we set the mask to 0000 (effectively turning it off), the file is now world writable. To understand how this works, we have to look at octal numbers again. If we take the mask, expand it into binary, and then compare it to the attributes, we can see what happens.
 
 | Original file mode | --- rw- rw- rw- |
 | ------------------ | --------------- |
@@ -1038,7 +1038,11 @@ $ rm foo.txt; umask 0002
   $ chmod [options] mode file(s)
   ```
 
+​	r = 4, w = 2, x = 1
 
+​	-rw- rw-r--
+
+​	6-6-4 
 
 1. Changing Permissions Numerically:
 
@@ -1360,7 +1364,7 @@ $ jobs
 
     Moving a process from the foreground to the background is handy if we launch a graphical program from the command line but forget to place it in the background by appending the trailing &.
 
-  **Note:** Why would we want to launch a graphical program program from the command line? There are two reasons.
+  **Note:** Why would we want to launch a graphical program from the command line? There are two reasons.
 
   - The program you want to run might not be listed on the window manager's menus (such as xlogo).
   - By launching a program from the command line, you might be able to see error messages that would otherwise be invisible if the program were launched graphically. Sometimes, a program will fail to start up when launched from the graphical menu. By launching it from the command line instead, we may see an error message that will reveal the problem. Also, some programs have interesting and useful command line options.
@@ -1383,7 +1387,7 @@ PID TTY          TIME CMD
 
 
 
-**Note:** The `kill` command doesn't exactly "kill" processes; rather, it sends them signals. Signals are one of several ways that the operating system communicates with programs. When the terminal receives one of these keystrokes, it sends a signal to the program in the foreground. In the case of CTRL-C, a signal called INT (interrupt) is sent; with CTRL-Z, a signal called TSTP (terminal stop) is sent. Programs, in turn, "listen" fro signals and may act upon them as they are received. The fact that a program can listen and act upon signals allows a program to do things such as save work in progress when it is sent a termination signal.
+**Note:** The `kill` command doesn't exactly "kill" processes; rather, it sends them signals. Signals are one of several ways that the operating system communicates with programs. When the terminal receives one of these keystrokes, it sends a signal to the program in the foreground. In the case of CTRL-C, a signal called INT (interrupt) is sent; with CTRL-Z, a signal called TSTP (terminal stop) is sent. Programs, in turn, "listen" for signals and may act upon them as they are received. The fact that a program can listen and act upon signals allows a program to do things such as save work in progress when it is sent a termination signal.
 
 
 

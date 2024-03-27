@@ -28,6 +28,14 @@ find more satisfying?
 
 
 
+In Linux, a distribution (often abbreviated as "distro") refers to a version or variant of the Linux operating system that includes the Linux kernel, system utilities, libraries, and additional software packaged together. Linux distributions typically include a package management system to simplify the process of installing, updating, and removing software.
+
+There are many different Linux distributions available, each with its own goals, target audience, and characteristics. Some of the most popular Linux distributions include Ubuntu, Debian, Fedora, CentOS, Arch Linux, and openSUSE, among others.
+
+These distributions can vary significantly in terms of their default desktop environment, package management system (such as apt, yum, pacman), release cycle, level of user-friendliness, and the software they include out of the box. Users can choose a distribution that best fits their needs and preferences, whether it's for general-purpose desktop use, server deployment, specialized applications, or embedded systems.
+
+
+
 ## Soft Links (Symbolic links or Symlinks)
 
 - **Concept :**  A soft link is a separate file that contains the path to the original file. It's like a shortcut that points to another location.
@@ -130,7 +138,7 @@ Here's a table summarizing the key differences:
 
 
 
-Pathname Expa nsion of Hidden Files
+Pathname Expansion of Hidden Files
 
 ```
 As we know, filenames that begin with a period character are hidden. Pathname
@@ -505,4 +513,179 @@ chmod 640 example.txt
 //Change owner and group
 chown user:group example.txt
 ```
+
+
+
+#### Package Management
+
+Package Management is a method of installing and maintaining software on the system.
+
+
+
+##### Packing Systems
+
+Most distributions fall into one of two camps of packaging technologies: the Debian .deb camp and Red Hat .rpm camp.
+
+| Packaging System     | Distributions (partial listing)                    |
+| -------------------- | -------------------------------------------------- |
+| Debain-style (.deb)  | Debain, Ubuntu, Linux Mint, Raspbian               |
+| Red-Hat-style (.rpm) | Fedora, CentOs, Red Hat Enterprise Linux, OpenSUSE |
+
+
+
+##### How a Package System Works
+
+The method of software distribution found in the proprietary software industry usually entails buying a piece of installation media such as "install disk" or visiting each vendor's website and downloading the product and then running an "installation wizard" to install a new application on the system.
+
+Linux doesn't work that way. Virtually all software for a Linux system will be found on the Internet. Most of it will be provided by the distribution vendor in the form of package files and the rest will be available in source code form that can be installed manually.
+
+
+
+##### High- and Low-Level Package Tools
+
+Package management systems usually consist of two types of tools.
+
+- Low-level tools that handle tasks such as installing and removing package files.
+- High-level tools that perform metadata searching and dependency resolution.
+
+| Distributions                            | Low-level tools | High-level tools       |
+| ---------------------------------------- | --------------- | ---------------------- |
+| Debian-style                             | dpkg            | apt-get, apt, aptitude |
+| Fedora, Red hat Enterprise Linux, CentOS | rpm             | yum, dnf               |
+
+
+
+##### Common Package Management Tasks
+
+Package_name - the actual name of a package.
+
+Package_term - the name of the file that contains the package.
+
+
+
+###### Finding a Package in a Repo
+
+Using the high-level tools to search repository metadata,
+
+| Style   | Command(s)                                                   |
+| ------- | ------------------------------------------------------------ |
+| Debian  | apt-get update,                                          apt-cache search search_string |
+| Red Hat | yum search search_string                                     |
+
+E.g yum search emacs
+
+
+
+###### Installing a Package from a Repo
+
+High-level tools permit a package to be downloaded from a repository and installed with full dependency resolution
+
+| Style   | Command(s)                                   |
+| ------- | -------------------------------------------- |
+| Debian  | apt-get update, apt-get install package_name |
+| Red Hat | yum install package_name                     |
+
+E.g apt-get update; apt-get install emacs
+
+
+
+###### Installing a Package from a Package File
+
+If a package file has been downloaded from a source rather than a repository, it can be installed directly using a low-level tool
+
+| Style   | Command(s)           |
+| ------- | -------------------- |
+| Debian  | dpkg -i package_file |
+| Red Hat | rpm -i package_file  |
+
+E.g rpm -i emacs-22.1-7.fc7-i386.rpm
+
+**Note:** Because this technique uses the low-level rpm program to perform the installation, no dependency resolution is performed. If rpm discovers a missing dependency, rpm will exit with an error.
+
+
+
+###### Removing a Package
+
+Package can be uninstalled using either the high-level or low-level tools.
+
+| Style   | Command(s)                  |
+| ------- | --------------------------- |
+| Debian  | apt-get remove package_name |
+| Red Hat | yum erase package_name      |
+
+E.g apt-get remove emacs
+
+
+
+###### Updating Packages from a Repository
+
+The most common package management task is keeping the system up-to-date with the latest versions of packages. The high-level tools can perform this vital task in a single step.
+
+| Style   | Command(s)                      |
+| ------- | ------------------------------- |
+| Debian  | apt-get update; apt-get upgrade |
+| Red Hat | yum update                      |
+
+E.g apt-get update; apt-get upgrade
+
+
+
+###### Upgrading a Packing from a Package File
+
+If an updated version of a package has been downloaded from a non-repository source, it can be installed, replacing the previous version.
+
+| Style   | Command(s)           |
+| ------- | -------------------- |
+| Debian  | dpkg -i package_file |
+| Red Hat | rpm -U package_file  |
+
+E.g rpm -U emacs-22.1-7.fc7-i386.rpm
+
+**Note:** dpkg does not have a specific option for upgrading a package vs installing one as rpm does.
+
+
+
+###### Listing installed Packages
+
+| Style   | Command(s) |
+| ------- | ---------- |
+| Debian  | dpkg -l    |
+| Red Hat | rpm -qa    |
+
+
+
+###### Determining Whether a Package is Installed
+
+below are low-level tools we can use to display whether a specified package is installed.
+
+| Style   | Command(s)           |
+| ------- | -------------------- |
+| Debian  | dpkg -s package_name |
+| Red Hat | rpm -q package_name  |
+
+E.g dpkg -s emacs
+
+
+
+###### Displaying information about an installed Package
+
+| Style   | Command(s)                  |
+| ------- | --------------------------- |
+| Debian  | apt-cache show package_name |
+| Red Hat | yum info package_name       |
+
+E.g apt-cache show emacs
+
+
+
+###### Finding Which Package Installed a File
+
+To determine what package is responsible for the installation of a particular file,
+
+| Style   | Command(s)        |
+| ------- | ----------------- |
+| Debian  | dpkg -S file_name |
+| Red Hat | rpm -qf file_name |
+
+E.g rpm -qf /usr/bin/vim
 
