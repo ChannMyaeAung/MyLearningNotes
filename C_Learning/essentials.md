@@ -1,5 +1,14 @@
 ## C Programming Essentials
 
+When we run `make` or when we run `clang`, four different things are happening under the hood.
+
+- preprocessing
+- compiling
+- assembling
+- linking
+
+
+
 #### Escaping Sequence
 
 \n - newline
@@ -206,6 +215,148 @@ int main(){
 
     
     return 0;
+}
+```
+
+
+
+---
+
+
+
+#### Switch
+
+A more efficient alternative to using many "else if" statements. It allows a value to be tested for equality against many cases.
+
+```c
+#include <stdio.h>
+#include <ctype.h> // To be able to convert uppercase or lowercase the input.
+
+int main(){
+    char grade;
+    
+    printf("What is your grade? \n");
+    scanf("%c", &grade);
+    
+    //Conver the input grade to uppercase
+    grade = toupper(grade);
+    
+    switch(grade){
+        case 'A':
+            printf("Perfect!\n");
+            break;
+        case 'B':
+            printf("You did good!\n");
+            break;
+        case 'C':
+            printf("You did okay!\n");
+            break;
+        case 'D':
+            printf("At least it's not an F!\n");
+            break;
+        case 'F':
+            printf("YOU FAILED!\n");
+            break;
+        default:
+            printf("Please enter only valid grades");
+            
+    }
+    
+    return 0;
+}
+
+```
+
+
+
+---
+
+
+
+#### Arguments & Parameters
+
+Arguments - the actual data values that are passed into the function or method when it is called.
+
+Parameters - defined by the function or method and act as placeholders for data. (values what a function expects when it is invoked.)
+
+
+
+```c
+#include <stdio.h>
+
+void birthday(char name[], int age); // Parameters
+
+int main(){
+    char name[] = "Bro";
+    int age = 21;
+    
+    birthday(name, age); // Arguments
+    
+    return 0;
+}
+
+void birthday(char name[], int age){
+    printf("Happy birthday dear %s\n", name);
+    printf("You are %d years old\n", age);
+}
+```
+
+
+
+---
+
+
+
+#### String Functions
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void){
+    char string1[] = "Sun";
+    char string2[] = "Moon";
+    
+    // appends string2 to the end of string1
+    strcat(string1, string2); // SunMoon
+    
+    // appends n characters from string2 to string1
+    strncat(string1, string2, 1); // SunM
+    
+    //copy string2 to string1
+    strcpy(string1, string2); // Moon
+    
+    //copy n characters of string2 to string1
+    strncpy(string1, string2, 1); // Mun
+    
+}
+```
+
+
+
+---
+
+
+
+#### Arrays
+
+```c
+#include <stdio.h>
+
+int main(void){
+    int scores[3]; //defining the length of the array which is 3.
+    
+    //Getting user inputs 
+    for(int i = 0; i < 3; i++){
+        printf("Enter your score %d: \n", i);
+        scanf("%d", &scores[i]); // dynamically assigning the location of the array .
+    }
+    
+    // Calculating the average result
+    float result = (scores[0] + scores[1] + scores[2]) / 3.0;
+    // using 3.0 automatically outputs the float type.
+    
+    printf("Your average is: %2f\n", result);
 }
 ```
 
