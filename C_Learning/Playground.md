@@ -154,3 +154,28 @@ int main(void){
 }
 ```
 
+---
+
+
+
+#### String Length
+
+```C
+#include <stdio.h>
+
+int main(void){
+    char name[25];
+    puts("Name: ");
+    scanf("%s", name);
+    
+    int n = 0;
+    while(name[n] != '\0')
+        n++;
+    printf("%i\n", n);
+    
+    return 0;
+}
+```
+
+---
+

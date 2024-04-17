@@ -343,6 +343,8 @@ int main(void){
 ```c
 #include <stdio.h>
 
+float average(int length, int array[]);
+
 int main(void){
     int scores[3]; //defining the length of the array which is 3.
     
@@ -352,11 +354,16 @@ int main(void){
         scanf("%d", &scores[i]); // dynamically assigning the location of the array .
     }
     
-    // Calculating the average result
-    float result = (scores[0] + scores[1] + scores[2]) / 3.0;
-    // using 3.0 automatically outputs the float type.
-    
-    printf("Your average is: %2f\n", result);
+    printf("Your average is: %2f\n", average(N, scores));
+}
+
+float average(int length, int array[]){
+    //Calculate the average
+    int sum = 0;
+    for(int i = 0; i < length; i++){
+        sum += array[i];
+    }
+    return sum / (float) length;
 }
 ```
 
