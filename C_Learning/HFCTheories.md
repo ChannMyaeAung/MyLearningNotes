@@ -164,3 +164,237 @@ printf("3rd order: %i drinks\n", drinks[2]);
 printf("3rd order: %i drinks\n", *(drinks + 2));
 ```
 
+
+
+#### Why pointers have types
+
+Pointer types exist so that the compiler knows how much to adjust the pointer arithmetic.
+
+For instance, if you add 1 to a char pointer, the pointer will point to the very next memory address because a char occupies 1 byte of memory.
+
+
+
+**int** usually takes 4 bytes of space, so if you add 1 to an int pointer, the complied code will actually add 4 to the memory address.
+
+```C
+int nums[] = {1,2,3};
+printf("nums is at %p\n", nums);
+printf("nums + 1 is at %p\n", nums + 1);
+
+// nums is at 0x7ffdca81cabc
+// nums + 1 is at 0x7ffdca81cac0
+
+// nums + 1 is 4 bytes away from nums.
+// these addresses are printed in hex format.
+
+int arr[5] = {1,2,3,4,5};
+printf("result: %p %p %p\n", arr, arr + 1, arr + 2);
+
+// result: 0x7fff82772940 0x7fff82772944 0x7fff82772948
+// 4 bytes away from each other.
+```
+
+
+
+##### Bullet Points
+
+- Array variables can be used as pointers
+- but array variables are not quite the same
+- Array variables are not pointers themselves. They are just a special type of variable that can be used as pointers in certain contexts thanks to the implicit conversion provided by the C language.
+- Array variables have a fixed size and cannot be reassigned to point to a different memory location unlike pointers.
+- *sizeof* is different for array and pointer variables.
+- Array variables can't point to anything else.
+- Passing an array variable to a pointer decays it.
+- You can pass array variables as arguments to functions that expect pointers. The array variable decays into a pointer to its first element when passed to the function and the function has no way to determine the size of the original array.
+- Arrays start at zero because of pointer arithmetic.
+- You can perform pointer arithmetic on array variables just like you would with regular pointers. For example, `arr+1` points to the second element of the array `arr`.
+- You can dereference an array variable using * operator, which accesses the value at the memory address it points to. For example, `*arr` gives you the value of the first element of the array.
+- Pointer variables have types so they can adjust pointer arithmetic.
+
+
+
+#### scanf()
+
+scanf() can cause buffer overflows if you forget to limit the length of the string that you read with scanf(), then any user can enter far more data than the program has space to store. The extra data then gets written into memory that has not been properly allocated by the computer.
+
+
+
+```C
+char first_name[20];
+    char last_name[20];
+
+    printf("Enter your first and last name: \n");
+    scanf("%19s %19s", first_name, last_name);
+
+    printf("First: %s Last: %s\n", first_name, last_name);
+
+// scanf() uses the same kind of format strings as printf() but when we print a string with printf(), we just use %s. Well, if you just use %s in scanf(), there can be a problem if someone gets a little type-happy:
+
+char food[5];
+printf("Enter favorite food: ");
+scanf("%s", food);
+printf("Favorite food: %s\n", food);
+
+// Enter favorite food: liver-tangeraine-raccoon-toffee
+// Favorite food: liver-tangeraine-raccoon-toffee
+// *** stack smashing detected ***: terminated
+// Aborted (core dumped)
+
+```
+
+
+
+Stack smashing detected is a security alert that occurs when a program tries to write data beyond the boundary of a buffer allocated on the stack memory. This can potentially lead to memory corruption and security vulnerabilities.
+
+In the code you provided, the issue occurs due to the scanf statement:
+
+The %s format specifier in scanf reads a string from the input until it encounters a whitespace character (space, newline, tab, etc.). The problem is that scanf doesn't check the length of the input string and writes it directly into the food array, which has a fixed size of 5 characters.
+
+When you enter the string "liver-tangeraine-raccoon-toffee", which is longer than 5 characters, scanf writes the entire string into the food array, overwriting memory beyond the boundaries of the food array. This memory area could be used for other variables, function call information, or other important data stored on the stack.
+
+Overwriting this memory is what causes the "stack smashing" error. The stack is a critical region of memory used for storing function call information, local variables, and other data. When data is written beyond the boundaries of the stack, it can corrupt this information, leading to undefined behavior, crashes, or even potential security vulnerabilities if an attacker can control the input data.
+
+To fix this issue, you need to use a safer string input function that limits the number of characters read or use a dynamically allocated buffer with a sufficient size. For example, you can use the fgets function to read a line of input with a maximum length:
+
+```C
+#include <string.h>
+
+int main(void){
+    char food[100];
+    printf("Enter favorite food: ");
+    if(fgets(food, sizeof(food), stdin) != NULL){
+        food[strcspn(food, "\n")] = "\0";
+        printf("Favorite food: %s\n", food);
+    }
+    return 0;
+}
+```
+
+
+
+In this example, fgets reads a line of input up to a maximum of sizeof(food) - 1 characters (accounting for the null terminator). The strcspn function is used to remove the newline character from the input string.
+
+Stack smashing is a serious issue that can lead to security vulnerabilities, crashes, and data corruption. It's important to always validate input data and use safe functions or techniques to prevent buffer overflows and stack smashing errors.
+
+
+
+#### fgets() is an alternative to scanf()
+
+Unlike the scanf() function, the `fgets()` function must be given a maximum length:
+
+```C
+char food[5];
+printf("Enter favorite food: ");
+fgets(food, sizeof(food), stdin);
+
+// First it takes a pointer to a buffer
+// Next it takes a maximum size of the string ("\0 included")
+// stdin just means the data will be coming from the keyboard.
+```
+
+- fgets() buffer size includes the final `\0` character. So we don't need to subtract 1 from the length as you do with scanf().
+
+- `sizeof` returns the amount of space occupied by a variable.
+
+- If `food` was a simple pointer, you'd give an explicit length, rather than using `sizeof`.
+
+  ```C
+  printf("Enter favorite food: ");
+  fgets(food, 5, stdin);
+  ```
+
+  
+
+
+
+|                                                              | scanf()                                                      | fgets()                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Do you limit the number of characters that a user can enter? | scanf() can limit the data entered, so long as you remember to add the size to the format string. | fgets() has a mandatory limit. Nothing gets past him.        |
+| Can you be used to enter more than one field?                | Yes! scanf() will not only allow you to enter more than one field, but it also allows you to enter structured data including the ability to specify what characters appear between fields. | fgets() allows you to enter just one string into a buffer. No other data types. Just strings. Just one buffer. |
+| If someone enters a string, can it contain spaces?           | When scanf() reads a string with the %s, it stops as soon as it hits a space. So if you want to enter more than one word, you either have to call it more than once, or use some fancy regular expression trick. | No problem with spaces at all. fgets() can read the whole string every time. |
+
+- Clearly if you need to enter structured data with several fields, you'll want to use scanf(). If you are entering a single unstructured string, then fgets() is probably the way to go.
+
+
+
+#### Three-card monte
+
+```C
+#include <stdio.h>
+
+int main(){
+    char *cards = "JQK";
+    char a_card = cards[2];
+    cards[2] = cards[1];
+    cards[1] = cards[0];
+    cards[0] = cards[2];
+    cards[2] = cards[1];
+    cards[1] = a_card;
+    puts(cards);
+    return 0;
+}
+```
+
+
+
+The above code will result in an error because the string literals can never be updated.
+
+A variable that points to a string literal can't be used to change the contents of the string:
+
+```C
+char *cards = "JQK"; // This variable can't modify this string
+```
+
+But if you create an array from a string literal, then you can modify it:
+
+```C
+char cards[] = "JQK";
+```
+
+
+
+**Note to myself:** Refer to page 113 in Head First C book for visualization.
+
+1. The computer loads the string literal.
+   - when the computer loads the program into memory, it puts all of the constant values into the constant memory block. This section of memory is read-only.
+2. The program creates the cards variable on the stack.
+3. The cards variable is set to the address of "JQK".
+   - The cards variable will contain the address of the string literal "JQK".
+4. The computer  tries to change the string.
+   - It cannot change because it's read-only.
+
+
+
+#### If you're going to change a string, make a copy
+
+If you create a copy of the string in an area of memory that's not read-only, there won't be a problem if you try to change the letters it contains.
+
+We can make a copy just by creating the string as a new array.
+
+```C
+char cards[] = "JQK";
+// cards is not just a pointer. cards is now an array.
+```
+
+In the old code, cards was just a pointer. In the new code, it's an array. By declaring an array called cards and then set it to a string literal, the cards array will be a completely new copy. The variable isn't just pointing at the string literal. It's a brand-new array that contains a fresh copy of the string literal.
+
+
+
+```C
+int my_function{
+    char cards[] = "JQK";
+    // cards is an array
+    // There is no array size given, so you have to set it to something immediately.
+}
+
+// The following two functions are equivalent.
+void stack_deck(char cards[]){
+    ...
+}
+
+void stack_deck(char *cards){
+    ...
+}
+
+```
+
