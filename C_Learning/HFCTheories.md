@@ -398,3 +398,130 @@ void stack_deck(char *cards){
 
 ```
 
+
+
+With our new code `char cards[] = "JQK"`,
+
+1. The computer loads the string literal.
+2. The program creates a new array on the stack.
+3. The program initializes the array.
+   - As well as allocating the space, the program will also copy the contents of the string literal "JQK" into the stack memory.
+
+
+
+**Difference:** the original code used a pointer to point to a read-only string literal. But if you initialize an array with a string literal, you then have a copy of the letters and you can change them as much as you like.
+
+
+
+```C
+#include <stdio.h>
+
+int main(void){
+    char cards[] = "JQK";
+    char a_card = cards[2];
+    cards[2] = cards[1];
+    cards[1] = cards[0];
+    cards[0] = cards[2];
+    cards[2] = cards[1];
+    cards[1] = a_card;
+    puts(cards);
+
+    return 0;
+}
+
+// Output: QKJ
+```
+
+
+
+The `cards` variable now points to a string in an unprotected section of memory, so we are free to modify its contents.
+
+
+
+**Tips: **
+
+One way to avoid this problem in the future is to never write code that sets a simple char pointer to a string literal value like:
+
+```C
+char *s = "Some string";
+```
+
+
+
+There's nothing wrong with setting a pointer to a string literal - the problems only happen when you try to modify a string literal. Instead, if you want to set a pointer to a literal, always make sure you use the `const` keyword.
+
+```C
+const char *s = "some string";
+```
+
+
+
+That way if the compiler sees some code that tries to modify the string, it will give you a compile error:
+
+```C
+s[0] = 'S'; 
+```
+
+
+
+**Note to myself:** Refer to page 115 on HFC book to see the five-minute mystery case emphasizing memory and pointers.
+
+
+
+##### Bullet points
+
+- if you see * in a variable declaration, it means the variable will be a pointer.
+- String literals are stored in read-only memory.
+- Why are string literals stored in read-only memory? Because they are designed to be constant. If you write a function to print "Hello World", you don't want some other part of the program modifying the "Hello World" string literal.
+- If you want to modify a string, you need to make a copy in a new array.
+- You can declare a `char` pointer as `const char *` to prevent the code from using it to modify a string. The `const` modifier means that the compiler will complain if you try to modify an array with that particular variable.
+- When the program is complied, all the references to array variables are replaced with the addresses of the array. So the truth is that the array variable won't exist in the final executable. That's OK because the array variable will never be needed to point anywhere else.
+- `scanf()` means "scan formatted" because it's used to scan formatted input.
+
+
+
+#### Memory memorizer
+
+**Stack:** A section of memory used for local variable storage. Every time you call a function, all of the function's local variables get created on the stack. It's called the stack because it's like a stack of plates: variables get added to the stack when you enter a function, and get taken off the stack when you leave. The stack actually works upside down, it starts at the top of memory and grows downward.
+
+
+
+**Heap:** The heap is for dynamic memory: pieces of data that get created when the program is running and then hang around a long time.
+
+
+
+**Globals:** A global variable is a variable that lives outside all of the functions and is visible to all of them. Globals get created when the program first runs and you can update them freely. But that's unlike...
+
+
+
+**Constants:** Created when the program first runs and they are stored in read-only memory. E.g things like string literals that you'll need when the program is running but you'll never want them to change.
+
+
+
+**Code:** Finally the code segment. A lot of OS place the code right down in the lowest memory addresses. The code segment is also read-only. The is the part of the memory where the actual assembled code gets loaded.
+
+
+
+**Refer to page 121 for visualization**.
+
+
+
+**Summary of Chapter 2 Theories:**
+
+- `scanf("%i", &x)` will allow a user  to enter a number x directly.
+- ints are different sizes on different machines.
+- A char pointer variable x is declared as `char *x`.
+- String literals are stored in read-only memory.
+- Initialize a new array with a string and it will copy it.
+- Read the contents of an address a with `*a`.
+- `fgets(buf, size, stdin)` is a simpler way to enter text.
+- Local variables are stored on the stack.
+- `&x` returns the address of x.
+- `&x` is called a pointer to x.
+
+---
+
+
+
+### Chapter 3
+

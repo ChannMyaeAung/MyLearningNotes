@@ -129,3 +129,33 @@ void skip(char *msg){ // holds the address of the string
 }
 ```
 
+---
+
+
+
+### Chapter 3
+
+#### Create an array of arrays
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main(){
+    char tracks[][80] = {
+        "I left my heart in Harvard Med School",
+        "Newark, Newark - a wonderful town",
+        "Dancing with a Dork",
+        "From here to maternity",
+        "The girl from Iwo Jima",
+    };
+    
+    printf("Result: %s\n", tracks[4]);
+    // Result: The girl from Iwo Jima
+    
+    printf("Result: %c\n", tracks[4][6]);
+    // Result: r
+    return 0;
+}
+```
+
