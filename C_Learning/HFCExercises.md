@@ -133,7 +133,7 @@ void skip(char *msg){ // holds the address of the string
 
 
 
-### Chapter 3
+### Chapter 2.5
 
 #### Create an array of arrays
 
@@ -141,21 +141,105 @@ void skip(char *msg){ // holds the address of the string
 #include <stdio.h>
 #include <string.h>
 
-int main(){
-    char tracks[][80] = {
+char tracks[][80] = {
         "I left my heart in Harvard Med School",
         "Newark, Newark - a wonderful town",
         "Dancing with a Dork",
         "From here to maternity",
         "The girl from Iwo Jima",
     };
-    
+
+void find_track(char search_for[]);
+
+int main(){
     printf("Result: %s\n", tracks[4]);
     // Result: The girl from Iwo Jima
     
     printf("Result: %c\n", tracks[4][6]);
     // Result: r
+    
+    char search_for[80];
+    printf("Search for: ");
+    fgets(search_for,80, stdin);
+    
+    // Remove the newline character if it exists
+    if(search_for[strlen(search_for) - 1] == '\n'){
+        search_for[strlen(search_for) - 1] == '\0';
+    }
+    
+    find_track(search_for);
+    
+    return 0;
+}
+
+void find_track(char search_for[]){
+    int i;
+    for(i = 0; i < 5; i++){
+        if(strstr(tracks[i], search_for)){
+            printf("Track %i: '%s'\n", i, tracks[i]);
+        }
+    }
+}
+```
+
+
+
+---
+
+
+
+### Chapter 3
+
+**Pocket Code**
+
+```C
+#include <stdio.h>
+
+int main(){
+    float latitude;
+    float longitude;
+    char info[80];
+    int started = 0;
+    
+    puts("data[");
+    // We are using scanf() to enter more than one piece of data.
+    // While there're 3 values entered, we keep looping the loop.
+    while(scanf("%f,%f, 79[^\n]", &latitude, &longitude, info) == 3){
+        // 79[^\n] means "give me every character up to the end of the line"
+        // scanf() always uses pointers.
+        // The scnaf() function returns the number of values it was able to read.
+        
+        if(started){
+            printf(",\n");
+            // Display a comma only if you've already displayed a previous line.
+        }else{
+            started = 1;
+            // Once the loop has started, you can set "started" to 1 which is true.
+        }
+        printf("{latitude: %f, longitude: %f, info: '%s'\n}", latitude, longitude, info);
+    }
+    // We don't need & here because printf() is using the values, not the addresses of the numbers.
+    puts("]");
     return 0;
 }
 ```
 
+
+
+One problem is the input and the output are all mixed up together and instead of reading and writing files, the program is currently reading data from the keyboard and writing it to the display. Also, there's a lot of data. If you are writing a small tool, you don't want to type in the data; you want to get large amounts of data by reading a file.
+
+We really don't want the output on the screen. We need it in a file so we can use it with the mapping application.
+
+Here is how the program should work.
+
+**For visual representation, refer to page 148 on HFC Book.**
+
+1. Take the GPS from the bike and download the data. It creates a file called `gpsdata.csv` with one line of data for every location.
+2. The `geo2json` tool needs to read the contents of the `gpsdata.csv` line by line.
+3. And then write that data in JSON format into a file called `output.json`.
+4. The web page that contains the map application reads the `output.json` file. It displays all of the locations on the map.
+
+- Tools that read data line by line, process it and write it out again are called filters. If you have a Unix machine or you've installed Cygwin on Windows, you already have a few filter tools installed.
+- **head:** This tool displays the first few lines of a file.
+- **tail:** This filter displays the lines at the end of a file.
+- **sed:** The stream editor lets you do things like search and replace text.

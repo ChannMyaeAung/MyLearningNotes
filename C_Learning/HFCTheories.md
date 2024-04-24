@@ -523,5 +523,48 @@ s[0] = 'S';
 
 
 
+### Chapter 2.5
+
+Q: Why do I have to put the find_track () function before main()?
+
+A: C needs to know what parameters a function takes and what its return type is before it can be called.
+
+
+
+- You can create an array of arrays with `char strings[...][...]`.
+- The first set of brackets is used to access the outer arrray.
+- The second set of brackets is used to access the details of each of the inner arrays.
+- The `string.h` header file gives you access to a set of string manipulation functions in the C Standard Library.
+- You can create several functions in C program but the computer will always run `main()` first.
+
+
+
+#### Array of arrays vs array of pointers
+
+An array of arrays is used to stored a sequence of strings.
+
+An array of pointers is actually a list of memory addresses stored in an array. It's very useful if you want to quickly create a list of string literals.
+
+```C
+char *names_for_dog[] = {"Browser", "Bonza", "Snodgrass"};
+// This is an array that stores pointers.
+// There will be one pointer pointing at each string literal.
+```
+
+
+
+You can access the array of pointers just like you accessed the array of arrays.
+
+---
+
+
+
 ### Chapter 3
 
+##### Small tools can solve big problems
+
+A small tool does one task and does it well. OS like Linux are mostly made up of hundreds and hundreds of small tools.
+
+If one small part of your program needs to convert data from one format to another, that's the perfect kind of task for a small tool.
+
+- `scanf()` always uses pointers.
