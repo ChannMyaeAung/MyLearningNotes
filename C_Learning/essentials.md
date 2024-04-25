@@ -7,7 +7,17 @@ When we run `make` or when we run `clang`, four different things are happening u
 - assembling
 - linking
 
+In C, the conventions for return values are as follows:
 
+- `return 0;` typically means success or no error. This is the standard way to indicate that a program or function executed successfully.
+- `return 1;` is often used to indicate a general error condition. It's a common convention to return 1 when an error occurs, but the specifics of the error are not differentiated.
+- `return 2;`, `return 3;`, and so on, are sometimes used to represent different types of errors or failure conditions. However, there is no universal standard for what each non-zero return value means - it depends on the specific program or library.
+
+Many programs and libraries define their own error codes, with different non-zero values representing different types of errors. For example, a library might return 2 for a file not found error, 3 for an invalid argument error, and so on.
+
+It's important to note that these conventions are not enforced by the C language itself. They are simply common practices that programmers follow to indicate success or failure in their programs. The specific meaning of non-zero return values is up to the programmer or the library/API being used.
+
+In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
 #### Escaping Sequence
 

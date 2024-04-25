@@ -568,3 +568,40 @@ A small tool does one task and does it well. OS like Linux are mostly made up of
 If one small part of your program needs to convert data from one format to another, that's the perfect kind of task for a small tool.
 
 - `scanf()` always uses pointers.
+
+- The OS controls how data gets into and out of the Standard Input and Output.
+- If you run a program from the command prompt or terminal, the operating system will send all of the keystrokes from the keyboard into the Standard Input.
+- If the OS reads any data from the Standard Output, by default it will send that data to the display.
+- The `scanf()` and `printf()` functions just read and write Standard Input and the Standard Output.
+- You can redirect the Standard Input and Standard Output with `<` and `>`so that they read and write data somewhere else such as to and from files.
+
+- By default, the Standard Error is sent to the display.
+
+
+
+**`fprintf()` prints to a data stream.**
+
+`printf()` is just a version of a more general function called `fprintf()`. When you call `printf()`, it actually calls `fprintf()`.
+
+```C
+printf("I like Turtles!");
+
+fprintf(stdout, "I like Turtles!"); // This will send data to the data stream
+
+// These two calls are equivalent.
+```
+
+
+
+The `fprintf()` function allows you to choose where you want to send text to. You can tell `fprintf()` to send text to `stdout`(the Standard Output) or `stderr`(the Standard Error).
+
+- `fscanf()` can be used to read the Standard input which is just like `scanf()` but you can specify the data steam.
+
+
+
+`>` redirects the Standard Output. But `2>` redirects the Standard Error.
+
+```bash
+$ ./hello 2> errors.txt
+```
+
