@@ -605,3 +605,48 @@ The `fprintf()` function allows you to choose where you want to send text to. Yo
 $ ./hello 2> errors.txt
 ```
 
+
+
+**Bullet Points**
+
+- The `printf()` function sends data to the Standard Output.
+- The Standard Output goes to the display by default.
+- You can redirect the Standard Output to a file using `>` on the command line.
+- You can redirect the Standard Input to read a file by using `<` on the command line.
+- You can redirect the Standard Error using `2>`.
+- The Standard Error is reserved for outputting error messages.
+- `scanf()` reads data from the Standard Input.
+- The Standard Input reads data from the keyboard by default.
+
+In C and many other programming languages, including C++, Java, and Python, the concept of "truthiness" differs from JavaScript.
+
+In JavaScript, certain values are considered "falsy" and others are considered "truthy" when evaluated in a conditional context. For example, the number `0`, empty strings `""` or `''`, `null`, `undefined`, and `NaN` are considered falsy, while all other values are considered truthy.
+
+However, in C and other languages mentioned above, the condition inside a conditional statement is typically evaluated based on whether the expression evaluates to zero (false) or non-zero (true). So, in C, the value `0` is considered false in a conditional context, while any non-zero value is considered true.
+
+For example, in C:
+
+```c
+int num = 0;
+if (num) {
+    printf("This won't be printed because num is 0\n");
+} else {
+    printf("This will be printed because num is 0\n");
+}
+```
+
+In the above code, the `if` condition evaluates `num`, and since `num` is `0`, which is considered false in C, the code inside the `else` block will be executed, printing "This will be printed because num is 0".
+
+
+
+#### Tips for Designing Small Tools
+
+Small tools should follow these design principles:
+
+- They can read data from the Standard Input.
+- They can display data on the Standard Output.
+- They deal with text data rather than obscure binary formats.
+- They each perform one simple task.
+
+
+

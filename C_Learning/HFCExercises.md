@@ -387,3 +387,149 @@ chan@CMA:~/C_Programming/brocode$ echo $?
 
 ```
 
+
+
+If we replace the `printf()` with the `fprintf()`, the code should now work in exactly the same way, except the error messages should appear on the Standard Error instead of the Standard Output.
+
+```C
+if(lattitude < -90.00 || latitude > 90.00){
+    fprintf(stderr, "Invalid latitude: %f\n", latitude);
+    return 2;
+}
+if(longitude < -180.00 || longitude > 180.00){
+    fprintf(stderr, "Invalid longitude: %f\n", longitude);
+    return 2;
+}
+
+// We need to specify stderr as the first parameter.
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/brocode$ ./hello < gpsdata.csv > output.json 
+Invalid latitude: 180.990005
+
+```
+
+
+
+#### Top Secret Exercise
+
+```C
+#include <stdio.h>
+
+int main(){
+    char word[10];
+    int i = 0;
+    // while scanf successfully reads the input, run this loop.
+    while(scanf("9%s", word) == 1){
+        i = i + 1;
+        if(i % 2){
+            fprintf(stdout, "%s", word);
+        }else{
+            fprintf(stderr, "%s", word);
+        }
+    }
+    
+   	return 0;
+}
+```
+
+
+
+```bash
+$ chan@CMA:~/C_Programming/HFC$ ./test > message.txt 2> message2.txt
+THE
+SUBMARINE
+WILL
+NOT 
+ARRIVE 
+TODAY
+
+chan@CMA:~/C_Programming/HFC$ cat message.txt
+THE
+WILL
+ARRIVE
+
+chan@CMA:~/C_Programming/HFC$ cat message2.txt
+SUBMARINE
+NOT
+TODAY
+
+```
+
+
+
+In the case of first input which is "THE", i = 0 + 1 = 1 and since 1 % 2 == 1, 1 is a non-zero value which means success. So the **if** block will be run and "THE" will be redirected to the Standard Output which in this case is to `message.txt`. In the case of "SUBMARINE", i = 1 + 1 = 2 and since 2 % 2 == 0, 0 is a zero value which evaluates to false and "SUBMARINE" will be redirected to the Standard Error which in this case is `message2.txt`.
+
+**while `0` signifies success in the context of the `main()` function return value, it represents false in the context of conditional statements.**
+
+
+
+Let's try to use our geo2json program above for something a little more complex which is displaying the information that falls inside the Bermuda Rectangle instead of just displaying data on a map.
+
+That means only data that matches these conditions:
+
+For visual representation, refer to page 168 in HFC book.
+
+```C
+((latitude > 26) && (latitude < 34))
+
+((longitude > -76) && (longitude < -64))
+```
+
+
+
+We will not change the geo2json tool because we just want it to do just one task. If you make the program do something more complex, you'll cause problems for your users who expect the tool to keep working in exactly the same way.
+
+#### A different task needs a different tool
+
+We'll have two tools: a new Bermuda tool that filters out data that is outside the Bermuda Rectangle and then our original geo2json tool that will convert the remaining data for the map.
+
+
+
+**For visualization, refers to page 170 in HFC Book.**
+
+This is how we'll connect the programs together:
+
+1. We'll feed all of out data into the Bermuda tool. This data includes events inside and outside the Bermuda Rectangle.
+2. The Bermuda tool will only pass on data that falls inside the Bermuda Rectangle.
+3. So, we'll only pass Bermuda Rectangle data to geo2.json.
+4. geo2.json will work exactly the same as before.
+5. We will product a map containing only Bermuda Rectangle data.
+
+By splitting the problem down into two tasks, we'll be able to leave our geo2json untouched. But how will we connect our two tools together. 
+
+#### Connect our input and output with a pipe
+
+But now we will connect the **Standard Output** of the Bermuda tool to the **Standard Input** of the `geo2json` .
+
+
+
+The `|` symbol is a pipe that connects the Standard Output of one process to the Standard Input of another process.
+
+**Page 171 for visualization**.
+
+```bash
+$ bermuda | geo2json
+
+// The operating system will run both programs at the same time.
+// The output of bermuda will become the input of geo2json.
+```
+
+
+
+#### The Bermuda Tool
+
+- It will read through a set of GPS data, line by line and send data to the Standard Output.
+- But it won't send every piece of data to the Standard Output, just the lines that are inside the Bermuda Rectangle.
+- The Bermuda tool will always output data in the same CSV format used to store GPS data.
+
+```C
+// Read the latitude, longitude, and other data for each line:
+// if the latitude is between 26 and 34, then:
+// if the longitude is between -64 and -76, then:
+// display the latitude, longitude and other data.
+```
+
