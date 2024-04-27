@@ -650,3 +650,108 @@ Small tools should follow these design principles:
 
 
 
+
+
+Q: Why is it important that small tools use the Standard Input and Standard Output?
+
+A: Because it makes it easier to connect them with pipes.
+
+
+
+Q: Why does that matter?
+
+A: Small tools usually don't solve an entire problem on their own, just a small technical problem like converting from one format to another. But if you can combine them together, then you can solve large problems.
+
+
+
+Q: What is a pipe, actually?
+
+A: The exact details depend on the OS. Pipes might be made from sections of memory or temporary files. The important thing is that they accept data in one end and send the data out of the other in sequence.
+
+
+
+Q: So if two programs are piped together, does the first program have to finish running before the second program can start?
+
+A: No. Both of the programs will run at the same time; as output is produced by the first program, it can be consumed by the second program.
+
+
+
+Q: Why do small tools use text?
+
+A: It's the most open format. If a small tool uses text, it means that any other programmer can easily read and understand the output just by using a text editor. Binary formats are normally obscure and hard to understand.
+
+
+
+Q: Can I connect several programs together with pipes?
+
+A: Yes, just add more `|` between each program name. A series of connected processes is called a pipeline.
+
+
+
+Q: If several processes are connected together with pipes and then I use `>` and `<` to redirect the Standard Input and Output, which processes will have their input and output redirected?
+
+A: The `<` will send a file's content to the first process in the pipeline. The `>` will capture the Standard Output from the last process in the pipeline.
+
+
+
+##### Bullet Points
+
+- If you want to perform a different task, consider writing a separate small tool.
+- Design tools to work with Standard Input and Standard Output.
+- Small tools normally read and write text data.
+
+
+
+`fscanf()` and `scanf()` returns the number of items successfully read.
+
+
+
+#### Roll your own data streams
+
+When a program runs, the OS gives it three file data streams: the Standard Input, the Standard Output and the Standard Error. But sometimes you need to create other data streams on the fly.
+
+The good news is that the operating system doesn't limit you to the ones you are dealt when the program starts. You can roll your own as the program runs.
+
+
+
+**Each data stream is represented by a pointer to a file** and you can create  a new data stream using the `fopen()` function:
+
+```C
+FILE *in_file = fopen("input.txt", "r");
+// This will create a data stream to read from a file.
+// fopen(filename, mode);
+FILE *out_file = fopen("output.txt", "w");
+```
+
+The mode is:
+
+"w" = write, "r" = read and "a" = append.
+
+Once you have created a data stream, you can print to it using `fprintf()`. `fscanf()` to read from a file.
+
+```C
+fprintf(out_file, "Don't wear %s with %s", "red", "green");
+
+fscanf(in_file, "%79[^\n]\n", sentence);
+```
+
+
+
+Finally when you're finished with a data stream, you need to close it. The truth is that all data streams are automatically closed when the program ends but it's still a good idea to always close the data stream yourself:
+
+```C
+fclose(in_file);
+fclose(out_file);
+```
+
+
+
+Q: How many data streams can I have?
+
+A: It depends on the OS, but usually a process can have up to 256. The key thing is there's a limited number of them, so make sure you close them when you're done using them.
+
+
+
+Q: Why is FILE in uppercase?
+
+A: It's historic. FILE used to be defined using a macro. Macros are usually given uppercase names.
