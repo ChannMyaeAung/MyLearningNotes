@@ -77,6 +77,17 @@ Three things you need to know in order to use pointers to read and write data.
 
      
 
+```C
+int x = 10; //Declare an integer x
+int *p; //Declare a pointer p;
+p = &x; //Store the address of x in p
+printf("%d", *p); // Print the value at address stored in p (which is x)
+
+//This will output 10 because *p gives the value at the address stored in p which is the value of x.
+```
+
+
+
 
 
 Summary Bullet Points
@@ -706,6 +717,34 @@ A: The `<` will send a file's content to the first process in the pipeline. The 
 
 
 
+#### `fprintf()` and `fscanf()`
+
+- `fprintf()`: This function is used to write formatted output to a file. It takes at least two arguments:
+
+  1. A pointer to a `FILE` object that identifies the stream where the content is to be written. This can be `stdout` (standard output), `stderr` (standard error), or a file opened using `fopen()`.
+
+  2. A format string that specifies how subsequent arguments are converted for output. It can contain ordinary characters (which are copied directly to the output) and conversion specifiers (beginning with %) which are replaced by the values of the subsequent arguments.
+
+  3. Zero or more additional arguments supplying values to be printed. Their type should match the corresponding format specifier in the format string.
+
+     ```C
+     fprintf(FILE *stream, "%s\n", line);
+     ```
+
+- `fscanf()`: This function is used to read formatted input from a file. It also takes at least two arguments:
+
+  1. A pointer to a `FILE` object that identifies the stream from which characters are read. This can be `stdin` (standard input) or a file opened using `fopen()`.
+
+  2. A format string that specifies how to read the input.
+
+  3. A variable number of arguments corresponding to the conversion specifiers in the format string. These arguments are pointers to memory locations where the values read from the input stream will be stored, according to the format string.
+
+     ```C
+     fscanf(FILE *stream, "%s\n", line)
+     ```
+
+  In both functions, the return value indicates the number of items successfully formatted or read and stored. If an error occurs or the end-of-file (EOF) is reached before any data is read, `EOF` is returned.
+
 #### Roll your own data streams
 
 When a program runs, the OS gives it three file data streams: the Standard Input, the Standard Output and the Standard Error. But sometimes you need to create other data streams on the fly.
@@ -755,3 +794,107 @@ A: It depends on the OS, but usually a process can have up to 256. The key thing
 Q: Why is FILE in uppercase?
 
 A: It's historic. FILE used to be defined using a macro. Macros are usually given uppercase names.
+
+
+
+Any program we write is going to need options. If we create a chat program, it's going to need preferences. If we write a game, a user will want to change the shape of the blood spots. Similarly, if we are writing a command-line tool, we are probably going to need to add command-line options.
+
+Command-line options are the little switches we often see with command-line tools:
+
+```bash
+ps -ae 
+// Display all the processes, including thier environments.
+
+tail -f logfile.out
+// Display the end of the file, but wait for new data to be added to the end of the file.
+```
+
+
+
+#### Let the library do the work for you
+
+Many programs use command-line options. So, there's a special library function you can use to make dealing with them a little easier and it's called `getopt()`. and each time you call it, it returns the next option it finds on the command line.
+
+```bash
+rocket_to -e 4 -a Brasilia Tokyo London
+
+-e = engines
+4 = use four engines
+-a = awesomeness
+```
+
+
+
+This program needs one option that will take a vluae (-e = engines) and another that is simply on or off (-a). You can handle these options by calling `getopt()` in a loop like this:
+
+The `unistd.h` header is not actually part of the standard C library. Instead it gives your programs access to some of the POSIX libraries. POSIX was an attempt to create a common set of functions for use across all popular OS.
+
+```C
+// We will need to include this header.
+#include <unistd.h>
+
+// "ae:" means "The a option is valid; so is the e option"
+// ":" means that the e option needs an argument
+while((ch = getopt(argc, argv, "ae:")) != EOF){
+    // The code to handle each option goes here.
+    switch(ch){
+        case 'e':
+            engine_count = optarg;
+    };
+}
+	// These final two lines make sure we skip past the options we read.
+	argc -= optind;
+	argv += optind;
+	// optind stores the number of strings read from the command line to get past the options.
+
+	
+```
+
+
+
+The string `ae:` tells the `getopt()` function that a and e are valid options. The e is followed by a colon to tell `getopt()` that the `-e` needs to be followed by an extra argument. `getopt()` will point to that argument with the `optarg` variable.
+
+When the loop finishes, you tweak `argv` and `argc` variables to skip past all of the options and get to the main command-line arguments. That will make your `argv` array look like this:
+
+Barasilia - This is `argv[0]`.
+
+Tokyo - This is `argv[1]`.
+
+London - This is `argv[2]`.
+
+After processing the arguments, the 0th argument will no longer be the program name. `argv[0]` will instead point to the first command-line argument that follows the options.
+
+
+
+##### optarg
+
+`optarg` is a global variable that is part of the `getopt` function in the `unistd.h` library in C.
+
+When `getopt` is called to parse command-line options and arguments, if it encounters an option that takes an argument, it sets `optarg` to point to the argument value.
+
+For example, if you run your program with `-d delivery`, `optarg` would point to the string "delivery".
+
+`optarg` is only valid after `getopt` has been called and returned a character that requires an argument. It's undefined at other times.
+
+```bash
+./order_pizza -d now
+// now is optarg
+```
+
+
+
+#### Should we always declare string variables as pointers?
+
+While pointers are commonly used to work with strings in C, especially when dealing with dynamic memory allocation or modifying string contents, it's not always required to declare string variables as pointers.
+
+1. **Static Strings:** If you have a string with a fixed size known at compile time, you can declare it as a static array of characters(`char myString[size]`) without the need for pointers.
+
+   ```C
+   char staticString[20] = "Hello, World";
+   ```
+
+2. **Dynamic Strings:** If the size of the string is not known at compile time or if you need to dynamically allocate memory for the string, using pointers is more appropriate. This allows you to allocate memory as needed using functions like `malloc` or `calloc` and to resize or modify the string contents as requried.
+
+3. **Function Arguments:** When passing strings as function arguments, you can use either pointers or arrays. Strings are passed by reference in C, so modifying the string inside the function affects the original string. However, passing a pointer to a string allows more flexibility and efficiency especially with large strings.
+
+4. **Null-Terminated Strings:** Whether you use pointers or arrays, remember that C strings are null-terminated, meaning they end with a null character(`0\`). Ensure that your string variables are properly null-terminated to avoid undefined behavior.

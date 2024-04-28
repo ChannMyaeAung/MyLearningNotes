@@ -632,6 +632,16 @@ When you connect the two programs together, you can treat them as a single progr
 
   
 
+#### Segmentation Fault(core dumped)
+
+The segmentation fault is likely due to the program trying to access memory that it shouldn't.
+
+`perror` is a function in the C standard library that prints a descriptive error message to the standard error output (`stderr`).The message is based on the current value of the `errno` variable which is set by many library functions when they encounter errors.
+
+The `perror` function takes a single argument which is a string that is printed before the error message, followed by a colon and a space. This argument can be used to provide context about what operation was being attempted when the error occured.
+
+For example, if you try to open a file that doesn't exist, `fopen` will return `NULL` and set `errno` to a value representing an error. You can then call `perror` to print a message like "Error opening file: No such file or directory."
+
 
 
 ```C
@@ -642,6 +652,11 @@ When you connect the two programs together, you can treat them as a single progr
 int main(){
     char line[80];
     FILE *in = fopen("spooky.csv", "r");
+    // This will print an error message and exit the program if the file cannot be opened, preventing segmentation fault.
+    if(in == NULL){
+        perror("Error opening file");
+        return 1;
+    }
     FILE *file1 = fopen("ufos.csv", "w");
     FILE *file2 = fopen("disappearances.csv", "w");
     FILE *file3 = fopen("others.csv", "w");
@@ -719,6 +734,10 @@ But how do we read command-line arguments from **within the program**?
 int main(int argc, char *argv[]){
     ...Do stuff...
 }
+// argc = argument count, arvg = argument vecotr
+// argc value is a count of the number of elements in the array. In other words, it is the number of arguments passed into the program from the command line, including the name of the program.
+
+// argv is the argument of vector. It is an array of strings(character arrays) that hold each of the command line arguments. argv[0] is the name of the program, argv[1] is the first argument and so on.
 ```
 
 
@@ -729,9 +748,9 @@ The main function can read the command-line arguments as an array of strings. Be
 ./categorize mermaid mermaid.csv Elvis elvises.csv the_rest.csv
 ```
 
+The `argc` would be 6.
 
-
-`./categorize` - The first argument is actually the name of the program being run as it was run by the user. This is argv[0].
+`./categorize` - The first argument is actually the name of the program being run as it was run by the user. This is argv[0]. That means the first proper command-line argument is `argv[1]`.
 
 `mermaid` - This is argv[1]
 
@@ -742,3 +761,266 @@ The main function can read the command-line arguments as an array of strings. Be
 `elvises.csv` - This is argv[4]
 
 `the_rest.csv` - This is argv[5]
+
+Command-line arguments really give your program a lot more flexibility.
+
+**This is a modified version of the categorize program that can read the keywords to search for and the files to use form the command line.**
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char *argv[]){
+    char line[80];
+    
+    if(argc != 6){
+        fprintf(stderr, "You need to give 5 arguments");
+        return 1;
+    }
+    
+    FILE *in = fopen("spooky.csv", "r");
+    
+    //This will print an error message and exit the program if the file cannot be opened, preventing segmentation fault.
+    if(in == NULL){
+        perror("Error opening file");
+        return 1;
+    }
+    
+    FILE *file1 = fopen(argv[2], "w");
+    FILE *file2 = fopen(argv[4], "w");
+    FILE *file3 = fopen(argv[5], "w");
+    
+    while(fscanf(in, "%79[^\n]\n", line) == 1){
+        if(strstr(line, argv[1])){
+            fprintf(file1, "%s\n", line);
+        } else if(strstr(line, argv[3])){
+            fprintf(file2, "%s\n", line);
+        }else{
+            fprintf(file3, "%s\n", line);
+        }
+    }
+    fclose(in);
+    fclose(file1);
+    fclose(file2);
+    fclose(file3);
+    return 0;
+}
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ make categorize
+cc     categorize.c   -o categorize
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat spooky.csv
+30.685163,-68.137207,Type=Yeti
+28.304380,-74.575195,Type=UFO
+29.132971,-71.136475,Type=Ship
+28.343065,-62.753906,Type=Elvis
+27.868217,-68.005371,Type=Goatsucker
+30.496017,-73.333740,Type=Disappearance
+26.224447,-71.477051,Type=UFO
+29.401320,-66.027832,Type=Ship
+37.879536,-69.477539,Type=Elvis
+22.705256,-68.192139,Type=Elvis
+27.166695,-87.484131,Type=Elvis
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ ./categorize mermaid mermaid.csv Elvis elvises.csv the_rest.csv
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat mermaid.csv
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat elvises.csv
+28.343065,-62.753906,Type=Elvis
+37.879536,-69.477539,Type=Elvis
+22.705256,-68.192139,Type=Elvis
+27.166695,-87.484131,Type=Elvis
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat the_rest.csv
+30.685163,-68.137207,Type=Yeti
+28.304380,-74.575195,Type=UFO
+29.132971,-71.136475,Type=Ship
+27.868217,-68.005371,Type=Goatsucker
+30.496017,-73.333740,Type=Disappearance
+26.224447,-71.477051,Type=UFO
+29.401320,-66.027832,Type=Ship
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams$ 
+
+
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ ./categorize UFO aliens.csv Elvis elvises.csv the_rest.csv
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat aliens.csv
+28.304380,-74.575195,Type=UFO
+26.224447,-71.477051,Type=UFO
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat elvises.csv
+28.343065,-62.753906,Type=Elvis
+37.879536,-69.477539,Type=Elvis
+22.705256,-68.192139,Type=Elvis
+27.166695,-87.484131,Type=Elvis
+
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams
+$ cat the_rest.csv
+30.685163,-68.137207,Type=Yeti
+29.132971,-71.136475,Type=Ship
+27.868217,-68.005371,Type=Goatsucker
+30.496017,-73.333740,Type=Disappearance
+29.401320,-66.027832,Type=Ship
+chan@CMA:~/C_Programming/HFC/chapter3_datastreams$ 
+
+```
+
+
+
+#### Pizza Pieces
+
+```C
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char *argv[]){
+    char delivery = "";
+    int think = 0;
+    
+    int count = 0;
+    char ch;
+    
+    while((ch = getopt(argc, argv, "d:t")) != EOF){
+        switch(ch){
+            case 'd':
+                delivery = optarg;
+                break;
+            case 't':
+                thick = 1;
+                break;
+            default:
+                fprintf(stderr, "Unknown option: '%s'\n", optarg);
+                return 1;
+        }
+    }
+    
+    argc -= optind;
+    argv += optind;
+    
+    if(thick){
+        puts("Thick crust.");
+    }
+    if(delivery[0]){
+        printf("To be delivered %s.\n", delivery);
+    }
+    puts("Ingredients: ");
+    
+    for(count = 0; count < argc; count++){
+        puts(argv[count]);
+    }
+    return 0;
+}
+```
+
+
+
+##### Pizza Pieces Code Breakdown line by line
+
+- The main function accepts two parameters: `argc`, an integer representing the number of command-line arguments passed to the program, and `argv`, an array of strings containing those arguments.
+
+- Declare variables for storing information about pizza delivery(`delivery`), crust thickness(`thick`), a counter(`count`), and a character(`ch`) for parsing command-line options. `delivery` is declared as a pointer to allow flexibility in storing and modifying string data.
+
+- The while loop parses command-line options using `getopt`. It iterates over each option(`ch`) provided in the command-line arguments(`argv`). The `getopt` function returns the next option character(`d` for delivery and `t` for thick crust) or `EOF` when all options  have been processed. In this case, the loop will run until `EOF` end of files.
+
+- The switch statement handles each option accordingly.
+
+- After parsing options with `getopt`, `optind` contains the index of the first non-option argument in `argv`. These lines adjust `argc` and `argv` to exclude the parsed options. `argc -= optind` reduces `argc` by the number of parsed options, and `argv += optind` advances `argv` to the start of the remaining arguments.
+
+  illustrations:
+
+  ```bash
+  ./pizza -d "home" -t cheese tomato mushroom
+  ```
+
+  - Initially, `argc` is 7 (including the program name).
+  - After parsing options with `getopt`, `optind` points to the first non-option argument ("cheese").
+  - `argc -= optind` reduces `argc` to 4 (3 non-option arguments).
+  - `argv += optind` advances `argv` to point to the first non-option argument("cheese").
+
+- If the `thick` variable is set indicating that the `t` option was given `-t`, a message is printed saying "Thick crust.".
+
+- If the first character of the `delivery` string is not the null character indicating that the `d` option was given with a non-empty argument), a message is printed saying "To be delivered" followed by the delivery time.
+
+- The remaining arguments which are not options are printed one per line. These are the pizza ingredients.
+
+
+
+##### Test Drive
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ make order_pizza
+cc     order_pizza.c   -o order_pizza
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza
+Ingredients: 
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza Anchovies
+Ingredients: 
+Anchovies
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza Anchovies Pineapple
+Ingredients: 
+Anchovies
+Pineapple
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza -d now -t Anchovies Pineapple
+Thick crust.
+To be delivered now.
+Ingredients: 
+Anchovies
+Pineapple
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza -d 9:40 -t Anchovies Pineapple
+Thick crust.
+To be delivered 9:40.
+Ingredients: 
+Anchovies
+Pineapple
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ ./order_pizza -d
+./order_pizza: option requires an argument -- 'd'
+Unknown option: '(null)'
+
+chan@CMA:~/C_Programming/HFC/chapter3_orderpizza
+$ 
+
+```
+
+
+
+We first compile the program and try running with no options for the first couple of times we call it.
+
+Then we try out the 'd' option and give it an argument of 'now'.
+
+Then the 't' option. Remember the "t" option doesn't take any arguments.
+
+Finally, we try skipping the argument for "d": it creates an error.
