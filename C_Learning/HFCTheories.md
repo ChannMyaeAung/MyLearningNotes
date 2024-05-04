@@ -1303,3 +1303,71 @@ launch: launch.o thruster.o
 - Save object code into files to speed up your builds.
 
 - Use `make` to manage your builds.
+
+---
+
+
+
+### Chapter 6 - structs, unions, and bitfields
+
+
+
+#### Struct
+
+Create your own structured data types with a `struct`.
+
+- If you have a set of data that you need to bundle together into a single thing, then you can use a `struct`.
+
+- The word `struct` is short for `structured data type`.
+
+- A `struct` will let you take all of those different pieces of data into the code and wrap them up into one large new data type.
+
+  - ```C
+    struct fish{
+        const char *name;
+        const char *species;
+        int teeth;
+        int age;
+    }
+    ```
+
+- It's a little bit like an array except:
+
+  - It's fixed length.
+  - The pieces of data inside the `struct` are given names.
+
+- We can create pieces of data that use it:
+
+  - ```C
+    struct fish snappy = {"Snappy", "Piranha", 69, 4}
+    ```
+
+  - `struct fish` is the data type.
+
+  - `snappy` is the variable name.
+
+  - `"Snappy"` is the name.
+
+  - `"Piranha"` is the species.
+
+  - `69` is the number of teeth.
+
+  - `4`is Snappy's age.
+
+
+
+Q: What's that `const char` thing again?
+
+A: `const char *` is used for strings that you don't want to change. That means it's often used to record string literals.
+
+
+
+Q: Does this `struct` store the string?
+
+A: In this case, no. The `struct` here just stores a pointer to a string. That means it's just recording an address, and thee string lives somewhere else in memory.
+
+
+
+Q: But you can store the whole string in there if you want?
+
+A: Yes, if you define a `char` array in the string, like `char name[20]`;
