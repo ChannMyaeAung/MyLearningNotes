@@ -1481,3 +1481,39 @@ chan@CMA:~/C_Programming/test$
 
 
 
+If there's a change in one of the files, I don't have to rerun all the recipes and recompile all the code with `Makefile`.
+
+Let's say if I change Hello World from Hello My Princess.
+
+hello.c
+
+```C
+const char *get_message(){
+    return "Hello My Princess!\n";
+}
+
+```
+
+Then I only have to run this:
+
+```bash
+chan@CMA:~/C_Programming/test
+$ make clean
+Removing everything except the source files
+
+chan@CMA:~/C_Programming/test
+$ make all
+Compiling the main file
+gcc -c main.c 
+Compiling the hello file
+gcc -c hello.c 
+Linking and producing the final application
+gcc main.o hello.o -o final
+
+chan@CMA:~/C_Programming/test
+$ ./final
+Hello My Princess!
+chan@CMA:~/C_Programming/test$ 
+
+```
+
