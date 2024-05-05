@@ -1371,3 +1371,144 @@ A: In this case, no. The `struct` here just stores a pointer to a string. That m
 Q: But you can store the whole string in there if you want?
 
 A: Yes, if you define a `char` array in the string, like `char name[20]`;
+
+
+
+**View the exercise in `HFCExercises.md`**.
+
+
+
+#### Read a struct's fields with the "." operator
+
+Even though a struct stores fields like an array, the only way to access them is by name.
+
+```C
+struct fish{
+    const char *name;
+    const char *species;
+    int teeth;
+    int age;
+}
+
+struct fish snappy = {"Snappy", "piranha", 69, 4}
+
+printf("Name = %s\n", snappy.name);
+//This will return the string "Snappy".
+// Name = Snappy
+```
+
+
+
+- One of the great things about data passing around inside `struct`s is that you can change contents of your `struct` without having to change the functions that use it.
+
+- For example, let's say you want to add an extra field to `fish`:
+
+  ```C
+  struct fish{
+      const char *name;
+      const char *species;
+      int teeth;
+      int age;
+      int favorite_music;
+  }
+  ```
+
+  - All the `catalog()` and `label()` which are the functions that uses the `struct fish` which can be found in `HFCExercises.md` have been told is they're going to be handed a `fish`. They don't know (and don't care) that the `fish` now contains more data, so long as it has all the fields they need.
+  - That means that `struct`s don't just make your code easier to read, they also make it better able to cope with change.
+
+Q: is a `struct` just an array?
+
+A: No but like an array, it groups a number of pieces of data together.
+
+
+
+Q: An array variable is just a pointer to the array. Is a `struct` variable a pointer to a `struct`?
+
+A: No, a `struct` variable is a name for the `struct` itself.
+
+
+
+Q: Are `structs` like classes in other languages?
+
+A: They're similar but it's not so easy to add methods to `struct`s.
+
+
+
+#### Structs In Memory Up Close
+
+- The assignment copies the pointers to strings, not the strings themselves.
+
+- When you assign one `struct` to another, the contents of the `struct` will be copied.
+
+- But if that includes pointers, the assignment will just copy the pointer values.
+
+  ```C
+  struct fish{
+      const char *name;
+      const char *species;
+      int teeth;
+      int age;
+  };
+  
+  struct fish snappy = {"Snappy", "Piranha", 69, 4};
+  struct fish gnasher = snappy;
+  
+  // gnasher and snappy both point to the same strings.
+  ```
+
+  - That means the `name` and `species` fields of `gnasher` and `snappy` both point to the same strings.
+
+- When we define a new variable, the computer will need to create some space in memory for an instance of the `struct`.
+
+- That space in memory will need to be big enough to contain all of the fields within the `struct`.
+
+- The computer will create a brand-new copy of the `struct` when we assign a `struct` to another variable.
+
+- That means it will need to allocate another piece of memory of the same size, then copy over each of the fields.
+
+- When we are assigning `struct` variables, we are telling the computer to copy data.
+
+
+
+#### Can yhou put one struct inside another?
+
+When we define a `struct`, we are actually creating a new data type.
+
+If a `struct` creates a data type from existing data types, that means we can also **create `structs` from other `structs`.**
+
+```C
+struct preferences{
+    const char *food;
+    float exercise_hours;
+};
+
+struct fish{
+    const char *name;
+    const char *species;
+    int teeth;
+    int age;
+    struct preferences care;
+}
+```
+
+- This is a `struct` inside a `struct`. This is called nesting.
+- Our new field is called "care", but it will contain fields defined by the "preferences" `struct`.
+- The above code tells the computer one `struct` will contain another `struct`.
+
+```C
+struct fish snappy = {"Snappy", "Piranha", 69, 4, {"Meat", 7.5}};
+// "Meat" - The value for care.food
+// 7.5 - The value for care.exercise_hours
+// {"Meat", 7.5} - struct data for the care field.
+```
+
+
+
+- Once we've combined `struct` together, we can access the fields using a chain of "." operators:
+
+  ```C
+  printf("Snappy likes to eat %s", snappy.care.food);
+  printf("Snappy likes to exercise for %f hours", snappy.care.exercise_hours);
+  ```
+
+  
