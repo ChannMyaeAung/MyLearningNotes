@@ -1512,3 +1512,136 @@ struct fish snappy = {"Snappy", "Piranha", 69, 4, {"Meat", 7.5}};
   ```
 
   
+
+#### Typedef
+
+C allows you to create an **alias** for any `struct` that you create. If you add the word **typedef** before the `struct` keyword and a **type name** after the closing brace, you can call the new type whatever you like:
+
+Before:
+
+```C
+struct cell_phone{
+    int cell_no;
+    const char *wallpaper;
+    float minutes_of_charge;
+};
+
+struct cell_phone p = {5557879, "sinatra.png", 1.35};
+```
+
+
+
+After:
+
+```C
+typedef struct cell_phone{
+    int cell_no;
+    const char *wallpaper;
+    float minutes_of_charge;
+} phone;
+
+phone p = {5557879, "sinatra.png", 1.35};
+
+```
+
+
+
+- `typedef` means you are going to give the `struct` type a new name.
+
+- `phone` will become an alias for `struct cell_phone`.
+
+- Now, when the compiler sees "phone", it will treat it like `struct cell_phone`.
+
+- `typedef` can shorten your code and make it easier to read.
+
+- If you use `typedef` to create an alias for a `struct`, you will need to decide what your alias will be.
+
+- The alias is just the name of your type that means there are two names to think about: the name of the `struct(struct cell_phone)` and the name of the `type(phone)`.
+
+- Why have two names? You usually don't need both. The compiler is quite happy for you to skip the `struct` name like this:
+
+  ```C
+  typedef struct{
+      int cell_no;
+      const char *wallpaper;
+      float minutes_of_charge;
+  } phone;
+  phone p = {5557879, "sinatra.png", 1.35};
+  ```
+
+  
+
+
+
+#### Bullet Points
+
+- A `struct` is a data type made from a sequence of other data types.
+- `struct`s are fixed length.
+- `struct` fields are accessed by name, using `<struct>.<field name>` syntax(aka dot notation).
+- `struct` fields are stored in memory in the same order they appear in the code.
+- You can nest `struct`s.
+- `typedef` creates an alias for a data type.
+- If you use `typedef` with a `struct`, then you can skip giving the `struct` a name.
+
+
+
+Q: Do `struct`  fields get placed next to each other in memory?
+
+A: Sometimes there are small gaps between the fields.
+
+
+
+Q: Why is that?
+
+A: The computer likes data to fit inside the word boundaries. SO, if a computer uses 32-bit words, it won't want a `short` , say, to be split over a 32-bit boundary.
+
+
+
+Q: So it would leave a gap and start the `short` in the next 32-bit word?
+
+A: Yes.
+
+
+
+Q: Does that mean each field takes up a whole word?
+
+A: No, the computer leaves gaps only to prevent fields from splitting across word boundaries. If it can fit several fields into a single word, it will.
+
+
+
+Q: Why does the computer care so much about word boundaries?
+
+A: it will read complete words from the memory. If a field was split across more than one word, the CPU would have to read several locations and somehow stitch the value together. That'd be slow.
+
+
+
+Q: In languages like Java, if I assign an object to a variable, it doesn't copy the object, it just copies a reference. Why is it different in C?
+
+A: In C, all assignments copy data. If you want to copy a reference to a piece of data, you should assign a pointer.
+
+
+
+Q: I'm really confused about `struct` names. What's the `struct` name and what's the alias?
+
+A: The `struct` name is the word that follows the `struct` keyword. If you write `struct peter_parker{...}`, then the name is `peter_parker` and when you create variables, you would say `struct peter_parker x`. Sometimes you don't want to keep using the `struct` keyword when you declare variables, so `typedef` allows you to create a single word alias. In `typedef struct peter_parker{...} spider_man;`, `spider_man` is the alias.
+
+
+
+Q: What's an anonymous `struct`?
+
+A: One without a name, so `typedef struct {...} spider_man;` has an alias of `spider_man` but no name. Most of the time, if you create an alias, you don't need a name.
+
+
+
+#### how do you update a struct?
+
+A `struct` is really jsut a bundle of variables, grouped together and treated like a single piece of data.
+
+We can change the fileds of a `struct` just like any other variable.
+
+```C
+fish snappy = {"Snappy", "piranha", 69, 4};
+printf("Hello %s\n", snappy.name);
+snappy.teeth = 68;
+```
+
