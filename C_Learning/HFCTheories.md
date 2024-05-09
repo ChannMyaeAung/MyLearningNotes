@@ -1645,3 +1645,175 @@ printf("Hello %s\n", snappy.name);
 snappy.teeth = 68;
 ```
 
+
+
+If we take a look at this code:
+
+```C
+#include <stdio.h>
+
+typedef struct{
+    const char *name;
+    const char *species;
+    int age;
+} turtle;
+
+void happy_birthday(turtle t){
+    t.age = t.age + 1;
+    printf("Happy Birthday %s! You are now %i years old!\n");
+}
+
+int main(){
+    turtle myrtle = {"Myrtle", "Leatherback sea turtle", 99};
+    happy_birthday(myrtle);
+    printf("%s's age is now %i\n", myrtle.name, myrtle.age);
+    return 0;
+}
+```
+
+
+
+When we run:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ make all
+Compiling the main file...
+gcc -c main.c 
+Compiling the final turtle exe file...
+gcc main.o functions.o -o turtle
+
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ ./turtle
+Happy Birthday Myrtle! You are now 100 years old!
+Myrtle's age is now 99
+
+```
+
+
+
+- Even though the `age` was updated by the function, when the code returned to the main function. the `age` seemed to reset itself.
+
+- The code is cloning the turtle. When we assign a `struct`, its values get copied to the new `struct`.
+
+- ```C
+  happy_birthday(myrtle);
+  ```
+
+  - myrtle - This is the turtle that we are passing to the function. The myrtle `struct` will be copied to this parameter.
+
+- In C, parameters are passed to functions by **value**. That means that when we call a function, the values we pass into it are assigned to the parameters.
+
+- So in this code, it's almost as if we had written something like this:
+
+  ```C
+  turtle t = myrtle;
+  ```
+
+- When we assign `structs` in C, the values are copied.
+
+- When we call the function, the parameter `t` will contain a copy of the `myrtle struct`.
+
+- It's as if the function has a clone of the original turtle.
+
+- So, the code inside the function does update the age of the turtle, but it's a different turtle.
+
+- What happens when the function returns?
+
+- The `t` parameter disappears, and the rest of the code in `main()` uses `myrtle struct`. But the value of `myrtle` was never changed by the code. It was always a completely separate piece of data.
+
+
+
+#### So what do we do if we want to pass a `struct` to a function that needs to update it?
+
+##### We need a pointer to the `struct`
+
+- When we pass a variable to the `scanf()` function, we couldn't pass the variable itself to `scanf()`; we have to pass a pointer:
+
+  ```C
+  scanf("%f", &length_of_run);
+  ```
+
+  
+
+- If we tell the `scanf()` function where the variable lives in memory, then the function will be able to update the data stored at the place in memory, which means it can update the variable.
+
+- We can just do the same with `struct`.
+
+- ```C
+  void happy_birthday(turtle *t){
+     (*t).age = (*t).age + 1;
+      printf("Happy Birthday %s! You are now %i years old!\n", (*t).name, (*t).age);
+  }
+  happy_birthday(&myrtle);
+  ```
+
+- The parentheses are really important because `(*t).age` and `*t.age` are very different.
+
+**Example exercises can be found in `HFCExercises.md`.**
+
+
+
+- `(*t).age != *t.age`. 
+
+- `(*t).age`. If t is a pointer to a turtle `struct`, then this is the age of the turtle. (I am the age of the turtle pointed to by t.)
+
+- `*t.age` . If t is a pointer to a turtle `struct`, then this expression is wrong. (I am the contents of the memory location given by `t.age`).
+
+- So the expression `*t.age` is really the same as `*(t.age)`. It means "the contents of the memory location given by `t.age`". But `t.age` isn't a memory location.
+
+- The reason `(*t).age` and `*t.age` are not the smae is due to the precedence of the operators in C.
+
+  - `(*t).age` first dereferences the pointer `t` to access the `turtle struct` and then accesses the `age` field of that `struct`.
+  - `*t.age` tried to access the `age` field of the pointer `t` (which doesn't exist because `t` is a pointer, not a `struct`), and then tries to dereference the result, which is not valid and will likely cause a compile error.
+
+- In C, the `.` operator has higher precedence than the `*` operator, so `*t.age` is interpreted as `*(t.age)`, not `(*t).age`.
+
+- To avoid confusion, C provides the `->` operator for accessing the members of a struct through a pointer, so instead of writing `(*t).age` , you can write `t->age`, which is clearer and easier to read.
+
+- `t->age` means `(*t).age`. (The `age` field in the `struct` that `t` points to).
+
+  ```C
+  void happy_birthday(turtle *a){
+      a->age = a->age + 1;
+      printf("Happy Birthday %s! You are now %i years old!\n", a->name, a->age);
+  }
+  ```
+
+  
+
+- By passing a pointer to the `struct`, we allowed the function to update the original data rather than taking a local copy.
+
+Q: Why are values copied to parameter variables?
+
+A: The computer will pass values to a function by assigning values to the function's parameters. And all assignments copy values.
+
+
+
+#### Bullet Points
+
+- When you call a function, the values are copied to the parameter variables.
+- You can create pointers to `struct`s, just like any other type.
+- The `->` notation cuts down on parentheses and makes the code more readable.
+
+
+
+#### Union
+
+- In C, a union is a user-defined data type that allows you to store different types of data in the same memory location.
+
+- It is similar to a `struct` but with a key difference.
+
+- In a union, all members share the same memory location.
+
+- In a `struct`, each member has its own memory space.
+
+- A union lets you reuse memory space.
+
+- Everytime we create an instance of `struct`, the computer will lay out the fields in memory, one after the other.
+
+- A union is different. A union will use the space for just one of the fields in its definition.
+
+- Unions are commonly used in situations where you need to conserve memory or when you want to represent a single value in different ways.
+
+  

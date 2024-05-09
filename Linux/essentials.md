@@ -1,5 +1,18 @@
 # Essentials of Linux
 
+Updating the system or apps on Ubuntu Linux:
+
+```bash
+sudo apt update
+sudo apt upgrade code
+```
+
+
+
+
+
+
+
 ### Linux Is About Imagination
 
 ```

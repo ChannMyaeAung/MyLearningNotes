@@ -1846,9 +1846,9 @@ chan@CMA:~/C_Programming/HFC/chapter_5/piranha_puzzle$
 
 #### Scuba Diver Exercise - Exercise 2
 
-```C
-#include <stdio.h>
+header.h
 
+```C
 typedef struct{
     float tank_capacity;
     int tank_psi;
@@ -1862,12 +1862,32 @@ typedef struct scuba{
 
 //Here we'll just use "diver" although we give the struct name "scuba".
 
+void badge(diver d);
+```
+
+
+
+functions.c
+
+```C
+#include <stdio.h>
+#include "header.h"
+
 void badge(diver d){
     printf("Name: %s Tank: %2.2f(%i) Suit: %s\n", d.name, d.kit.tank_capacity, d.kit.tank_psi, d.kit.suit_material);
 }
+```
+
+
+
+main.c
+
+```C
+#include <stdio.h>
+#include "header.h"
 
 int main(){
-    diver randy = {"Randy", {5.5, 3500, "neoprene"}};
+    diver randy = {"Randy", {5.5, 3500, "Neoprene"}};
     badge(randy);
     return 0;
 }
@@ -1875,5 +1895,237 @@ int main(){
 
 
 
-#### 
+Makefile
+
+```makefile
+all: diver
+
+diver: main.o functions.o
+	@echo "Compiling the final exe diver file..."
+	gcc main.o functions.o -o diver
+	
+main.o: main.c
+	@echo "Compiling main file..."
+	gcc -c main.c
+
+functions.o: functions.c
+	@echo "Compiling functions file..."
+	gcc -c functions.c
+
+clean:
+	@echo "Removing everything except the source files..."
+	@rm main.o functions.o diver
+```
+
+
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_5/scubadiver_puzzle
+$ make all
+Compiling main file...
+gcc -c main.c 
+Compiling the final exe diver file...
+gcc main.o functions.o -o diver 
+
+chan@CMA:~/C_Programming/HFC/chapter_5/scubadiver_puzzle
+$ ./diver
+Name: Randy Tank: 5.50(3500) Suit: Neoprene
+
+```
+
+
+
+---
+
+
+
+#### Turtle Myrtle - Exercise 3
+
+
+
+If we don't use the pointer to our `struct`
+
+```C
+#include <stdio.h>
+
+typedef struct{
+    const char *name;
+    const char *species;
+    int age;
+} turtle;
+
+void happy_birthday(turtle t){
+    t.age = t.age + 1;
+    printf("Happy Birthday %s! You are now %i years old!\n");
+}
+
+int main(){
+    turtle myrtle = {"Myrtle", "Leatherback sea turtle", 99};
+    happy_birthday(myrtle);
+    printf("%s's age is now %i\n", myrtle.name, myrtle.age);
+    return 0;
+}
+```
+
+
+
+The `myrtle struct` will not be updated but its clone will.
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ make all
+Compiling the main file...
+gcc -c main.c 
+Compiling the final turtle exe file...
+gcc main.o functions.o -o turtle
+
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ ./turtle
+Happy Birthday Myrtle! You are now 100 years old!
+Myrtle's age is now 99
+```
+
+
+
+Now if we use pointers: 
+
+Note: We'll also be implementing makefile for this.
+
+main.c
+
+```C
+#include <stdio.h>
+#include "header.h"
+
+int main(void){
+    turtle myrtle = {"Myrtle", "Leatherback sea turtle", 99};
+    happy_birthday(&myrtle);
+    printf("%s's age is now %i\n", myrtle.name, myrtle.age);
+    return 0;
+}
+```
+
+header.h
+
+```C
+typedef struct{
+    const char *name;
+    const char *species;
+    int age;
+} turtle;
+
+void happy_birthday(turtle *t)
+```
+
+functions.c
+
+```C
+#include <stdio.h>
+#include "header.h"
+
+void happy_birthday(turtle *t){
+    (*t).age = (*t).age + 1;
+    printf("Happy Birthday %s! You are now %i years old!\n", (*t).name, (*t).age);
+}
+```
+
+
+
+Makefile
+
+```make
+all: turtle
+
+turtle: main.o functions.o
+	@echo "Compiling the final turtle exe file..."
+	gcc main.o functions.o -o turtle
+
+main.o: main.c
+	@echo "Compiling the main file..."
+	gcc -c main.c
+
+functions.o: functions.c
+	@echo "Compiling the functions file..."
+	gcc -c functions.c
+
+clean:
+	@echo "Removing everything except the source files..."
+	@rm main.o functions.o turtle
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ make all
+Compiling the main file...
+gcc -c main.c 
+Compiling the functions file...
+gcc -c functions.c 
+Compiling the final turtle exe file...
+gcc main.o functions.o -o turtle
+
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle
+$ ./turtle
+Happy Birthday Myrtle! You are now 100 years old!
+Myrtle's age is now 100
+
+chan@CMA:~/C_Programming/HFC/chapter_5/myrtle$ 
+
+```
+
+Now the function is updated.
+
+By passing a pointer to the `struct`, we allowed the function to update the original data rather than taking a local copy.
+
+
+
+---
+
+
+
+#### Safe Cracker - Exercise 4
+
+```C
+#include <stdio.h>
+
+typedef struct{
+    const char *description;
+    float value;
+} swag;
+
+typedef struct{
+    swag *swag;
+    const char *sequence;
+} combination;
+
+typedef struct{
+    combination numbers;
+    const char *make;
+} safe;
+
+int main(void){
+    swag gold = {"GOLD", 1000000.0};
+    combination numbers = {&gold, "6502"};
+    safe s = {numbers, "RAMACON250"};
+    
+    printf("%s\n", s.numbers.swag->description);
+    return 0;
+}
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_5/safe_cracker
+$ make main
+cc     main.c   -o main
+
+chan@CMA:~/C_Programming/HFC/chapter_5/safe_cracker
+$ ./main
+GOLD
+
+```
 
