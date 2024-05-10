@@ -2129,3 +2129,45 @@ GOLD
 
 ```
 
+
+
+#### String Length Exercise from CS50
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int name_length(char *name);
+
+int main(void){
+    char name[25];
+    printf("Enter your name: \n");
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
+    name_length(name);
+    return 0;
+}
+
+int name_length(char *name){
+    int i = 0;
+    while(name[i] != '\0'){
+        i++;
+    }
+    return i;
+}
+```
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/practice
+$ make practice
+cc     practice.c   -o practice
+
+chan@CMA:~/C_Programming/practice
+$ ./practice
+Enter your name: 
+Chan Myae Aung
+Your name is 14 letters long.
+```
+
