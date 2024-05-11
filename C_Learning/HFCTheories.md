@@ -2076,3 +2076,100 @@ enum colors{RED, GREEN, PUCE};
     ```
 
   - in this `enum`, Sunday is 1, Monday is 2, Tuesday is 3 and so on.
+
+
+
+#### Bitfields
+
+- Sometimes you want control at the bit level.
+
+- Let's say we have a `struct` that contain a lot of yes/no values,
+
+  ```C
+  typedef struct{
+      short low_level_vcf;
+      short filter_coupler;
+      short reverb;
+      short sequential;
+      ... // Each of these fileds will contain 1 for true or 0 for false.
+  } syth;
+  ```
+
+  - Each field will use many bits.
+  - A `short` field will take up a lot more space than the single bit that you need for `true/false` values. 
+  - It's wasteful. It would be much better if we could create a `struct` that could hold a sequence of single bits for the values which is why `bitfields` are created.
+
+- When we're dealing with binary value, it would be great if we had some way of specifying the 1s and 0s in a literal like:
+
+  ```C
+  int x = 01010100;
+  ```
+
+- Unfortunately, C doesn't support `binary literals`, but it does support `hexadecimal literals`.
+
+- Everytime C sees a number beginning with 0x, it treats the number as base `6:
+
+  ```C
+  int x = 0x54;
+  ```
+
+- We can convert hex to binary one digit at a time.
+
+  ```C
+  0x54
+  5 - 0101
+  4 - 0100
+  ```
+
+- Each hexadecimal digit matches a binary digit of length 4.
+
+
+
+#### Bitfields store a custom number of bits
+
+A bitfield lets you specify how many bits an individual field will store.
+
+```C
+typedef struct{
+    unsigned int low_pass_vcf:1;
+    unsigned int filter_coupler:1;
+    unsigned int reverb:1;
+    unsigned int sequential:1;
+    ...
+        // Each field will only use 1 bit of storage.
+}synth;
+```
+
+- By using bitfields, we can make sure each field takes up only one bit. 
+- If we have  a sequence of bitfields, the computer can squash them together to save space.
+- If we have eight single-bit bitfields, the computer can store them in a single byte.
+- Bitfields can save space if they are collected together in a `struct`.
+- If the compiler finds a single bitfield on its own, it might still have to pad it out to the size of a word. That's why bitfields are usually grouped together.
+
+
+
+```C
+typedef struct{
+    unsigned int first_visit:1;
+    unsigned int come_again:1;
+    unsigned int fingers_lost:4;
+    unsigned int shark_attack:1;
+    unsigned int days_a_week:3;
+} survey;
+```
+
+
+
+- 1 bit can store 2 values: true/false.
+- 4 bits are needed to store up to 10.
+- 3 bits can store numbers up to 7.
+
+With 4 bits, you can represent 2*4 = 16 different values. Since we are starting counting from 0, the range of numbers you can represent is from 0 to 2^4 - 1 = 15. So, with 4 bits, you can represent values from 0 to 15.
+
+
+
+Similarly with 3 bits, you can represent 2^3 = 8 different values.  Again, starting counting from 0, the range of numbers you can represent is from 0 to 2^3 - 1 = 7. So, with 3 bits, you can represent values from 0 to 7.
+
+
+
+The formula 2^n represents the number of unique combinations you can have with n bits.
