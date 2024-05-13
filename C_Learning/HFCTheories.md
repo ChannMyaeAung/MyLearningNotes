@@ -2173,3 +2173,279 @@ Similarly with 3 bits, you can represent 2^3 = 8 different values.  Again, start
 
 
 The formula 2^n represents the number of unique combinations you can have with n bits.
+
+
+
+Q: Why doesn't C support binary literals?
+
+A: Because they take up a lot of space, and it's usually more  efficient to write hex values.
+
+
+
+Q: Why do I need 4 bits to store a value up to 10?
+
+A: Four bits can store values from 0 to binary 1111 which is 15. But 3 bits can only store values up to binary 111, which is 7.
+
+
+
+Q: So what if I try to put the value 9 into a 3-bit field?
+
+A: The computer will store a value of 1 in it, because 9 is 1001 in binary so the computer transfer 001.
+
+
+
+Q: Are bitfields really just used to save space?
+
+A: No, they are important if you need to read low-level binary information such as if you're reading or writing some sort of custom binary file.
+
+
+
+#### Bullet Points - Chapter 5
+
+- A union allows you to store different data types in the same memory location.
+
+- A designated initializer sets a field value by name.
+
+- Designated initializers are part of the C99 Standard. They are not supported in C++.
+
+- If you declare a union with a value in {braces}, it will be stored with the type of the first field.
+
+  ```C
+  #include <stdio.h>
+  union SampleUnion{
+      int integer;
+      float floating_point;
+      char character;
+  };
+  
+  int main(){
+      // Initializing with an integer value.
+   	union SampleUnion myUnion = {10};
+      
+      //Accessing fields
+      printf("Integer: %d\n", myUnion.integer);
+      printf("Floating Point: %f\n", myUnion.floating_point);
+      printf("Character: %c\n", myUnion.character);
+      return 0;
+      
+  }
+  ```
+
+  - When we initialize `myUnion` with a value in braces `{10}`, it is stored with the type of the first field which is `integer`, and the other fields(`floating_point` and `character`) are left uninitialized.
+
+    Code Execution:
+
+    ```bash
+    chan@CMA:~/C_Programming/practice
+    $ make practice
+    cc     practice.c   -o practice
+    
+    chan@CMA:~/C_Programming/practice
+    $ ./practice
+    Integer: 10
+    Floating Point: 0.000000
+    Character: 
+    
+    ```
+
+- The compiler will let you store one field in a union and read a completely different field. But be careful. This can cause bugs.
+
+- `enum`s store symbols.
+
+- Bitfields allow you to store a field with a custom number of bits.
+
+- Bitfields should be declared as `unsigned int` due to the following reasons:
+
+  1. **Logical Operations**: Bit manipulation operations like shifting, masking, and logical operations (AND, OR, XOR) work more predictably with unsigned integers. Using signed integers might lead to unexpected results due to sign extension during operations.
+  2. **Defined Behavior**: The C standard specifies the behavior of unsigned integer operations more precisely than signed integer operations. This makes the behavior of bit manipulation operations more predictable when using `unsigned int` for bitfields.
+  3. **Avoiding Sign Extension**: When using signed integers for bitfields, there's a risk of sign extension if the most significant bit (MSB) is set. This can lead to unintended behavior when manipulating the bitfield. Using unsigned integers avoids this issue entirely.
+  4. **Compiler Optimization**: Compilers often generate more efficient code when dealing with unsigned integers, especially in the context of bit manipulation operations.
+  5. **Consistency**: Using `unsigned int` for bitfields ensures consistency in the codebase. Developers expect bitfields to behave like unsigned integers, so using signed integers might introduce confusion and make the code harder to understand.
+
+- A `struct` combines data types together. You can initialize `struct`s with {array, like, notation}.
+
+- You can read `struct` fields with dot notation. `->` notation lets you easily update fields using a `struct` pointer.
+
+- Designated initializers let you set `struct` and union fields by name.
+
+  ```C
+  typedef struct{
+      int x;
+      int y;
+      int z;
+  } Point;
+  
+  int main(){
+      struct Point p = {.y = 10, .z=20};
+      // p = {0, 10, 20}
+      
+      return 0;
+  }
+  ```
+
+  - We can also use designated initializers with arrays:
+
+    ```C
+    int arr[5] = {[20] = 10, [4] = 20};
+    ```
+
+- `typedef` lets you create an alias for a data type.
+
+- `union` can hold different data types in one location.
+
+- `enums` let you create a set of symbols.
+
+- Bitfields give you control over the exact bits stored in a `struct`.
+
+---
+
+
+
+### Chapter 6 - Data Structures and Dynamic memory
+
+- To store a flexible amount of data, you need something more extensible than an array, you need a linked list.
+
+- Linked lists are like chains of data.
+
+- A linked list is an example of an abstract data structure. 
+
+- It's called an abstract data structure because a linked list is general: it can be used to store a lot of different kinds of data.
+
+- A linked list stores a piece of data and a link to another piece of data.
+
+- In a linked list, as long as you know where the list starts, you can travel along the list of links, from one of piece of data to the next, until you reach the end of the list.
+
+- Page 309 in HFC book for visual representation.
+
+- Linked lists allow inserts: inserting data is very quick which is another advantage linked lists have over arrays.
+
+- If you wanted to insert a value into the middle of an array, you would have to shuffle all the pieces of data that follow it along by one:
+
+  | Amity | Craggy | Isla Nublar | Shutter |
+  | ----- | ------ | ----------- | ------- |
+
+  - This is an array.
+  - Let's say we have an array with 3 items, which are Amity, Craggy, and Shutter.
+  - If we wanted to insert an extra value after Craggy Island, we'd have to move the other values along one space.
+  - And because an array is fixed length, we'd lose Shutter Island.
+
+- So linked lists allow us to store a variable amount of data and they make it simple to add more data.
+
+
+
+#### How do we create a linked list in C?
+
+Create a recursive structre.
+
+Each one of the `structs` in the list will need to connect to the one next to it.
+
+A `struct` that contains a link to another `struct` of the same type is called a recursive structure.
+
+- Recursive structures contain pointers to other structures of the same type.
+
+- So if you have a flight schedule for the list of islands that you're going to visit, you can use a recursive structure for each island.
+
+  ```C
+  typedef struct island{
+      char *name;
+      char *opens;
+      char *closes;
+      struct island *next;
+  } island;
+  ```
+
+  - You'll record these details for each island.
+  - For each island, you'll also record the next island.
+  - You must give the `struct` a name.
+  - You'll use strings for the name and opening times.
+  - You store a **pointer** to the next island in the `struct`.
+  - If you use the `typedef` command, you can normally skip giving the `struct` a proper name. 
+  - But in recursive structure, you need to include a pointer to the same type.
+  - C syntax won't let you use the `typedef` alias, so you need to give the `struct` a proper name.
+  - We store a link from one `struct` to the next with a **pointer**.
+  - That way the island data will contain the address of the next island that we're going to visit.
+  - So, whenever our code is at one island, it'll always be able to hop over to the next island.
+
+
+
+#### Create islands in C...
+
+Once we have defined an island data type, we can create the first set of islands like this:
+
+```C
+island amity = {"Amity", "09:00", "17:00", NULL};
+island craggy = {"Craggy", "09:00", "17:00", NULL};
+island isla_nublar = {"Isla Nublar", "09:00", "17:00", NULL};
+island shutter = {"Shutter", "09:00", "17:00", NULL};
+```
+
+
+
+- In C, NULL actually has the value 0 but it's set aside specially to set pointers to 0.
+
+- Once we've created each island, we can then connect them together:
+
+  ```C
+  amity.next = &craggy;
+  craggy.next = &isla_nublar;
+  isla_nublar.next = &shutter;
+  ```
+
+- We have to be careful to set the next field in each island to the address of the next island.
+
+- We'll use `struct` variables for each of the islands.
+
+- But what if we want to insert an excursion to Skull Island between Isla Nublar and Shutter Island?
+
+
+
+#### Inserting values into the list
+
+We can insert islands by changing the values of the pointers between islands.
+
+```C
+island skull = {"Skull", "09:00", "17:00", NULL};
+
+isla_nublar.next = &skull;
+skull.next = &shutter;
+```
+
+
+
+**Exercises are in `HFCExercises.md`.**
+
+
+
+Q: Other languages, like Java, have linked lists built in. Does C have any data structures?
+
+A: C doesn't really come with any data structures built in. You have to create them yourself.
+
+
+
+Q: What if I want to use the 700th item in a really long list? Do I have to start at the first item and then read all the way through?
+
+A: Yes, you do.
+
+
+
+Q: That's not very good. I thought a linked list was better than an array.
+
+A: You shouldn't think of data structures as being better or worse. They are either appropriate or inappropriate for what you want to use them for.
+
+
+
+Q: So if I want a data structure that lets me insert things quickly, I need a linked list but if I want a direct access I might use an array?
+
+A: Exactly.
+
+
+
+Q: You've shown a `struct` that contains a pointer to another `struct`. Can a `struct` contain a whole recursive `struct` inside itself?
+
+A: No.
+
+
+
+Q: Why not?
+
+A: C needs to know the exact amount of space a `struct` will occupy in memory. If it allowed full recursive copies of the same `struct`, then one piece of data would be a different size than another.

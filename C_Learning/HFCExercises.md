@@ -2280,3 +2280,87 @@ This order contains 10.50 pints of orange juice
 
 ```
 
+---
+
+
+
+## Chapter 6
+
+#### Code Magnets - Exercise 1 Linked Lists
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+typedef struct island{
+    const char *name;
+    const char *opens;
+    const char *closes;
+    struct island *next;
+} island;
+
+void display(island *start);
+
+int main(void){
+    island amity = {"Amity", "09:00", "17:00", NULL};
+    island craggy = {"Craggy", "09:00", "17:00", NULL};
+    island isla_nublar = {"Isla Nublar", "09:00", "17:00", NULL};
+    island shutter = {"Shutter", "09:00", "17:00", NULL};
+    
+    amity.next = &craggy;
+    craggy.next = &isla_nublar;
+    isla_nublar.next = &shutter;
+    
+    island skull = {"Skull", "09:00", "17:00", NULL};
+    isla_nublar.next = &skull;
+    skull.next = &shutter;
+    
+    display(&amity);
+    return 0;
+}
+
+void display(island *start){
+    island *i = start;
+    for(; i != NULL; i = i->next){
+        printf("Name: %s open: %s-%s\n", i->name, i->opens, i->closes);
+    }
+}
+```
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_1
+$ make main
+cc     main.c   -o main
+
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_1
+$ ./main
+Name: Amity open: 09:00-17:00
+Name: Craggy open: 09:00-17:00
+Name: Isla Nublar open: 09:00-17:00
+Name: Skull open: 09:00-17:00
+Name: Shutter open: 09:00-17:00
+
+```
+
+
+
+Code Breakdown:
+
+- The code starts with the definition of a `struct` called `island` with 4 fields: `name`, `opens`, `closes` and `next`. The `name`, `opens`, and `closes` are pointers to `char` which means they can hold the address of a string. The `next` field is a pointer to another `island` `struct`, which allows us to create a linked list of `island structs`.
+
+- The display function takes a pointer to an `island` struct as an argument. 
+
+  - The `island *i = start` is initializing a new pointer `i` to point to the same `island` struct that `start` is pointing to. The purpose of this line is to create a new pointer that can be used to traverse the linked list of islands without modifying the `start` pointer. This is important because the `start` pointer is needed to keep track of the beginning of the list. If you were to use `start` directly to traverse the list, you would lose the reference to the beginning of the list. 
+  - In our code, the initialization part is empty, which is why we set a semicolon at the beginning of the for loop. This is because `i` is already initialized before the `for` loop `(island *i = start;)`.
+
+  - It loops through the linked list of islands, starting from the given island and prints the `name`, `opens` and `closes` fields of each island. 
+  - In the for loop that follows, `i` is updated to point to the next `island` in the list on each iteration `(i = i->next)`.
+  - The loop continues until it reaches an island with `next` set to `NULL` which indicates the end of the list.
+
+- In the main function, four `island` structs are created and initialized. The `next` field of each island is set to the address of the next island, creating a linked list.
+
+- Then a new `island` struct `skull` is created and inserted into the list between `isla_nublar` and `shutter`.
+
+- Finally the display function is called with `&amity` as the argument, which prints the details of all the islands in the linked list.
