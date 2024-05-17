@@ -2449,3 +2449,126 @@ A: No.
 Q: Why not?
 
 A: C needs to know the exact amount of space a `struct` will occupy in memory. If it allowed full recursive copies of the same `struct`, then one piece of data would be a different size than another.
+
+
+
+
+
+Each island `struct` needed its own variable. 
+
+If we wanted the code to store more than four islands, we would need another local variable. That's fine if we know how much data we need to store at compile time,But quite often programs don't know how much storage they need until runtime. 
+
+- If we are writing a web browser, for instance, we won;t know how much data we'll need to store a web page until we read the web page.
+- So C programs need some way to tell the OS that they need a little extra storage at the moment they need it.
+
+
+
+#### Program need dynamic storage
+
+##### Use the heap for dynamic storage
+
+- Most of the memory we've been using so far has been in the **stack**.
+- The stack is the area of memory that's used for local variables.
+- Each piece of data is stored in a variable and each variable disappears as soon as you leave its function.
+- It's harder to get more storage on the stack at runtime and that's where the **heap** comes in.
+- The **heap** is the place where a program stores data that will need to be available longer term.
+- It won't automatically get cleared away, so that means it's the perfect place to store data structures like our linked list.
+- We can think of heap storage as being a bit like reserving a locker in a locker room.
+
+
+
+##### First, get your memory with malloc()
+
+- We tell the malloc() function exactly how much memory we need and it asks the OS to set that much memory aside in the heap.
+
+- The malloc() function then returns a **pointer** to the new heap space, a bit like getting a key to the locker.
+
+- It allows you access to the memory, and it can also be used to keep track of the storage locker that's been allocated.
+
+  | Stack     |
+  | --------- |
+  | Heap      |
+  | Globals   |
+  | Constants |
+  | Code      |
+
+- The malloc() function will give you a pointer to the space in the heap.
+
+
+
+#### Give the memory back when you're done
+
+When we use the stack, we don't need to worry about returning memory; it all happened automatically.
+
+- Every time we leave a function, the local storage is freed from the stack.
+
+The heap is different. When we've asked for space on the heap, it will never be available for anything else until we tell the C Standard Library that we are finished with it.
+
+- If we keep asking for more and more heap space, our program will quickly start to develop memory leaks.
+- A memory leak happens when a program asks for more and more memory without releasing the memory it no longer needs.
+- Memory leaks are among the most common bugs in C programs and they can be really hard to track down.
+- The heap has only a fixed amount of storage available, so be sure you use it wisely.
+
+#### Free memory by calling the free() function
+
+-  The malloc() function allocates space and gives us a pointer to it.
+- We'll need to use this pointer to access the data and then when we're finished with the storage, we need to release the memory using the free() function.
+- It's a bit like handing your locker key back to the attendant so that the locker can be reused.
+- Every time some part of our code requests heap storage with the malloc() function, there should be some part of our code that hands the storage back with the free() function.
+- When our program stops running, all of its heap storage will be released automatically, but it's always good practice to explicitly call free() on every piece of dynamic memory we've created.
+
+
+
+#### Ask for memory with malloc()
+
+The function that asks for memory is called malloc() for memory allocation.
+
+- malloc() taks a single parameter: the number of bytes you need.
+
+- Most of the time, you probably don't know exactly how much memory you need in bytes, so malloc() is almost always used with an operator called `sizeof`, like this:
+
+  ```C
+  #include <stdlib.h>
+  // We need to include the stdlib.h header file to pick up the malloc() and free() functions.
+  
+  ...
+  malloc(sizeof(island));
+  // This means, "Give me enough space to store an island struct"
+  ```
+
+- `sizeof` tells us how many bytes a particular data type occupies on our system.
+
+- It might be a `struct`, or it could be some base data type, like `int` or `double`.
+
+- The malloc() function sets aside a chunk of memory for us, then returns a pointer containing the start address.
+
+- malloc() actually returns a general-purpose pointer, with type `void*`.
+
+  ```C
+  island *p = malloc(sizeof(island));
+  
+  // This means "Create enough space for an island, and store the address in variable p."
+  ```
+
+
+
+#### ...and free up the memory with free()
+
+- Once we have created the memory on the heap, we can use it for as long as we like.
+
+- But once we've finished, we need to release the memory using the free() function.
+
+- free() needs to be given the address of the memory that malloc() created.
+
+  ```C
+  free(p);
+  // This means "Release the memory you allocated from heap address p."
+  ```
+
+
+
+**Key takeaway: if you allocated memory with malloc() in one part of your program, you should always release it later with the free() function.**
+
+
+
+**Exercises can be found in `HFCExercises.md`**

@@ -2364,3 +2364,25 @@ Code Breakdown:
 - Then a new `island` struct `skull` is created and inserted into the list between `isla_nublar` and `shutter`.
 
 - Finally the display function is called with `&amity` as the argument, which prints the details of all the islands in the linked list.
+
+
+
+#### malloc() example
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+typedef struct island{
+    const char *name;
+    const char *opens;
+    const char *closes;
+    struct island *next;
+} island;
+
+void display(island *start);
+
+island *create()
+```
+
