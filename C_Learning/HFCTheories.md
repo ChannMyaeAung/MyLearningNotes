@@ -2572,3 +2572,13 @@ The function that asks for memory is called malloc() for memory allocation.
 
 
 **Exercises can be found in `HFCExercises.md`**
+
+
+
+#### `strdup()` function
+
+- The `strdup()` function can reproduce a complete copy of the string somewhere on the heap:
+- The `strdup()` function works out how long the string is, and then calls the malloc() function to allocate the correct number of characters on the heap.
+- It then copies each of the characters to the new space on the heap.
+- That means that `strdup()` always create space **on the heap**. It can't create space on the stack because that's for local variables, and local variables get cleared away too often.
+- But because `strdup()` puts new strings on the heap, that means we must **always remember to release their storage with the free() function.**

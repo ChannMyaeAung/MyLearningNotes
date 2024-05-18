@@ -2383,6 +2383,165 @@ typedef struct island{
 
 void display(island *start);
 
-island *create()
+island *create(char *name);
+
+int main(){
+    // predefined islands
+    island amity = {"Amity", "09:00", "17:00", NULL};
+    island craggy = {"Craggy", "09:00", "17:00", NULL};
+    island isla_nublar = {"Isla Nublar", "09:00", "17:00", NULL};
+    island shutter = {"Shutter", "09:00", "17:00", NULL};
+    
+    // Link islands
+    amity.next = &craggy;
+    craggy.next = &isla_nublar;
+    isla_nublar.next = &shutter;
+    
+    // Adding a new island
+    island skull = {"Skull", "09:00", "17:00", NULL};
+    isla_nublar.next = &skull;
+    skull.next = &shutter;
+    
+    // display the list of islands
+    display(&amity);
+    
+    // Create new islands based on user input
+    char name[80];
+    // read name for the first island
+    fgets(name, 80, stdin);
+    // create the first island
+    island *p_island0 = create(name);
+    // read name for the second island
+    fgets(name, 80, stdin);
+    // create the second island
+    island *p_island1 = create(name);
+    // link the two newly created islands
+    p_island0->next = p_island1;
+    // display the newly created islands
+    display(p_island0);
+    
+    return 0;
+}
+
+void display(island *start){
+    island *i = start;
+    
+    for(;i != NULL; i = i->next){
+        printf("Name: %s open: %s-%s\n", i->name, i->opens, i->closes);
+    }
+}
+
+island *create(char *name){
+    // allocate memory for the new island
+    island *i = malloc(sizeof(island));
+    // assign the name
+    i->name = name;
+    // default opening time
+    i->opens = "09:00";
+    // default closing time
+    i->closes = "17:00";
+    // initialize next to NULL
+    i->next = NULL;
+    
+    // return the pointer to the new island
+    return i;
+}
 ```
 
+
+
+We added a `create` function to create a new island `struct`, it uses dynamic memory allocation with malloc() to create the new island on the **heap** instead of the stack. 
+
+- Memory on the heap persists until it's explicitly deallocated with free() so the island will continue to exist after create returns.
+- `create` then returns a pointer to the new `island` on the heap.
+- This is why the return type of `create` is `island*` (a pointer to an island) rather than island. The pointer allows us to access the new `island` on the heap after `create` returns.
+
+But when we run the code, one issue remains:
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/practice
+$ ./practice
+Name: Amity open: 09:00-17:00
+Name: Craggy open: 09:00-17:00
+Name: Isla Nublar open: 09:00-17:00
+Name: Skull open: 09:00-17:00
+Name: Shutter open: 09:00-17:00
+Atlantis
+Titchmarsh Island
+Name: Titchmarsh Island
+ open: 09:00-17:00
+Name: Titchmarsh Island
+ open: 09:00-17:00
+
+```
+
+- The first island is now the same as the second one.
+- What happened to the name of the first island?
+- When the code records the name of the island, it doesn't take a copy of the whole name string; it just records the address where the name string lives in memory.
+- The program asks the user for the name of each island, but both times it uses the name local `char` array to store the name.
+- That means that the two islands share the same name string.
+- As soon as the local variable gets updated with the name of the second island, the name of the first island changes as well.
+- The `strdup()` function can reproduce a complete copy of the string somewhere on the heap:
+- The `strdup()` function works out how long the string is, and then calls the malloc() function to allocate the correct number of characters on the heap.
+- It then copies each of the characters to the new space on the heap.
+- That means that `strdup()` always create space **on the heap**. It can't create space on the stack because that's for local variables, and local variables get cleared away too often.
+- But because `strdup()` puts new strings on the heap, that means we must **always remember to release their storage with the free() function.**
+
+
+
+#### Let's fix the code using the `strdup()` function
+
+```C
+island *create(char *name){
+    island *i = malloc(sizeof(island));
+    i->name = strdup(name);
+    i->opens = "09:00";
+    i->closes = "17:00";
+    i->next = NULL;
+    return i;
+}
+```
+
+- We only need to put the `strdup()` function on the name field only because we are setting the opens and closes fields to string literals.
+- String literals are stored in a **read-only** area of memory set aside for **constant values**.
+- Because we always set the `opens` and `closes` fields to constant values, we don't need to take a defensive copy of them because they'll never change.
+- But we had to take a defensive copy of the` name` array, because something might come and update it later.
+
+
+
+```bash
+chan@CMA:~/C_Programming/practice
+$ make practice
+cc     practice.c   -o practice
+
+chan@CMA:~/C_Programming/practice
+$ ./practice
+Name: Amity open: 09:00-17:00
+Name: Craggy open: 09:00-17:00
+Name: Isla Nublar open: 09:00-17:00
+Name: Skull open: 09:00-17:00
+Name: Shutter open: 09:00-17:00
+Atlantis
+Titchmarsh Island
+Name: Atlantis
+ open: 09:00-17:00
+Name: Titchmarsh Island
+ open: 09:00-17:00
+
+```
+
+Now that code works. Each time the user enters the name of an island, the create() function is storing it in a brand new string.
+
+
+
+Q: If the island `struct` had a name array rather than a character pointer, would I need to use `strdup()` here?
+
+A: No, each island `struct` would store its own copy, so you wouldn't need to make your own copy.
+
+
+
+Q: So why would I want to use char pointers rather than char arrays in my data structures?
+
+A: char pointers won't limit the amount of space you need to set aside for strings. If you use char arrays, you will need to decide in advance exactly how long your strings might need to be.
