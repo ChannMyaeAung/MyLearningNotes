@@ -2545,3 +2545,108 @@ A: No, each island `struct` would store its own copy, so you wouldn't need to ma
 Q: So why would I want to use char pointers rather than char arrays in my data structures?
 
 A: char pointers won't limit the amount of space you need to set aside for strings. If you use char arrays, you will need to decide in advance exactly how long your strings might need to be.
+
+
+
+#### Pool Puzzle
+
+```C
+island *start = NULL;
+island *i = NULL;
+island *next = NULL;
+char name[80];
+
+// We'll keep looping until we don't get any more strings
+for(; fgets(name, 80, stdin) != NULL; i = next){
+    // This creates an island
+    next = create(name);
+    if(start == NULL){
+        start = next;
+    }
+    if(i != NULL){
+        i->next = next;
+    } 
+}
+display(start);
+```
+
+Code Breakdown:
+
+- `island *start = NULL`, This line initializes a pointer `start` to `NULL`. This pointer will eventually point to the first island in the list.
+- `island *i = NULL`, This line initializes a pointer `i` to `NULL`. This pointer will be used to keep track of the current island in the list.
+- `island *next = NULL`, This line initializes a pointer `next` to `NULL`. This pointer will be used to point to the next island to be added to the list.
+- The for loop continues until we don't get any more strings from the Standard Input. At the end of each loop, set `i` to the next island we created which means that `i` always points to the last `island` that was added to the list.
+- `next = create(name);` This line calls the `create` function with the name that was read from the standard input. The `create` function creates a new `island` with the given `name` and return a pointer to it. This pointer is then stored in `next`.
+- `if(start == NULL) {start = next};` This `if` statement checks if `start` is `NULL`, which mean that the list is currently empty. If it is, `start` is set to `next`, which means that the first `island` in the list is the one that was just created. In other words, the first time through, `start` is set to `NULL`, so set it to the first island.
+- `if (i != NULL) { i->next = next }` This if statement checks if `i` is not `NULL` which means that there is at least one island in the list. If there is, it sets the `next` field of the current `island` `i` to `next`, which adds the new `island` to the end of the list.
+
+
+
+#### Free the memory when you're done
+
+```C
+void release(island *start){
+    island *i = start;
+    island *next = NULL;
+    for(; i != NULL; i = next){
+        next = i->next;
+        free(i->name);
+        free(i);
+    }
+}
+```
+
+Code Breakdown:
+
+- `island *i = start;` - This line initializes a pointer `i` to `start`. This pointer will be used to traverse the list of islands.
+- `island *next = NULL;` - This line initializes a pointer `next` to `NULL`. This pointer will be used to keep track of the next island in the list.
+- `for (; i != NULL; i = i->next)` - This for loop continues as long as i is not NULL, which means that there are still islands left in the list. After each iteration, `i` is set to `i->next`, which moves `i` to the next island in the list.
+- `next = i->next;` - Inside the loop, this line sets `next` to `i->next`, which is the next island in the list. This is done before freeing `i` because freeing `i` will deallocate its memory, making `i->next` inaccessible.
+- `free(i->name);` - This line frees the memory allocated for the name of the current island. The name was allocated with `strdup` in the create function, so it needs to be freed to avoid a memory leak.
+- `free(i);` - This line frees the memory allocated for the current island. The island was allocated with `malloc` in the create function, so it needs to be freed to avoid a memory leak.
+- After the for loop has finished, all memory allocated for the list of islands (both the islands themselves and their names) has been freed, and there are no memory leaks.
+
+
+
+##### If we run the code
+
+```bash
+chan@CMA:~/C_Programming/practice
+$ ./practice < trip1.txt
+Name: Amity open: 09:00-17:00
+Name: Craggy open: 09:00-17:00
+Name: Isla Nublar open: 09:00-17:00
+Name: Skull open: 09:00-17:00
+Name: Shutter open: 09:00-17:00
+Name: Delfino Isle
+ open: 09:00-17:00
+Name: Angel Island
+ open: 09:00-17:00
+Name: Wild Cat Island
+ open: 09:00-17:00
+Name: Neri's Island
+ open: 09:00-17:00
+Name: Great Todday
+ open: 09:00-17:00
+Name: Ramita de la Baya
+ open: 09:00-17:00
+Name: Island of the Blue Dolphins
+ open: 09:00-17:00
+Name: Fantasy Island
+ open: 09:00-17:00
+Name: Farne
+ open: 09:00-17:00
+Name: Isla de Muert
+ open: 09:00-17:00
+Name: Tabor Islandd
+ open: 09:00-17:00
+Name: Haunted Isle
+ open: 09:00-17:00
+Name: Sheena Island
+ open: 09:00-17:00
+chan@CMA:~/C_Programming/practice$ 
+```
+
+It works. One thing worth noting in mind is that we had no way of knowing how long that file was going to be.
+
+In this case, because we are just printing out the file, we could have simply printed it out without storing it all in memory. But because we do have it in memory, we're free to manipulate it. We could add in extra steps in the tour, or remove them. We could reorder to extend the tour.

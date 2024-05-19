@@ -2582,3 +2582,7 @@ The function that asks for memory is called malloc() for memory allocation.
 - It then copies each of the characters to the new space on the heap.
 - That means that `strdup()` always create space **on the heap**. It can't create space on the stack because that's for local variables, and local variables get cleared away too often.
 - But because `strdup()` puts new strings on the heap, that means we must **always remember to release their storage with the free() function.**
+
+
+
+**Dynamic memory allocation lets us create the memory we need at RUNTIME. And they way we access dynamic heap memory is with malloc() and free().**
