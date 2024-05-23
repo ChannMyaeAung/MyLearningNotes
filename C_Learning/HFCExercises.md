@@ -2599,11 +2599,19 @@ void release(island *start){
 Code Breakdown:
 
 - `island *i = start;` - This line initializes a pointer `i` to `start`. This pointer will be used to traverse the list of islands.
+
 - `island *next = NULL;` - This line initializes a pointer `next` to `NULL`. This pointer will be used to keep track of the next island in the list.
-- `for (; i != NULL; i = i->next)` - This for loop continues as long as i is not NULL, which means that there are still islands left in the list. After each iteration, `i` is set to `i->next`, which moves `i` to the next island in the list.
+
+- `for (; i != NULL; i = next)` - This for loop continues as long as i is not NULL, which means that there are still islands left in the list. After each iteration, `i` is set to the current node and `next` will be set to the the next node before freeing the current node.
+
 - `next = i->next;` - Inside the loop, this line sets `next` to `i->next`, which is the next island in the list. This is done before freeing `i` because freeing `i` will deallocate its memory, making `i->next` inaccessible.
+
+  Before freeing the current node, save the pointer to the next node in `next`. This ensures that after freeing the current node, you still have a reference to the rest of the list.
+
 - `free(i->name);` - This line frees the memory allocated for the name of the current island. The name was allocated with `strdup` in the create function, so it needs to be freed to avoid a memory leak.
+
 - `free(i);` - This line frees the memory allocated for the current island. The island was allocated with `malloc` in the create function, so it needs to be freed to avoid a memory leak.
+
 - After the for loop has finished, all memory allocated for the list of islands (both the islands themselves and their names) has been freed, and there are no memory leaks.
 
 
@@ -2647,6 +2655,360 @@ Name: Sheena Island
 chan@CMA:~/C_Programming/practice$ 
 ```
 
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_1$ 
+make all
+Compiling the main file...
+gcc -c main.c 
+Compiling the functions file...
+gcc -c functions.c 
+Compiling the final exe file...
+gcc main.o functions.o -o main 
+
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_1$ 
+./main < trip1.txt
+Name: Amity open: 09:00-17:00
+Name: Craggy open: 09:00-17:00
+Name: Isla Nublar open: 09:00-17:00
+Name: Skull open: 09:00-17:00
+Name: Shutter open: 09:00-17:00
+Name: Delfino Isle
+ open: 09:00-17:00
+Name: Angel Island
+ open: 09:00-17:00
+Name: Wild Cat Island
+ open: 09:00-17:00
+Name: Neri's Island
+ open: 09:00-17:00
+Name: Great Todday
+ open: 09:00-17:00
+Name: Ramita de la Baya
+ open: 09:00-17:00
+Name: Island of the Blue Dolphins
+ open: 09:00-17:00
+Name: Fantasy Island
+ open: 09:00-17:00
+Name: Farne
+ open: 09:00-17:00
+Name: Isla de Muert
+ open: 09:00-17:00
+Name: Tabor Islandd
+ open: 09:00-17:00
+Name: Haunted Isle
+ open: 09:00-17:00
+Name: Sheena Island
+ open: 09:00-17:00
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_1$ 
+
+```
+
+
+
 It works. One thing worth noting in mind is that we had no way of knowing how long that file was going to be.
 
 In this case, because we are just printing out the file, we could have simply printed it out without storing it all in memory. But because we do have it in memory, we're free to manipulate it. We could add in extra steps in the tour, or remove them. We could reorder to extend the tour.
+
+
+
+#### Chapter 6 Final Exercise - SPIES Program
+
+header.h
+
+```C
+typedef struct node {
+    char *question;
+    struct node *no;
+    struct node *yes;
+} node;
+
+int yes_no(char *question);
+node *create(char *question);
+void release(node *n);
+```
+
+main.c
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include "header.h"
+
+int main(void) {
+    char question[80];
+    char suspect[20];
+
+    // Create the initial decision tree
+    node *start_node = create("Does suspect have a mustache");
+    start_node->no = create("Loretta Barnsworth");
+    start_node->yes = create("Vinny the Spoon");
+
+    // Pointer to traverse the tree
+    node *current;
+
+    // do-while loop that continues running based on the user's response to "Run again".
+    do {
+        // Initialize current to point to the root node at the start of each iteration.
+        current = start_node;
+        while (1) {
+            // Ask the current question.
+            if (yes_no(current->question)) {
+                // If the answer is yes and the 'yes' child exists, move to the 'yes' child.
+                if (current->yes) {
+                    current = current->yes;
+                } else {
+                    // If a suspect is identified (current->yes or current->no is NULL), print "SUSPECT IDENTIFIED".
+                    printf("SUSPECT IDENTIFIED\n");
+                    break;
+                }
+            } else if (current->no) {
+                // If the answer is no and the 'no' child exists, move to the 'no' child.
+                current = current->no;
+            } else {
+                // If the suspect is not identified, prompt the user for the new suspect's name and a distinguishing question.
+                printf("Who's the suspect? ");
+                fgets(suspect, 20, stdin);
+                suspect[strcspn(suspect, "\n")] = '\0';  // Remove newline character
+
+                // Make the yes-node the new suspect name.
+                node *yes_node = create(suspect);
+                current->yes = yes_node;
+
+                // Make the no-node a copy of this question.
+                node *no_node = create(current->question);
+                current->no = no_node;
+
+                // Then replace this question with the new question.
+                printf("Give me a question that is TRUE for %s but not for %s? ", suspect, current->question);
+                fgets(question, 80, stdin);
+                question[strcspn(question, "\n")] = '\0';  // Remove newline character
+                free(current->question);
+                current->question = strdup(question);
+                break;
+            }
+        }
+    } while (yes_no("Run again"));
+
+    // Release memory for the entire tree.
+    release(start_node);
+
+    return 0;
+}
+
+```
+
+Code Breakdown:
+
+1. **Create Initial Tree:**
+
+   - `node *start_node = create("Does suspect have a mustache");`: Creates the root node with the initial question.
+
+   - `start_node->no = create("Loretta Barnsworth");`: Creates a child node for the "no" answer.
+
+   - `start_node->yes = create("Vinny the Spoon");`: Creates a child node for the "yes" answer.
+
+2. **Traversal and User Interaction:**
+
+   - The do-while loop ensures the program runs repeatedly based on user input.
+   - `current = start_node;`: Sets current to the root node at the start of each iteration.
+   - Inside the `while(1)` loop, the program:
+   - Asks the current question using `yes_no(current->question)`.
+   - Moves to the `yes` or `no` child node based on the user's response.
+   - If a leaf node is reached (no child nodes), it prompts for a new suspect and question.
+   - Updates the tree with the new suspect and question.
+
+3. **Prompt for New Suspect and Question:**
+   - `fgets(suspect, 20, stdin);`: Reads the new suspect's name from input.
+   - `suspect[strcspn(suspect, "\n")] = '\0';`: Removes the newline character.
+   - Creates `yes_node` for the new suspect and updates `current->yes`.
+   - Creates `no_node` as a copy of the current question and updates `current->no`.
+   - Prompts for a new question distinguishing the new suspect and updates `current->question`.
+
+4. **Loop Continuation:**
+   - `while (yes_no("Run again"));`: Asks if the user wants to run the program again.
+
+5. **Release Memory:**
+   - `release(start_node);`: Frees all allocated memory for the tree nodes.
+
+functions.c
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "header.h"
+
+int yes_no(char *question) {
+    char answer[3];
+    printf("%s? (y/n): ", question);
+    // if the user choose to terminate the program, exit.
+    if (fgets(answer, 3, stdin) == NULL) {
+        printf("\n");
+        exit(0);
+    }
+    return answer[0] == 'y' || answer[0] == 'Y';
+}
+
+node *create(char *question) {
+    // Allocate memory for a new node.
+    node *n = malloc(sizeof(node));
+    // Copy the question string into the node.
+    n->question = strdup(question);
+    // Initializes yes and no pointers to NULL.
+    n->no = NULL;
+    n->yes = NULL;
+    //Return the newly created node
+    return n;
+}
+
+void release(node *n) {
+    // Recursively free memory for all nodes in the tree.
+    if (n) {
+        if (n->no) {
+            release(n->no);
+        }
+        if (n->yes) {
+            release(n->yes);
+        }
+        
+        // Free the question string and the node itself.
+        if (n->question) {
+            free(n->question);
+        }
+        free(n);
+    }
+}
+
+```
+
+
+
+Makefile
+
+```makefile
+all: spies
+
+spies: main.o functions.o 
+	@echo "Compiling the final exe file..."
+	gcc -g main.o functions.o -o spies 
+
+main.o: main.c 
+	@echo "Compiling the main file..."
+	gcc -c main.c 
+
+functions.o: functions.c 
+	@echo "Compiling the functions file..."
+	gcc -c functions.c 
+
+clean: 
+	@echo "Removing everything except the source files..."
+	@rm spies main.o functions.o
+```
+
+
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2
+$ make all
+Compiling the functions file...
+gcc -c functions.c 
+Compiling the final exe file...
+gcc -g main.o functions.o -o spies 
+
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2
+$ valgrind --leak-check=full ./spies
+==23531== Memcheck, a memory error detector
+==23531== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==23531== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==23531== Command: ./spies
+==23531== 
+Does suspect have a mustache? (y/n): n
+Loretta Barnsworth? (y/n): n
+Who's the suspect? Hayden Fantucci
+Give me a question that is TRUE for Hayden Fantucci
+ but not for Loretta Barnsworth? Has a facial scar
+Run again? (y/n): y
+Does suspect have a mustache? (y/n): n
+Has a facial scar
+? (y/n): Y
+Hayden Fantucci
+? (y/n): y
+SUSPECT IDENTIFIED
+Run again? (y/n): Y
+Does suspect have a mustache? (y/n): y
+Vinny the Spoon? (y/n): y
+SUSPECT IDENTIFIED
+Run again? (y/n): N
+==23531== 
+==23531== HEAP SUMMARY:
+==23531==     in use at exit: 19 bytes in 1 blocks
+==23531==   total heap usage: 13 allocs, 12 frees, 2,287 bytes allocated
+==23531== 
+==23531== 19 bytes in 1 blocks are definitely lost in loss record 1 of 1
+==23531==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==23531==    by 0x491658E: strdup (strdup.c:42)
+==23531==    by 0x10950A: create (in /home/chan/C_Programming/HFC/chapter_6/exercise_2/spies)
+==23531==    by 0x10928B: main (in /home/chan/C_Programming/HFC/chapter_6/exercise_2/spies)
+==23531== 
+==23531== LEAK SUMMARY:
+==23531==    definitely lost: 19 bytes in 1 blocks
+==23531==    indirectly lost: 0 bytes in 0 blocks
+==23531==      possibly lost: 0 bytes in 0 blocks
+==23531==    still reachable: 0 bytes in 0 blocks
+==23531==         suppressed: 0 bytes in 0 blocks
+==23531== 
+==23531== For lists of detected and suppressed errors, rerun with: -s
+==23531== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2$ 
+
+```
+
+
+
+Visualization
+
+```plaintext
+Does suspect have a mustache?
+├── Yes: Vinny the Spoon
+└── No: Has a facial scar?
+    ├── Yes: Hayden Fantucci
+    └── No: Loretta Barnsworth
+
+```
+
+
+
+But there's one problem. It was using almost **twice the amount of memory** it needed.
+
+We have managed to detect it using `valgrind` tool which is used on the **Linux** OS. It can monitor the pieces of data that are allocated space on the heap. 
+
+- It works by creating its own **fake version of malloc()**.
+- When our program wants to allocate some heap memory, `valgrind` will intercept our calls to `malloc()` and `free()` and run its own versions of those functions.
+- The `valgrind` version of `malloc()` will take note of which piece of code is calling it and which piece of memory it allocated.
+- When the program ends, `valgrind` will report back on any data that was left on the heap and tell us where in our code the data was created.
+- As we can see in our **makefile**, we used `gcc -g main.o functions.o -o spies` to tells the compiler to record the line numbers against the code it compiles.
+
+
+
+If we look closely,
+
+```bash
+==23531==    definitely lost: 19 bytes in 1 blocks
+
+==23531==   total heap usage: 13 allocs, 12 frees, 2,287 bytes allocated
+
+==23531==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+
+==23531==    by 0x491658E: strdup (strdup.c:42)
+
+==23531==    by 0x10950A: create (in /home/chan/C_Programming/HFC/chapter_6/exercise_2/spies)
+
+==23531==    by 0x10928B: main (in /home/chan/C_Programming/HFC/chapter_6/exercise_2/spies)
+```
+
+- 19 bytes of memory were allocated but not freed.
+
+- Looks like we allocated new pieces of memory 13 times, but freed only 12 of them.
+
+  

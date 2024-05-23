@@ -2586,3 +2586,50 @@ The function that asks for memory is called malloc() for memory allocation.
 
 
 **Dynamic memory allocation lets us create the memory we need at RUNTIME. And they way we access dynamic heap memory is with malloc() and free().**
+
+
+
+Q: Why is the heap called the heap?
+
+A: Because the computer doesn't automatically organize it. It's just a big heap of data.
+
+
+
+Q: What's a garbage collection?
+
+A: Some languages track when you allocate data on a heap and then when you're no longer using the data, they free the data from the heap.
+
+
+
+Q: Why doesn't C contain garbage collection?
+
+A: C is quite an old language; when it was invented, most languages didn't do automatic garbage collection.
+
+
+
+Q: I understand why I needed to copy the name of the island in the example in `HFCExercises.md`. Why didn't I need to copy the `opens` and `closes` values?
+
+A: The `opens` and `closes` values are set to string literals. String literals can't be updated, so it doesn't matter if several data items refer to the same string.
+
+
+
+Q: Does `strdup()` actually call the `malloc()` function?
+
+A: It will depend on how the C standard library is implemented, but most of the time, yes.
+
+
+
+Q: Do I need to free all my data before the program ends?A: You don't have to; the OS will clear away all of the memory when the program exits. But it's good practice to always explicitly free anything you've created.
+
+
+
+#### Bullet Points
+
+- Dynamic data structures allow you to store a variable number of data items.
+- A linked list is a data structure that allows you to easily insert items.
+- Dynamic data structures are normally defined in C with recursive `struct`s.
+- A recursive `struct` contains one or more pointers to a  similar `struct`.
+- The stack is used for local variables and is managed by the computer.
+- The heap is used for long-term storage. You allocate space with `malloc()`.
+- The `sizeof` operator will tell you how much space a `struct` needs.
+- Data will stay on the heap until you release it with `free()`.
