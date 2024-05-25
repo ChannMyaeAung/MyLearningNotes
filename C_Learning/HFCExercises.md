@@ -3011,4 +3011,178 @@ If we look closely,
 
 - Looks like we allocated new pieces of memory 13 times, but freed only 12 of them.
 
-  
+
+Now that we've collected quite a few pieces of evidence.
+
+1. Location
+
+   We ran the code two times. The first time, there was no problem. The memory leak only happened when we entered a new suspect name. That means the leak can't be in the code that ran the first time. The problem lies in this section of code.
+
+   ```C
+   else if (current->no)
+               {
+                   current = current->no;
+               }
+               // If the suspect is not identified, prompt the user for the new suspect's name and a distinguishing question.
+               // Create new nodes for the suspect and update the current node's 'yes' and 'no' pointers accordingly.
+               else
+               {
+                   // Make the yes-node the new suspect name
+                   printf("Who's the suspect? ");
+                   fgets(suspect, 20, stdin);
+   
+                   node *yes_node = create(suspect);
+                   current->yes = yes_node;
+   
+                   // Make the no-node a copy of this question
+                   node *no_node = create(current->question);
+                   current->no = no_node;
+   
+                   // Then replace this question with the new question
+                   printf("Give me a question that is TRUE for %s but not for %s? ", suspect, current->question);
+                   fgets(question, 80, stdin);
+                   free(current->question);
+                   current->question = strdup(question);
+                   break;
+               }
+   ```
+
+2.  Clues from valgrind
+
+   When we ran the code through valgrind and added a single suspect, the program allocated 13 times, but only released 12 times. It told us that there were 19 bytes of data left on the heap when the program ended.
+
+   - How many pieces of data were left on the heap?
+
+     - There is one piece of data.
+
+   - What was the piece of data left on the heap?
+
+     - The string "Loretta Bransworth". It's 18 characters with a string terminator.
+
+   - Which line or lines of code caused the leak?
+
+     - The create() functions themselves don't cause leaks because they didn't on the first pass, so it must be this strdup() line:
+
+     - ```C
+       current->question = strdup(question);
+       ```
+
+   - How do we plug the leak?
+
+     - If current->question is already pointing to something on the heap, free that before allocating a new question:
+     - free(current->question);
+     - current->question = strdup(question);
+
+
+
+Now that we have added the fix to the code, it's time to run the code through valgrind again.
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2
+$ valgrind --leak-check=full ./spies
+==7591== Memcheck, a memory error detector
+==7591== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==7591== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+==7591== Command: ./spies
+==7591== 
+Does suspect have a mustache? (y/n): n
+Loretta Barnsworth? (y/n): n
+Who's the suspect? Hanna
+Give me a question that is TRUE for Hanna
+ but not for Loretta Barnsworth? Has a facial scar
+Run again? (y/n): y
+Does suspect have a mustache? (y/n): n
+Has a facial scar
+? (y/n): y
+Hanna
+? (y/n): y
+SUSPECT IDENTIFIED
+Run again? (y/n): n
+==7591== 
+==7591== HEAP SUMMARY:
+==7591==     in use at exit: 0 bytes in 0 blocks
+==7591==   total heap usage: 13 allocs, 13 frees, 2,277 bytes allocated
+==7591== 
+==7591== All heap blocks were freed -- no leaks are possible
+==7591== 
+==7591== For lists of detected and suppressed errors, rerun with: -s
+==7591== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2$ 
+
+```
+
+The leak is fixed.
+
+- Spot when leaks happen.
+- Identify the location where they happen.
+- Check to make sure the leak is fixed.
+
+
+
+Q: valgrind said the leaked memory was created on line 46, but the leak was fixed on a completely different line. How come?
+
+A: The "Loretta..." data was put onto the heap on line 46, but the leak happened when the variable pointing to it (current->question) was reassigned without freeing it. Leaks don't happen when data is created; they happen when the program loses all references to the data.
+
+
+
+Q: How does valgrind intercept calls to malloc() and free()?
+
+A: The `malloc()` and `free()` functions are contained in the C Standard Library. But valgrind contains a library with its own versions of `malloc()` and `free()`. When you run a program with valgrind, your program will be using valgrind's functions, rather than the ones in the C Standard Library.
+
+
+
+Q: Why doesn't the compiler always include debug information when it compiles code?
+
+A: Because debug information will make your executable larger and it may also make your program slightly slower.
+
+---
+
+
+
+### Chapter 7 - Advanced Functions
+
+### Exercises
+
+
+
+#### Exercise - 1
+
+Complete the find() function so it can track down all the sports fans in the list who don't also share a passion for Bieber.
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+nt NUM_ADS = 7;
+char *ADS[] = {
+    "William: SBM GSOH likes sports, TV, dining",
+    "Matt: SWM NS likes art, movies, theater",
+    "Luis: SLM ND likes books, theater, art",
+    "Mike: DWM DS likes trucks, sports and bieber",
+    "Peter: SAM likes chess, working out and art",
+    "Josh: SJM likes sports, movies and theater",
+    "Jed: DBM likes theater, books and dining"};
+
+void find();
+
+int main(){
+    find();
+    return 0;
+}
+
+void find(){
+    int i;
+    puts("Search results:");
+    puts("--------------------");
+    
+    for(i = 0; i < NUM_ADS; i++){
+        if(strstr(ADS[i], "sports") && !strstr(ADS[i], "bieber")){
+            printf("%s\n", ADS[i]);
+        }
+    }
+    puts("--------------------");
+}
+```
+

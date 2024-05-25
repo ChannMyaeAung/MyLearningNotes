@@ -2633,3 +2633,29 @@ Q: Do I need to free all my data before the program ends?A: You don't have to; t
 - The heap is used for long-term storage. You allocate space with `malloc()`.
 - The `sizeof` operator will tell you how much space a `struct` needs.
 - Data will stay on the heap until you release it with `free()`.
+- `valgrind` checks for memory leaks.
+- `valgrind` works by intercepting the calls to `malloc()` and `free()`.
+- When a program stops running, `valgrind` prints details of what's left on the heap.
+- If you compile your code with debug information, `valgrind` can give you more information.
+- If you run your program several times, you can narrow the search for the leak.
+- `valgrind` can tell you which lines of code in your source put the data on the heap.
+- `valgrind` can be used to check that you've fixed a leak.
+- A linked list is more extensible than an array.
+- Data can be inserted easily into a linked list.
+- A link list is a dynamic data structure.
+- Dynamic data structures use recursive structs.
+- Recursive structs contain one or more links to similar data.
+- `malloc()` allocates memory on the heap.
+- `free()` releases memory on the heap.
+- Unlike the stack, heap memory is not automatically released. 
+- The stack is used for local variables.
+- `strdup()` will create a copy of a string on the heap.
+- A memory leak is allocated memory you can no longer access.
+- `valgrind` can help you track down memory leaks.
+
+---
+
+
+
+### Chapter 7 - Advanced Functions
+
