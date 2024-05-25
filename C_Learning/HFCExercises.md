@@ -3186,3 +3186,22 @@ void find(){
 }
 ```
 
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_7/exercise_1
+$ make main
+cc     main.c   -o main
+
+chan@CMA:~/C_Programming/HFC/chapter_7/exercise_1
+$ ./main
+Search results: 
+---------------------------
+William: SBM GSOH likes sports, TV, dining
+Josh: SJM likes sports, movies and theater
+---------------------------
+
+chan@CMA:~/C_Programming/HFC/chapter_7/exercise_1$ 
+
+```
+
