@@ -2659,3 +2659,174 @@ Q: Do I need to free all my data before the program ends?A: You don't have to; t
 
 ### Chapter 7 - Advanced Functions
 
+The extern keyword in C is used to declare a variable or function and specify that its actual definition is located elsewhere, not within the same block where it is declared. This can be in a different file or above/below in the same file.
+
+When you declare a variable with extern, you're telling the compiler that this variable will be defined somewhere else in the program. This allows you to use that variable in different source files.
+
+For example, if you have a variable int count that you want to use in multiple .c files, you can declare it in one file like this:
+
+```C
+ int count = 0;
+```
+
+
+And then in any other file where you want to use count, you would declare it with extern:
+
+```C
+extern int count;
+```
+
+
+This tells the compiler that count is an integer variable that's defined in another file. The linker then takes care of making sure all the extern declarations point to the correct location when the program is linked.
+
+
+
+####  Every function name is a pointer to the function...
+
+The name of a function really is a way of referring to the piece of code. And that's just what a pointer is: a way of referring to something in memory.
+
+- That's why, in C, function names are also pointer variables.
+
+- When you create a function called `go_to_warp_speed(int speed)`, you are also creating a pointer variable called `go_to_warp_speed` that contains the address of the function.
+
+- ```C
+  int go_to_warp_speed(int speed){
+      dilithium_crystals(ENGAGE);
+      warp = speed;
+      reactor_core(c, 125000 * speed, PI);
+      clutch(ENGAGE);
+      brake(ENGAGE);
+      return 0;
+  }
+  ```
+
+- Whenever you create a function, you also create a function pointer with the same name.
+
+- | STACK                        |
+  | ---------------------------- |
+  | HEAP                         |
+  | GLOBALS                      |
+  | CONSTANTS "go_to_warp_speed" |
+  | CODE                         |
+
+- ```C
+  go_to_warp_speed(4);
+  ```
+
+- When you call the function, you are using the function pointer.
+
+
+
+#### but there's no function data type
+
+Usually, it's pretty easy to declare pointers in C. If you have a data type like int, you just need to add an asterisk to the end of the data type name, and you declare a pointer with `int *`. Unfortunately, C doesn't have a function data type, so you can't declare a function pointer with anything like `function *`.
+
+```C
+int *a;
+```
+
+This declares an int pointer.
+
+```C
+function *f;
+```
+
+but this won't declare a function pointer.
+
+
+
+#### Why doesn't C have a function data type?
+
+C doesn't have a function data type because there's not just one type of function.
+
+- When you create a function, you can vary a lot of things, such as the return type or the list of parameters it takes.
+- That combination of things is what defines the type of the function.
+
+```C
+int go_to_warp_speed(int speed){
+    ...
+}
+```
+
+```C
+char **album_names(char *artist, int year){
+    ...
+}
+```
+
+There are many different types of functions. These two functions above are different types because they have different return types and parameters.
+
+
+
+#### How to create function pointers
+
+Say you want to create a pointer variable that can store the address of each of the functions.
+
+```C
+int (*warp_fn) (int);
+
+warp_fn = go_to_warp_speed; <- // This will create a variable called warp_fn that can store the address of the go_to_warp_speed() function.
+    
+warp_fn(4); <- // This is just like calling go_to_warp_speed(4)
+    
+    
+char ** (*names_fn) (char*, int);
+names_fn = album_names; <- // This will create a variable called names_fn that can store the address of the album_names() function.
+    
+char **results = names_fn("Sacha Distel", 1972);
+```
+
+
+
+We need to tell C the return type and the parameter types the function will take. But once we have declared a function pointer variable, you can use it like any other variable. You can assign values to it, you can add it to arrays and you can also pass it to functions.
+
+
+
+Q: What does `char **` mean? Is it a typing error?
+
+A: `char **` is a pointer normally used to point to an array of strings.
+
+
+
+**Exercises are in `HFCExercises.md`. **
+
+| Return type | (*Pointer variable) | (Param types) |
+| ----------- | ------------------- | ------------- |
+| char**      | (*names_fn)         | (char*, int)  |
+
+
+
+`(*names_fn)` - This is the name of the variable we are declaring.
+
+
+
+Q: If function pointers are just pointers, why don't you need to prefix them with a * when you call the function?
+
+A: You can. In the program in `HFCExercises.md`, instead of writing `match(ADS[i])`, you could have written `(*match)(ADS[i])`.
+
+
+
+Q: And could I have used & to get the address of a method?
+
+A: Yes. Instead of `find(sports_or_workout)`, you could have written `find(&sports_or_workout)` in the exercise `HFCExercises.md`.
+
+
+
+Q: Then why didn't I?
+
+A: Because it makes the code easier to read. If you skip the * and &, C will still understand what you're saying.
+
+
+
+#### Get it sorted with the C Standard Library
+
+Lots of programs need to sort data. If the data is something simple like a set of numbers, then sorting is pretty easy. Numbers have their own natural order. But it's not so easy with other types of data.
+
+
+
+**How could a sort function sort any type of data at all?**
+
+
+
+#### Use function pointers to set the order
+

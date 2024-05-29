@@ -2770,6 +2770,7 @@ int main(void) {
                 suspect[strcspn(suspect, "\n")] = '\0';  // Remove newline character
 
                 // Make the yes-node the new suspect name.
+                //This process effectively adds a new branch to the decision tree for the new suspect. The new question becomes the question in the current node, the 'yes' child becomes the new suspect, and the 'no' child becomes the old suspect/question.
                 node *yes_node = create(suspect);
                 current->yes = yes_node;
 
@@ -2845,6 +2846,7 @@ int yes_no(char *question) {
         printf("\n");
         exit(0);
     }
+    // returns 1 (true) if the first character of the user's answer is 'y', and 0 (false) otherwise. This is how the function determines whether the user answered 'yes' or 'no' to the question.
     return answer[0] == 'y' || answer[0] == 'Y';
 }
 
@@ -2967,6 +2969,16 @@ chan@CMA:~/C_Programming/HFC/chapter_6/exercise_2$
 
 
 Visualization
+
+```plaintext
+"Does suspect have a mustache?"
+|
+├── yes: "Vinny the Spoon"
+|
+└── no: "Loretta Bransworth"
+```
+
+
 
 ```plaintext
 Does suspect have a mustache?
@@ -3202,6 +3214,149 @@ Josh: SJM likes sports, movies and theater
 ---------------------------
 
 chan@CMA:~/C_Programming/HFC/chapter_7/exercise_1$ 
+
+```
+
+
+
+#### Exercise 2
+
+practice.h
+
+```C
+extern int num_ADS;
+extern char *ADS[];
+
+int sports_no_bieber(char *s);
+
+int sports_or_workout(char *s);
+
+int ns_theater(char *s);
+
+int arts_theater_or_dining(char *s);
+
+void find(int (*match)(char*));
+
+```
+
+functions.c
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "practice.h"
+
+int NUM_ADS = 7;
+char *ADS[] = {
+    "William: SBM GSOH likes sports, TV, dining",
+    "Matt: SWM NS likes art, movies, theater",
+    "Luis: SLM ND likes books, theater, art",
+    "Mike: DWM DS likes trucks, sports and bieber",
+    "Peter: SAM likes chess, working out and art",
+    "Josh: SJM likes sports, movies and theater",
+    "Jed: DBM likes theater, books and dining"
+};
+
+int sports_no_bieber(char *s){
+    return strstr(s, "sports") && !strstr(s, "bieber");
+}
+
+int sports_or_workout(char *s){
+    return strstr(s, "sports") || strstr(s, "working out");
+}
+
+int ns_theater(char *s){
+    return strstr(s, "NS") && strstr(s, "theater");
+}
+
+int arts_theater_or_dining(char *s){
+    return strstr(s, "art") || strstr(s, "theater") || strstr(s, "dining");
+}
+
+void find(int (*match)(char *)){
+    int i;
+    puts("Search result: ");
+    puts("--------------------");
+    for(i = 0; i < NUM_ADS; i++){
+        if(match(ADS[i])){
+            printf("%s\n", ADS[i]);
+        }
+    }
+    puts("--------------------");
+    printf("\n");
+}
+```
+
+practice.c (main file)
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "practice.h"
+int main(){
+    printf("Sports but no Bieber:\n");
+    find(sports_no_bieber);
+    
+    printf("Sports or workout:\n");
+    find(sports_or_workout);
+    
+    printf("non-smoking and theater:\n");
+    find(ns_theater);
+    
+    printf("Arts, or theater or dining:\n");
+    find(arts_theater_or_dining);
+    
+    return 0;
+}
+```
+
+Code Execution
+
+```bash
+chan@CMA:~/C_Programming/practice
+$ make all
+Compiling functions file...
+gcc -c functions.c 
+Compiling the final exe file...
+gcc practice.o functions.o -o practice
+
+chan@CMA:~/C_Programming/practice
+$ ./practice
+Sports but no Bieber: 
+Search result: 
+--------------------
+William: SBM GSOH likes sports, TV, dining
+Josh: SJM likes sports, movies and theater
+--------------------
+
+Sports or workout:
+Search result: 
+--------------------
+William: SBM GSOH likes sports, TV, dining
+Mike: DWM DS likes trucks, sports and bieber
+Peter: SAM likes chess, working out and art
+Josh: SJM likes sports, movies and theater
+--------------------
+
+non-smoking and theater:
+Search result: 
+--------------------
+Matt: SWM NS likes art, movies, theater
+--------------------
+
+Arts, or theater or dining:
+Search result: 
+--------------------
+William: SBM GSOH likes sports, TV, dining
+Matt: SWM NS likes art, movies, theater
+Luis: SLM ND likes books, theater, art
+Peter: SAM likes chess, working out and art
+Josh: SJM likes sports, movies and theater
+Jed: DBM likes theater, books and dining
+--------------------
+
 
 ```
 
