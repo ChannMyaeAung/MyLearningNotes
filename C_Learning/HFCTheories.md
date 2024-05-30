@@ -2830,3 +2830,131 @@ Lots of programs need to sort data. If the data is something simple like a set o
 
 #### Use function pointers to set the order
 
+The C Standard Library has a sort function that accepts a pointer to a comparator function which will be used to decide if one piece of data is **the same as**, **less than** or **greater than** another piece of data.
+
+
+
+This is what the `qsort()` function looks like:
+
+```C
+qsort(void *array, <- // This is a pointer to 										an array.
+     size_t length, <- // This is the length of 									the array.
+     size_t item_size, <- // This is the size 					of each element in the array.
+     int(*compar)(const void *, const void *));
+
+// (*compar) - This is a pointer to a function that compares two items in the array.
+// const void * - Remember, a void* pointer can point to anything.
+```
+
+
+
+- The `qsort()` function compares pairs of values over and over again, and if they are in the wrong order, the computer will switch them.
+- And that's what the comparator function is for. It will tell `qsort()` which order a pair of elements should be in. 
+- It does this by returning three different values.
+- If the first value is greater than the second value, it should return a positive number.
+- If the first value is less than the second value, it should return a negative number.
+- If the two values are equal, it should return zero.
+
+
+
+Let's say we have an array of integers and we want to sort them in increasing order.
+
+```C
+int scores[] = {543, 323, 32, 554, 11, 3, 112};
+```
+
+
+
+If you look at the **signature** of the comparator function that `qsort()` needs, it takes two **void pointers** given by `void *`.
+
+A void pointer can store the address of **any kind of data**, but you always need to cast it to something more specific before you can use it.
+
+
+
+**A void pointer `void *` can store a pointer to anything.**
+
+
+
+The `qsort()` function works by comparing pairs of elements in the array and then placing them in the correct order. It compares the values by calling the comparator function that you give it.
+
+```C
+int compare_scores(const void* score_a, const void* score_b){
+    ...
+}
+```
+
+
+
+- Values are always passed to the function as pointers, so the first thing we need to do is get the integer values from the pointers.
+
+- ```C
+  int a = *(int*)score_a;
+  int b = *(int*)score_b;
+  ```
+
+- We need to cast the void pointer to an integer pointer.
+
+- The first * then gets the int stored at address score_b.
+
+- Then we need to return a positive, negative or zero value depending on whether `a` is greater than, less than, or equal to `b`.
+
+- For integers, that's pretty easy to do - we just subtract one number from the other.
+
+- ```C
+  return a - b;
+  
+  // If a > b, this is positive;
+  // If a < b, this is negative;
+  // If a and b are equal, this is zero
+  ```
+
+- And this is how we ask `qsort()` to sort the array
+
+- ```C
+  qsort(scores, 7, sizeof(int), compare_scores);
+  ```
+
+  
+
+#### Why use `*(int*)score_a`?
+
+The function `compare_scores` needs to compare two `int` values.
+
+1. **Casting the Void Pointer:** `score_a` is of type `const void *`, which is a generic pointer type in C. Since `void *` does not point to any specific type, it must be cast to the appropriate type before dereferencing. In this case, we cast it to `int *`.
+
+   ```C
+   (int *)score_a
+   ```
+
+   This tells the compiler that `score_a` is actually pointing to an `int`.
+
+2. **Dereferencing the Pointer:** After casting `score_a` to `int *`, we then dereference it to get the `int` value it points to:
+
+   ```C
+   *(int *)score_a
+   ```
+
+   This `*` operator is used to access the value at the address stored in the pointer. This effectively converts `score_a` from a pointer to a void type into an `int` value.
+
+
+
+```C
+int compare_scores(const void *score_a, const void *score_b){
+    int a = *(int*)score_a;
+    int b = *(int*)score_b;
+    return a - b;
+}
+
+qsort(scores, 7, sizeof(int), compare_scores);
+```
+
+
+
+#### How it works
+
+- `score_a` and `score_b`: These are pointers to `int` values but they are passed as `const void *` for generality as required by `qsort`.
+- `Casting and Dereferencing`: By casing `score_a` and `score_b` to `int *` and then dereferencing them, you obtain the actual `int` values that need to be compared.
+- `Returning the Result`: The function returns the difference between `a` and `b`. This is a common way to write a comparison function in C.
+
+**Refer to the example exercise in `HFCExercises.md`.**
+
