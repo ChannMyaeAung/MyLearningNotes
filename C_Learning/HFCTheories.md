@@ -2958,3 +2958,61 @@ qsort(scores, 7, sizeof(int), compare_scores);
 
 **Refer to the example exercise in `HFCExercises.md`.**
 
+
+
+#### `strcmp`
+
+The `strcmp` function in C starts comparing the first characters of both strings. If they are equal, it moves on to the next characters, and so on. This process continues until it finds a pair of characters that differ or until it reaches the end of strings.
+
+- If the two strings are equal, `strcmp` returns 0.
+- If the first string is lexicographically greater than the second, `strcmp` returns a positive integer.
+- If the first string is lexicographically less than the second, `strcmp` returns a negative integer.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char *str1 = "Hello";
+    char *str2 = "World";
+    char *str3 = "Hello";
+
+    printf("strcmp(str1, str2): %d\n", strcmp(str1, str2));
+    printf("strcmp(str1, str3): %d\n", strcmp(str1, str3));
+
+    return 0;
+}
+```
+
+Code Execution
+
+```bash
+chan@CMA:~/C_Programming/test$ ./final
+strcmp(str1, str2): -15
+strcmp(str1,str3): 0
+
+```
+
+In this example, "Hello" and "World" both have 5 characters, but "Hello" is considered lexicographically less than "World". This is because the ASCII value of 'H'(72) is less than the ASCII value of 'W'(87).
+
+
+
+#### `qsort()`
+
+The `qsort` function in C is used to sort items in an array. It takes 4 parameters.
+
+1. `base`: A pointer to the first element of the array to be sorted.
+2. `nitems`: The number of elements in the array.
+3. `size`: The size in bytes of each element in the array. This is typically calculated as `sizeof(type)`, where `type` is the data type of the elements.
+4. `compar`: A function pointer to a comparison function. This function takes two pointers (pointing to two elements to be compared) and returns an integer less than, equal to, or greater than zero if the first argument is considered to be respectively less than, equal to, or greater than the second.
+
+```C
+int scores[] = {543, 323, 32, 554, 11, 3, 112};
+
+qsort(scores, 7, sizeof(int), compare_scores_desc);
+
+char *names[] = {"Karen", "Mark", "Brett", "Molly"};
+
+qsort(names, 4, sizeof(char *), compare_names);
+```
+
