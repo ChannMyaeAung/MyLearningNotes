@@ -3016,3 +3016,172 @@ char *names[] = {"Karen", "Mark", "Brett", "Molly"};
 qsort(names, 4, sizeof(char *), compare_names);
 ```
 
+
+
+#### Sorting Explanation
+
+- < 0 if x should go before y.
+- 0 if x is equivalent to y.
+- `> 0` if x should go after y. 
+
+```C
+int a[] = {8, 7, 2, 4, 6, 3, 5, 1, 9, 0};
+```
+
+
+
+Considering the above array:
+
+```C
+return x - y;
+```
+
+Let's say `x` = 2 and `y` = 7;
+
+x - y = 2 - 7 = - 5 which is less than zero so x should go before y which means in ascending order. (2...7)
+
+
+
+```C
+return y - x;
+```
+
+Now same as above `x` = 2 and `y` = 7;
+
+y - x = 7 - 2 = 5 which is greater than zero so x should go after y which means in descending order. (7....2)
+
+
+
+#### pointer-to-pointer
+
+In C, a pointer is a variable that holds the memory address of another variable. A pointer-to-pointer, denoted by two asterisks(**), is a form of multiple indirection, or a chain of pointers. Essentially, a pointer-to-pointer is a pointer that points to another pointer.
+
+```C
+int x = 5; // An integer
+int *p = &x; // A pointer that holds the address of x
+int **q = &p; // A pointer-to-pointer that holds the address of p
+```
+
+In this example, `p` points to `x`, and `q` points to `p`. So, `q` is a pointer-to-pointer.
+
+**Now why do we use a double asterisk or a pointer-to-pointer?**
+
+One common use of pointer-to-pointer is in functions that need to modify the content of a pointer passed as arguments.
+
+- In C, everything is passed by value, including pointers. This means that if you pass a pointer to a function, the function works with a copy of the pointer, not the original pointer itself.
+- If you want to change the original pointer, you need to pass a pointer to the pointer, i.e. , a pointer-to-pointer.
+
+```C
+void change_pointer(int **p){
+    int y = 10;
+    *p = &y;
+}
+
+int main(){
+    int x = 5,
+    int *p = &x;
+    printf("Before calling change_pointer: %d\n", *p); // Before modification, this will print 5.
+    change_pointer(&p);
+    printf("After calling change_pointer: %d\n", *p); // After modification, this will print 10
+    return 0;
+}
+```
+
+In this example:
+
+1. In the `change_pointer` function:
+   - It takes a pointer to a pointer to an integer (`int **p`) as its parameter.
+   - Inside the function, a local integer variable `y` is declared and assigned the value 10.
+   - Then, the pointer `p` is updated to point to the address of `y` using the address-of operator (`&`). This means that `p` now holds the address of the local variable `y`.
+2. In the `main` function:
+   - An integer variable `x` is declared and assigned the value 5.
+   - A pointer `p` is declared and initialized to point to the address of `x`.
+   - The value of `p` is printed before and after the function call to `change_pointer`.
+   - After the function call, the value of `p` has been changed to point to the address of the local variable `y` within the `change_pointer` function.
+
+So, `p` is a pointer to an integer (`int *`), and `&p` is a pointer to a pointer to an integer (`int **`). By passing `&p` to the `change_pointer` function, we allow the function to modify the value of `p`, effectively changing what it points to.
+
+
+
+#### Create an array of function pointers
+
+The trick is to create an array of function pointers that match the different response types.
+
+```C
+void (*replies[])(response) = {dump, second_chance, marriage};
+
+// void - each function in the array will be a void function
+// (*replies[]) - The variable will be called "replies" and it's not just a function pointer; it's a whole array of them.
+// (response) - Just one parameter with type "response".
+
+```
+
+| Return type | (*Pointer variable) | (Param types) |
+| ----------- | ------------------- | ------------- |
+| void        | (*replies[])        | (response)    |
+
+#### But how does an array help?
+
+It contains a set of function names that are in exactly the same order as the types in the `enum`:
+
+```C
+enum response_type{
+    DUMP,
+    SECOND_CHANCE,
+    MARRIAGE
+};
+```
+
+This is really important because when C creates an `enum`, it gives each of the symbols a number starting at 0.
+
+- So `DUMP == 0`, `SECOND_CHANCE == 1`, and `MARRIAGE == 2`. And that's really neat because it means you can get a pointer to one of your sets of functions using a `response_type`.
+
+```C
+replies[SECOND_CHANCE] = second_chance;
+
+// replies - this is your "replies" array of functions
+// SECOND_CHANCE - has the  value 1.
+// second_chance - it's equal to the name of the second_chance function.
+
+// void (*replies[])(response) = {dump, second_chance, marriage};
+// replies[0] will run the funciton "dump"
+// replies[1] will run the function "second_chance"
+// replies[2] will run the function "marriage"
+
+// replies[0] == DUMP
+// replies[1] == SECOND_CHANCE
+// replies[2] == MARRIAGE .Since enum gives each of the symbols a number starting at 0 as mentioned above.
+```
+
+
+
+#### Chapter 7 - Bullet Points
+
+- Function pointers store the addresses of functions.
+- The name of each function is actually a function pointer.
+- If you have a function `shoot()`, then `shoot` and `&shoot` are both pointers to that function.
+- You declare a new function pointer with `return-type (*var-name) (param-types)`.
+- If `fp` is a function pointer, you can call it with `fp(params, ...)`.
+- Or yo can use `(*fp)(params, ...)`. C will work the same way.
+- The C Standard Library has a sorting function called `qsort()`.
+- `qsort()` accepts a pointer to a comparator function that can test for (in)equality.
+- The comparator function will be passed pointers to two items in the array being sorted.
+- If you have an array of data, you can associate functions with each data item using function pointer arrays.
+
+
+
+Q: Why is the function pointer array syntax so complex?
+
+A: Because when you declare a function pointer, you need to say what the return and parameter types are. That's why there are so many parentheses.
+
+
+
+Q: This looks a little like the sort of object-oriented code in other languages. Is it?
+
+A: It's similar. Object-oriented languages associate a set of functions (called methods) with pieces of data. In the same way, you can use function pointers to associate functions with pieces of data.
+
+
+
+Q: Hey, so does that mean that C is object-oriented?
+
+A: No, C is not object-oriented, but other languages that are built on C, like Objective-C and C++, create a lot of their object-oriented features by using function pointers under the covers.
