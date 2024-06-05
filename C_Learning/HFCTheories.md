@@ -3303,3 +3303,31 @@ A: Random errors will occur.
 Q: What if I try to read an `int` argument as a double, or something?
 
 A: Random errors will occur.
+
+
+
+#### Bullet Points - Chapter 7
+
+- Functions that accept a variable number of arguments are called variadic functions.
+- To create variadic functions, you need to include `stdarg.h` header file.
+- The variable argument will be stored in a `va_list`.
+- You can control the `va_list` using `va_start()`, `va_arg()` and `va_end()`.
+- You will need at least one fixed parameter.
+- Be careful that you don't try to read more parameters than you've been given.
+- You will always need to know the data type of every parameter you read.
+- Function pointers let you pass functions around as if they were data.
+- The name of every function is **a pointer** to the function.
+- Arrays of function pointers can help run different functions for different types of data.
+- Each sort function needs a pointer to a comparator function.
+- `qsort()` will sort an array.
+- Comparator functions decide how to order two pieces of data.
+- Function pointers are the only pointers that don't need * and & operators but you can still use them if you want to.
+
+---
+
+
+
+### Chapter 8 - Static and dynamic libraries
+
+#### Hot-swappable code
+

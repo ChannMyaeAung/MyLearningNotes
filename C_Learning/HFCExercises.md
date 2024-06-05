@@ -3916,3 +3916,70 @@ $
 
 ```
 
+---
+
+### Chapter 7 - Exercise 1
+
+Encrypt function encrypt the contents of a string. Checksum function check if the contents of a string have been modified.
+
+**Detailed explanations are in `HFCTheories.md`.**
+
+encrypt.h
+
+```C
+void encrypt(char *message);
+```
+
+encrypt.c
+
+```C
+#include "encrypt.h"
+
+void encrypt(char *message){
+    while(*message){
+        *message = *message ^ 31;
+        message++;
+    }
+}
+```
+
+checksum.h
+
+```C
+int checksum(char *message);
+```
+
+checksum.c
+
+```C
+#include "checksum.h"
+int checksum(char *message){
+    int c = 0;
+    while(*message){
+        c += c ^ (int)(*message);
+        message++;
+    }
+    return c;
+}
+```
+
+main.c
+
+```C
+#include <stdio.h>
+#include "encrypt.h"
+#include "checksum.h"
+
+int main(){
+    char s[] = "Speak friend and enter";
+    encrypt(s);
+    printf("Encrypted to '%s'\n",s);
+    printf("Checksum is %i\n", checksum(s));
+    // If we call encrypt() again, it will decrypt it.
+    encrypt(s);
+    printf("Decrypted back to '%s'\n", s);
+    printf("Checksum is %i\n", checksum(s));
+    return 0;
+}
+```
+
