@@ -3983,3 +3983,51 @@ int main(){
 }
 ```
 
+Makefile
+
+```makefile
+all: final
+
+final: encrypt.o checksum.o main.o
+	@echo "Compiling the final exe file..."
+	gcc encrypt.o checksum.o main.o -o final
+
+main.o: main.c
+	@echo "Compiling the main file..."
+	gcc -c main.c
+
+encrypt.o: encrypt.c 
+	@echo "Compiling the encrypt file..."
+	gcc -c encrypt.c 
+
+checksum.o: checksum.c 
+	@echo "Compiling the checksum file..."
+	gcc -c checksum.c 
+
+clean: 
+	@echo "Removing everything except the source files..."
+	@rm encrypt.o checksum.o final
+
+```
+
+
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_1
+$ make all
+Compiling the main file...
+gcc -c main.c
+Compiling the final exe file...
+gcc encrypt.o checksum.o main.o -o final
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_1
+$ ./final
+Encrypted to 'Loz~t?ymvzq{?~q{?zqkzm'
+Checksum is 89561741
+Decrypted back to 'Speak friend and enter'
+Checksum is 89548156
+
+```
+
