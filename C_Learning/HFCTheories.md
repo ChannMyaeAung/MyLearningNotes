@@ -3331,3 +3331,98 @@ A: Random errors will occur.
 
 #### Hot-swappable code
 
+
+
+#### Explanation of Encrypt function and checksum function
+
+encrypt.c
+
+```C
+#include "encrypt.h"
+
+void encrypt(*message){
+    while(*message){
+        *message = *message ^ 31;
+        message++;
+    }
+}
+```
+
+#### What it does:
+
+- The `encrypt` function performs a simple bitwise XOR encryption on a string.
+- It iterates through each character in the `message` string and applies the XOR operation with the value `31`.
+
+#### How it works:
+
+1. **Pointer to the message**: The function takes a pointer to a character array (`char *message`), which is the string to be encrypted.
+2. **Loop through the string**: The `while (*message)` loop continues until it reaches the null terminator (`'\0'`) of the string.
+3. **Bitwise XOR operation**: Inside the loop, the statement `*message = *message ^ 31;` takes the current character, performs a bitwise XOR with `31`, and stores the result back in the same character position.
+4. **Move to the next character**: The `message++` statement moves the pointer to the next character in the string.
+
+#### Example:
+
+If the original message is "abc", the ASCII values are 97, 98, and 99. After the XOR operation with 31, the values become:
+
+- 'a' (97) ^ 31 = 126 (ASCII for '~')
+- 'b' (98) ^ 31 = 125 (ASCII for '}')
+- 'c' (99) ^ 31 = 124 (ASCII for '|')
+
+So, "abc" would be encrypted to "~}|".
+
+
+
+checksum.c
+
+```C
+#include "checksum.h"
+
+int checksum(char *message){
+    int c = 0;
+    while(*message){
+        c += c ^ (int)(*message);
+        message++;
+    }
+    return c;
+}
+```
+
+#### What it does:
+
+- The `checksum` function calculates a checksum value for the string using a combination of addition and bitwise XOR operations.
+
+#### How it works:
+
+1. **Pointer to the message**: The function takes a pointer to a character array (`char *message`), which is the string to calculate the checksum for.
+
+2. **Initialize checksum**: An integer variable `c` is initialized to `0`.
+
+3. **Loop through the string**: The `while (*message)` loop continues until it reaches the null terminator (`'\0'`) of the string.
+
+4. Calculate checksum
+
+   : Inside the loop, the statement 
+
+   ```
+   c += c ^ (int)(*message);
+   ```
+
+    does the following:
+
+   - It converts the current character to its integer (ASCII) value.
+   - It performs a bitwise XOR operation between the current checksum value `c` and the integer value of the character.
+   - It adds the result of the XOR operation to `c`.
+
+5. **Move to the next character**: The `message++` statement moves the pointer to the next character in the string.
+
+6. **Return checksum**: The function returns the final checksum value `c`.
+
+#### Example:
+
+For the string "abc":
+
+- 'a' (97): `c += c ^ 97` when `c` is 0 -> `c = 0 + (0 ^ 97) = 97`
+- 'b' (98): `c += c ^ 98` when `c` is 97 -> `c = 97 + (97 ^ 98) = 97 + 3 = 100`
+- 'c' (99): `c += c ^ 99` when `c` is 100 -> `c = 100 + (100 ^ 99) = 100 + 7 = 107`
+
+So, the checksum for "abc" would be 107.

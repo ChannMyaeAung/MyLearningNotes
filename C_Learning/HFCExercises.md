@@ -3972,6 +3972,7 @@ main.c
 
 int main(){
     char s[] = "Speak friend and enter";
+    char t[] = "abc";
     encrypt(s);
     printf("Encrypted to '%s'\n",s);
     printf("Checksum is %i\n", checksum(s));
@@ -3979,6 +3980,13 @@ int main(){
     encrypt(s);
     printf("Decrypted back to '%s'\n", s);
     printf("Checksum is %i\n", checksum(s));
+    
+    encrypt(t);
+    printf("Encrypted to '%s'\n", t);
+    printf("Checksum is %i\n", checksum(t));
+    encrypt(t);
+    printf("Decrypted back to '%s'\n", t);
+    printf("Checksum is %i\n", checksum(t));
     return 0;
 }
 ```
@@ -4028,6 +4036,10 @@ Encrypted to 'Loz~t?ymvzq{?~q{?zqkzm'
 Checksum is 89561741
 Decrypted back to 'Speak friend and enter'
 Checksum is 89548156
+Encrypted to '~}|'
+Checksum is 382
+Decrypted back to 'abc'
+Checksum is 107
 
 ```
 
