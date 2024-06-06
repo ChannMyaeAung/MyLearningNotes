@@ -3425,4 +3425,302 @@ For the string "abc":
 - 'b' (98): `c += c ^ 98` when `c` is 97 -> `c = 97 + (97 ^ 98) = 97 + 3 = 100`
 - 'c' (99): `c += c ^ 99` when `c` is 100 -> `c = 100 + (100 ^ 99) = 100 + 7 = 107`
 
+
+
+```markdown
+   01100001  (97)
+^  01100010  (98)
+-----------
+   00000011  (3)
+
+```
+
+
+
+### Bit-by-Bit Explanation
+
+1. The first bit (leftmost) of both numbers is `0`. XOR of `0` and `0` is `0`.
+2. The second bit of both numbers is `1`. XOR of `1` and `1` is `0`.
+3. The third bit of both numbers is `1`. XOR of `1` and `1` is `0`.
+4. The fourth bit of both numbers is `0`. XOR of `0` and `0` is `0`.
+5. The fifth bit of both numbers is `0`. XOR of `0` and `0` is `0`.
+6. The sixth bit of the first number is `0` and the second number is `1`. XOR of `0` and `1` is `1`.
+7. The seventh bit of the first number is `1` and the second number is `0`. XOR of `1` and `0` is `1`.
+8. The eighth bit of both numbers is `1`. XOR of `1` and `1` is `0`.
+
+Combining these results, we get `00000011` in binary, which is `3` in decimal.
+
+So, the XOR operation `97 ^ 98` results in `3`.
+
 So, the checksum for "abc" would be 107.
+
+
+
+#### Angle brackets are for standard headers
+
+##### Where are the standard header directories?
+
+So, if you include headers using angle brackets, where does the compiler go searching for the header files? 
+
+You'll need to check the documentation that came with your compiler, but typically on a Unix-style system like the Mac or a Linux machine, the compiler will look for the files under these directories:
+
+`/usr/local/include`
+
+`/usr/include`
+
+It will check `/usr/local/include` first.  `/usr/local/include` is often used for header files for third-party libraries.
+
+`/usr/include` is normally used for OS headerfiles.
+
+
+
+#### Sharing .h header files
+
+1. **Store them in a standard directory.**
+
+   If you copy your header files into one of the standard directories like `/usr/local/include`, you can include them in your source code using angle brackets.
+
+   ```C
+   #include <encrypt.h>
+   
+   // You can use angle brackets if your header files are in a standard directory.
+   ```
+
+2. **Put the full pathname in your include statement.**
+
+   If you want to store your header files somewhere else, such as  `/my_header_files`, you can add the directory name to your include statement.
+
+   ```C
+   #include "/my_header_files/encrypt.h"
+   ```
+
+3. **You can tell the compiler where to find them.**
+
+   The final option is to tell the compiler where it can find your header files. You can do this with the `-I` option on `gcc`:
+
+   ```bash
+   gcc -I/my_header_files test_code.c ... -o test_code
+   
+   // This tells the compiler to look in /my_header_files as well as the standard directories.
+   ```
+
+   - The `-I` option tells the `gcc` compiler that there's another place where it can find header files. It will still search in all the standard places, but first it will check the directory names in the `-I` option.
+
+
+
+#### Share .o object files by using the full pathname
+
+We can always put our .o object files into some sort of shared directory. Once we have done that, we can then jut add the full path to the object files when we're compiling the program that uses them:
+
+```makefile
+gcc -I/my_header_files test_code.c /my_object_files/encrypt.o /my_object_files/checksum.o -o test_code
+```
+
+
+
+- Using the full pathname to the object files means we don't need a separate copy for each C project.
+- /my_object_files is like a central store for our project files.
+
+
+
+Makefile
+
+```makefile
+all: final
+
+final: object_files/encrypt.o object_files/checksum.o object_files/main.o
+	@echo "Compiling the final exe file..."
+	gcc object_files/encrypt.o object_files/checksum.o object_files/main.o -o final
+
+main.o: main.c
+	@echo "Compiling the main file..."
+	gcc -I/header_files -c main.c -o object_files/main.o
+
+encrypt.o: encrypt.c 
+	@echo "Compiling the encrypt file..."
+	gcc -I/header_files -c encrypt.c -o object_files/encrypt.o 
+
+checksum.o: checksum.c 
+	@echo "Compiling the checksum file..."
+	gcc -I/header_files -c checksum.c -o object_files/checksum.o
+
+clean: 
+	@echo "Removing everything except the source files..."
+	@rm object_files/encrypt.o object_files/checksum.o object_files/main.o final
+
+```
+
+header_files
+
+- `encrypt.h`
+- `checksum.h`
+
+object_files
+
+- `main.o`
+- `encrypt.o`
+- `checksum.o`
+
+encrypt.c
+
+```C
+#include "../header_files/encrypt.h"
+
+void encrypt(char *message){
+    while(*message){
+        *message = *message ^ 31;
+        message++;
+    }
+}
+```
+
+checksum.c
+
+```C
+#include "../header_files/checksum.h"
+
+int checksum(char *message){
+    int c = 0;
+    while(*message){
+        c += c ^ (int)(*message);
+        message++;
+    }
+    return c;
+}
+```
+
+
+
+If we compile our code with the full pathname to the object files we want to use, then all our C programs can share the same `encrypt.o` and `checksum.o` files.
+
+```markdown
+Hmm.. That's OK if I just have one or two object files to share, but what if I have alot of object files? I wonder if there's some way of telling the compiler about a bunch of them...
+```
+
+
+
+**Yes, if we create an archive of object files, we can tell the compiler about a whole set of object files all at once.**
+
+An archive is just a bunch of object files wrapped up into a single file. By creating a single archive file of all of your security code, you can make it a lot easier to share the code between projects.
+
+
+
+#### An archive contains .o files
+
+Ever used a .zip or .tar file? Then you know how easy it is to create a file that contains other files. That's exactly what a .a archive file is: **a file containing other files.**
+
+
+
+```bash
+chan@CMA:~$ 
+cd /usr/local/lib
+
+chan@CMA:/usr/local/lib
+$ ls
+
+libcs50.a  libcs50.so  libcs50.so.11  libcs50.so.11.0.2  python3.10
+
+chan@CMA:/usr/local/lib
+$ nm libcs50.a
+
+libcs50.o:
+0000000000000000 b allocations
+                 U atexit
+                 U __ctype_b_loc
+                 U __errno_location
+                 U fgetc
+                 U free
+00000000000003ce T get_char
+00000000000004ee T get_double
+00000000000006fd T get_float
+00000000000008fd T get_int
+0000000000000aa3 T get_long
+0000000000000c3d T get_long_long
+0000000000000000 T get_string
+                 U __isoc99_sscanf
+                 U realloc
+0000000000000e3a t setup
+                 U setvbuf
+                 U __stack_chk_fail
+                 U stdin
+                 U stdout
+                 U strcspn
+0000000000000008 b strings
+                 U strlen
+                 U strtod
+                 U strtof
+                 U strtol
+                 U strtoll
+0000000000000dd7 t teardown
+                 U ungetc
+                 U vprintf
+chan@CMA:/usr/local/lib$ 
+
+```
+
+
+
+The `nm` command lists the **names** that are stored inside the archive.
+
+
+
+
+
+#### Create an archive with the `ar` command
+
+The `archive comand (ar)` will store a set of object files in an archive file:
+
+```makefile
+ar -rcs libhfsecurity.a encrypt.o checksum.o
+```
+
+- `-rcs` - The `r` means the .a file will be updated if it already exists. The `c` means that the archive will be created without any feedback. The `s` tells `ar` to create an index at the start of the .a file.
+- `libhfsecurity.a` - This is the name of the .a file to create.
+- The last two files are the files that will be stored in the archive.
+
+Did you notice that all of the .a files have names like `lib<something>.a`? That's the standard way of naming archives. The names begin with `lib` because they are `static libraries`. 
+
+```markdown
+**Make sure you always name your archives lib<something>.a.
+If you don't name them this way, your compiler will have problems tracking them down.
+```
+
+#### then store the .a in a library directory
+
+Once you have an archive, you can store it in a library directory. Which library directory should you store it in? It's up to you, but you have a couple of choices:
+
+1. **You can put your .a file in a standard directory like `/usr/local/lib`.**
+
+   Some coders like to install archives into a standard directory once they are sure it's working. On Linux, on Mac and in Cygwin, the `/usr/local/lib` directory is a good choice because that's the directory set aside for your own local custom libraries.
+
+2. **Put the .a file in some other directory.**
+
+   If you are still developing your code, or if you don't feel comfortable installing your code in a system directory, you can always create your own library directory. For example, `/my_lib`.
+
+   - On most machines, you need to be an administrator to put files in `/usr/local/lib`.
+
+#### Finally, compile your other programs
+
+The whole point of creating a library archive was so you could use it with other programs. If you've installed your archive in a standard directory, you can compile your code using the `-l` switch:
+
+```bash
+gcc test_code.c -lhfsecurity -o test_code
+```
+
+- `test_code.c` - Remember to list your source files before your `-l` libraries.
+- `-lhfsecurity` - hfsecurity tells the compiler to look for an archive called `libhfsecurity.a`.
+- If you're using several archives, you can set several `-l` options.
+- Do you need an `-I` option? It depends on where you put your headers.
+
+Can you see why it's so important to name your archive `lib<someting>.a`?
+
+```markdown
+The name that follows the -l option needs to match part of the archive name. So if your archive is called libawesome.a, you can compile your program with the -lawesome switch.
+```
+
+But what if you put your archive somewhere else, like `/my_lib`? In that case, you will need to use the `-L` option to say which directories to search:
+
+```bash
+gcc test_code.c -L/my_lib -lhfsecurity -o test_code
+```
+
