@@ -3724,3 +3724,66 @@ But what if you put your archive somewhere else, like `/my_lib`? In that case, y
 gcc test_code.c -L/my_lib -lhfsecurity -o test_code
 ```
 
+
+
+#### Chapter - 8 Bullet points
+
+- Headers in angle brackets (< >) are read from the standard directories.
+- Examples of standard header directories are `/usr/include` and `C:/MinGW/include`.
+- A library archive contains several object files.
+- You can create an archive with `ar -rcs libarchive.a file0.o file1.o...`.
+- Library archive names should begin `lib` and end `.a`.
+- If you need to link to an archive called `libfred.a`, use `-lfred`.
+- The `-L` flag should appear after the source files in the `gcc` command.
+
+
+
+Q: How do I know what the standard library directories are on my machine?
+
+A: You need to check the documentation for your compiler. On most Unix-style machines, the library directories include `/usr/lib` and `/usr/local/lib`.
+
+
+
+Q: When I try to put a library archive into my `/usr/lib` directory, it won't let me. Why is that?
+
+A: Almost certainly security. Many OS will prevent you from writing files to the standard directories in case you accidentally break one of the existing libraries.
+
+
+
+Q: is the `ar` format the same on all systems?
+
+A: No. Different platforms can have slightly different archive formats. And the object code the archive contains will be completely different for different OS.
+
+
+
+Q: If I've created a library archive, can I see what's inside it?
+
+A: Yes. `ar -t <filename>` will list the contents of the archive.
+
+
+
+Q: Are the object files in the archive linked together like an executable?
+
+A: No. The object files are stored in the archive as distinct files.
+
+
+
+Q: Can I put any kind of file in a library archive?
+
+A: No. The `ar` command will check the file type before including it.
+
+
+
+Q: Can I extract a single object file from an archivee?
+
+A: Yes. To extract the `encrypt.o` file from `libhfsecurity.a` , use `ar -x libhfsecurity.a encrypt.o`.
+
+
+
+Q: Why is it called "static" linking?
+
+A: Because it can't change once it's been done. When two files are linked together statically, it's like mixing coffee with milk: you can't separate them afterwards.
+
+
+
+An object file might need to call a function that's stored in some other file. The Linker links together the point in one file where the function call is made to the point in another file where the function lives.

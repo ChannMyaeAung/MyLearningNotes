@@ -4043,3 +4043,207 @@ Checksum is 107
 
 ```
 
+ #### Exercise - 2
+
+Working with archive. 
+
+encrypt.h
+
+```C
+void encrypt(char *message);
+```
+
+checksum.h
+
+```C
+int checksum(char *message);
+```
+
+
+
+bank_vault.c
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include "encrypt.h"
+#include "checksum.h"
+
+int main(void)
+{
+    char t[] = "abc";
+
+    encrypt(t);
+    printf("Encrypted to '%s'\n", t);
+    printf("Checksum is '%d'\n", checksum(t));
+    encrypt(t);
+    printf("Decrypted back to '%s'\n", t);
+    printf("Checksum is '%d'\n", checksum(t));
+    return 0;
+}
+```
+
+checksum.c
+
+```C
+#include <stdio.h>
+#include "checksum.h"
+
+int checksum(char *message)
+{
+    int c = 0;
+    while (*message)
+    {
+        c += c ^ (int)(*message);
+        message++;
+    }
+    return c;
+}
+```
+
+encrypt.c
+
+```C
+#include <stdio.h>
+#include "encrypt.h"
+
+void encrypt(char *message)
+{
+    while (*message)
+    {
+        *message = *message ^ 31;
+        message++;
+    }
+}
+```
+
+Makefile
+
+```makefile
+all: bank_vault
+
+bank_vault: bank_vault.o libhfsecurity.a 
+	gcc bank_vault.c -I. -L. -lhfsecurity -o bank_vault
+	
+bank_vault.o: bank_vault.c
+	gcc -c bank_vault.c -I. -o bank_vault.o
+
+encrypt.o: encrypt.c 
+	gcc -c encrypt.c -o encrypt.o
+
+checksum.o: checksum.c 
+	gcc -c checksum.c -o checksum.o
+
+
+libhfsecurity.a: encrypt.o checksum.o
+	ar -rcs libhfsecurity.a encrypt.o checksum.o
+```
+
+`-I.`, `-L.` - because the header files and the archive are in the current directory. Otherwise, we would have to specify the pathname like `-I../header_files/`.
+
+`-lhfsecurity` - We need `-lhfsecurity` because the archive is called `libhfsecurity.a`.
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_2
+$ make all
+gcc -c bank_vault.c -I. -I../header_files -o bank_vault.o
+gcc bank_vault.c -I. -L. -lhfsecurity -o bank_vault
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_2
+$ ./bank_vault
+Encrypted to '~}|'
+Checksum is '382'
+Decrypted back to 'abc'
+Checksum is '107'
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_2$ 
+
+
+```
+
+
+
+#### Exercise - 3
+
+`./header_files/hfcal.h`
+
+```C
+void display_calories(float weight, float distance, float coeff);
+```
+
+``hfcal.c`
+
+```C
+#include <stdio.h>
+#include "./header_files/hfcal.h"
+
+void display_calories(float weight, float distance, float coeff){
+    printf("Weight: %3.2f lbs\n", weight);
+    printf("Distance: %3.2f miles\n", distance);
+    printf("Calories burned: %4.2f cal\n", coeff * weight * distance);
+}
+```
+
+
+
+`elliptical.c`
+
+```C
+#include <stdio.h>
+#include "./header_files/hfcal.h"
+
+int main(){
+    display_calories(115.2, 11.3, 0.79);
+    return 0;
+}
+```
+
+- The test user weighs 115.2 pounds, and has done 11.3 miles on the elliptical.
+- For this machines, the coefficient is 0.79.
+
+
+
+Makefile
+
+```makefile
+all: elliptical
+
+elliptical: elliptical.o libhfcal.a
+	gcc elliptical.o -L./libs -lhfcal -o elliptical
+	
+elliptical.o: elliptical.c ./header_files/hfcal.h
+	gcc -I./header_files -c elliptical.c -o elliptical.o
+   
+hfcal.o: hfcal.c ./header_files/hfcal.h
+	gcc -I./header_files -c hfcal.c -o hfcal.o
+
+libhfcal.a: hfcal.o
+	ar -rcs ./libs/libhfcal.a hfcal.o
+```
+
+- When creating `hfcal.o`, the `hfcal.c` program needs to know where the header file is. That's why we have to specify the correct pathnames for it. In this case since I am saving the header files in a directory called `header_files` so I have to specify it like `./header_files/`.
+- `-c` means "just create the object file; don't link it."
+- `libhfcal.a`: `./libs/` means the archive needs to go into the `./libs` directory. The directory must be created first otherwise the compiler will complain. `libhfcal.a` The library needs to be named `lib... .a`. So, the correct command would be `./libs/libhfcal.a`.
+- When creating the final executable called `elliptical`, we have to include the necessary object files, in this case `elliptical.o`, followed by `-L./libs` which tells the compiler where the library is stored, followed by `-lhfcal` which tells the compiler to look for `libhfcal.a` and then followed by the output command and the final executable name, in this case `-o elliptical`.
+- We are building the program using `elliptical.o` and the library.
+
+
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ make all
+ar -rcs ./libs/libhfcal.a hfcal.o
+gcc elliptical.o -L./libs -lhfcal -o elliptical
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ ./elliptical
+Weight: 115.20 lbs
+Distance: 11.30 miles
+Calories burned: 1028.39 cal
+
+```
+
