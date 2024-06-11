@@ -3787,3 +3787,195 @@ A: Because it can't change once it's been done. When two files are linked togeth
 
 
 An object file might need to call a function that's stored in some other file. The Linker links together the point in one file where the function call is made to the point in another file where the function lives.
+
+
+
+```markd
+We've already seen that we can build programs using different pieces of object code. We've created .o files and .a archives and we've linked them together.
+but once they're linked, we can't change them as they are static.
+Once we've created a single executable file from those separate pieces of object code, we really have no way of changing any of the ingredients without rebuilding the whole program.
+```
+
+
+
+#### Dynamic linking happens at runtime
+
+The reason we can't change the different pieces of object code in an executable file is because they are all contained in a single file. They were statically linked together when the program was compiled.
+
+But if our program wasn't just a single file - if our program was made up of lots of separate files that only joined together when the program was run- we would avoid the problem.
+
+
+
+```markdo
+The trick, then, is to find a way of storing pices of object code in separate files and then dynamically linking them together only when the program runs.
+```
+
+
+
+#### Dynamic libraries are object files on steroids
+
+- Dynamic libraries are similar to those .o object files but they are not quite the same.
+- Like an archive file, a dynamic library can be built from several .o object files, but unlike an archive, the object files are properly linked together in a dynamic library to form a single piece of object code.
+- A dynamic library contains extra information that the OS will need to link the library to other things.
+- At the heart of a dynamic library is a single piece of object code.
+- The library is built from one or more .o files.
+
+
+
+#### How do we create our own dynamic libraries
+
+#### First, create an object file
+
+If we're going to convert the `hfcal.c` code into a dynamic library, then we need to begin by compiling it into a .o object file, like this:
+
+**The exercise is in `HFCExercises.md`.**
+
+```makefille
+gcc -I/header_files -fPIC -c hfcal.c -o hfcal.o
+```
+
+- `-I/header_files` - The `hfcal.h` header is in `./header_files`.
+- `-c` - means "Don't link the code".
+- `-fPIC`- This tells `gcc` that we want to create `position-independent code`.
+- Position-independent code can be moved around in memory.
+- Some OS and processors need to build libraries from position-independent code so that they can decide at runtime where they want to load it in memory.
+- The truth is that on most systems we don't need to specify this option.
+
+```markd
+What is position-independent code?
+
+Position-independent code is code that doesn't mind where the computer loads it into memory. Imagine you had a dynamic library that expected to find the value of some piece of global data 500 bytes away from where the library is loaded. Bad things would happen if the OS decided to load the library somewhere else in memory. If the compiler is told to create position-independent code, it will avoid problems like this.
+
+Some OS, like Windows, use a technique called memory mapping when loading dynamic libraries, which means all code is effectively position-independent. If you compile your code on Windows, you might find that gcc will give you a warning that the -fPIC option is not needed.
+```
+
+
+
+#### What you call your dynamic library depends on your platform
+
+- Dynamic libraries are available on most OS and they all work in pretty much the same way but what they're called can vary a lot.
+- On Windows, dynamic libraries are usually called `dynamic link libraries` and they have the extension `.dll`.
+- On Linux and Unix, they're `shared object files (.so)`.
+- On Mac, they're just called `dynamic libraries (.dylib)`.
+
+```makefile
+gcc -shared hflocal.o -o /libs/libhfcal.so
+```
+
+- `C:\libs\hfcal.dll` - MinGW on Windows
+- `/libs/libhfcal.dll.a` - Cygwin on Windows
+- `/libs/libhfcal.dylib` - Mac
+
+
+
+```markdo
+The -shared option tells gcc that we want to convert a .o object file into a dynamic library.
+When the compiler creates the dynamic library, it will store the name of the library inside the file.
+So, if you create a library called libhfcal.so on a Linux machine, the libhfcal.so file will remember that its library name is hfcal.
+Why is that important? It means that if we compile a library with one name, we can't just rename the file afterwards.
+If we need to rename a library, recompile it with the new name.
+```
+
+
+
+#### Compiling the elliptical program from `HFCExercises.md`
+
+- Once we've created the dynamic library, we can use it just like a static library. 
+
+```makefile
+gcc -I./header_files -c elliptical.c -o elliptical.o
+gcc elliptical.o -L./libs -lhfcal -o elliptical
+```
+
+- Even though these are the same commands we would use if `hfcal` were a static archive, the compile will work differently.
+- Because the library is dynamic, the compiler won't include the library code into the executable file. Instead, it will insert some placeholder code that will track down the library and link to it at runtime.
+
+
+
+If we want to store it in standard libraries directory,
+
+```makefile
+gcc -shared hfcal.o -o /libs/libhfcal.so
+
+gcc -I\include -c elliptical.c -o elliptical.o
+
+gcc elliptical.o -L\libs -lhfcal -o elliptical
+```
+
+
+
+Makefile
+
+```makefile
+all: elliptical
+
+elliptical: elliptical.o libhfcal.so  
+	gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+	
+elliptical.o: elliptical.c ./header_files/hfcal.h
+	gcc -I./header_files -c elliptical.c -o elliptical.o
+
+hfcal.o: hfcal.c ./header_files/hfcal.h
+	gcc -I./header_files -c hfcal.c -o hfcal.o
+
+libhfcal.so: hfcal.o 
+	gcc -shared hfcal.o -o ./libs/libhfcal.so
+```
+
+
+
+**Important:**
+
+- When we link against a shared library, the runtime linker needs to be able to find that library at runtime. 
+
+- By default, it looks in several standard locations (like `/lib` and `/usr/lib`) but it won't look in your `./libs` directory.
+
+- We can tell the runtime linker to look in `./libs` by setting the `LD_LIBRARY_PATH` environment variable to include `./libs`. 
+
+  ```makeflie
+  export LD_LIBRARY_PATH=./libs:$LD_LIBRARY_PATH
+  ./elliptical
+  
+  ```
+
+  ```bash
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ ./elliptical
+  Weight: 115.20 lbs
+  Distance: 11.30 miles
+  Calories burned: 1028.39 cal
+  ```
+
+  
+
+  This command will add `./libs` to the list of directories that the runtime linker searches. The `:$LD_LIBRARY_PATH` part ensures that the linker will still search all the standard locations as well.
+
+- If we want to avoid having to set `LD_LIBRARY_PATH` every time, we can add `-Wl,-rpath,./libs` option when we link `elliptical` .
+
+  ```bash
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ make all
+  gcc -shared hfcal.o -o ./libs/libhfcal.so
+  gcc elliptical.o -L./libs -lhfcal -o elliptical
+  
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ ./elliptical
+  ./elliptical: error while loading shared libraries: libhfcal.so: cannot open shared object file: No such file or directory
+  
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ make all
+  gcc -shared hfcal.o -o ./libs/libhfcal.so
+  gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+  
+  chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+  $ ./elliptical
+  Weight: 115.20 lbs
+  Distance: 11.30 miles
+  Calories burned: 1028.39 cal
+  ```
+
+  
+
+- This will embed `./libs` as a runtime search path in the `elliptical` executable itself.

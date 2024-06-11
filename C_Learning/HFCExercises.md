@@ -4247,3 +4247,197 @@ Calories burned: 1028.39 cal
 
 ```
 
+But what if we want to output it in kilograms and kilometres.
+
+
+
+
+
+#### Compiling the elliptical program with dynamic libraries
+
+- Once we've created the dynamic library, we can use it just like a static library. 
+
+```makefile
+gcc -shared hfcal.o -o ./libs/libhfcal.so
+gcc -I./header_files -c elliptical.c -o elliptical.o
+gcc elliptical.o -L./libs -lhfcal -o elliptical
+```
+
+- Even though these are the same commands we would use if `hfcal` were a static archive, the compile will work differently.
+- Because the library is dynamic, the compiler won't include the library code into the executable file. Instead, it will insert some placeholder code that will track down the library and link to it at runtime.
+
+
+
+Makefile
+
+```makefile
+all: elliptical
+
+elliptical: elliptical.o libhfcal.so  
+	gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+	
+elliptical.o: elliptical.c ./header_files/hfcal.h
+	gcc -I./header_files -c elliptical.c -o elliptical.o
+
+hfcal.o: hfcal.c ./header_files/hfcal.h
+	gcc -I./header_files -c hfcal.c -o hfcal.o
+
+libhfcal.so: hfcal.o 
+	gcc -shared hfcal.o -o ./libs/libhfcal.so
+```
+
+
+
+**Important:**
+
+- When we link against a shared library, the runtime linker needs to be able to find that library at runtime. 
+
+- By default, it looks in several standard locations (like `/lib` and `/usr/lib`) but it won't look in your `./libs` directory.
+
+- We can tell the runtime linker to look in `./libs` by setting the `LD_LIBRARY_PATH` environment variable to include `./libs`. 
+
+  ```makeflie
+  export LD_LIBRARY_PATH=./libs:$LD_LIBRARY_PATH
+  ./elliptical
+  ```
+
+  This command will add `./libs` to the list of directories that the runtime linker searches. The `:$LD_LIBRARY_PATH` part ensures that the linker will still search all the standard locations as well.
+
+- If we want to avoid having to set `LD_LIBRARY_PATH` every time, we can add `-Wl,-rpath,./libs` option when we link `elliptical` .
+
+- This will embed `./libs` as a runtime search path in the `elliptical` executable itself.
+
+- There's no need to do this if the library is somewhere standard, like `/usr/lib`.
+
+
+
+Code Execution: 
+
+Before adding `-Wl,-rpath,./libs`, it is resulting in error. 
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ make all
+gcc -shared hfcal.o -o ./libs/libhfcal.so
+gcc elliptical.o -L./libs -lhfcal -o elliptical
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ ./elliptical
+./elliptical: error while loading shared libraries: libhfcal.so: cannot open shared object file: No such file or directory
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ make all
+gcc -shared hfcal.o -o ./libs/libhfcal.so
+gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ ./elliptical
+Weight: 115.20 lbs
+Distance: 11.30 miles
+Calories burned: 1028.39 cal
+
+```
+
+Another way
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3$ ./elliptical
+Weight: 115.20 lbs
+Distance: 11.30 miles
+Calories burned: 1028.39 cal
+```
+
+
+
+What if we want to ship our gym equipment to the UK and we have to display it in kilograms and kilometres.
+
+`hfcal_UK.c`
+
+```C
+#include <stdio.h>
+#include "./header_files/hfcal.h"
+
+void display_calories_UK(float weight, float distance, float coeff)
+{
+    printf("Weight: %3.2f kg\n", weight / 2.2046);
+    printf("Distance: %3.2f km\n", distance * 1.609344);
+    printf("Calories burned: %4.2f cal\n", coeff * weight * distance);
+}
+```
+
+`hfcal.h`
+
+```C
+void display_calories(float weight, float distance, float coeff);
+void display_calories_UK(float weight, float distance, float coeff);
+```
+
+
+
+`elliptical.c`
+
+```C
+#include <stdio.h>
+#include "./header_files/hfcal.h"
+
+int main()
+{
+    puts("US elliptical:");
+    display_calories(115.2, 11.3, 0.79);
+    puts("UK elliptical:");
+    display_calories_UK(115.2, 11.3, 0.79);
+    return 0;
+}
+```
+
+Makefile
+
+```makefile
+all: elliptical
+
+elliptical: elliptical.o libhfcal.so  
+	gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+	
+elliptical.o: elliptical.c ./header_files/hfcal.h
+	gcc -I./header_files -c elliptical.c -o elliptical.o
+
+hfcal.o: hfcal.c ./header_files/hfcal.h
+	gcc -I./header_files -c hfcal.c -o hfcal.o
+
+hfcal_UK.o: hfcal_UK.c ./header_files/hfcal.h 
+	gcc -I./header_files -c hfcal_UK.c -o hfcal_UK.o 
+
+libhfcal.so: hfcal.o hfcal_UK.o
+	gcc -shared hfcal.o hfcal_UK.o -o ./libs/libhfcal.so
+```
+
+
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ make all
+
+gcc -I./header_files -c hfcal_UK.c -o hfcal_UK.o 
+gcc -shared hfcal.o hfcal_UK.o -o ./libs/libhfcal.so
+gcc elliptical.o -L./libs -lhfcal -Wl,-rpath,./libs -o elliptical 
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3
+$ ./elliptical
+
+US elliptical:
+Weight: 115.20 lbs
+Distance: 11.30 miles
+Calories burned: 1028.39 cal
+UK elliptical:
+Weight: 52.25 kg
+Distance: 18.19 km
+Calories burned: 1028.39 cal
+
+chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3$ 
+
+```
+
