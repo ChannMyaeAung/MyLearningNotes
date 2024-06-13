@@ -3476,6 +3476,12 @@ int main(void){
 }
 ```
 
+To get the number of elements in the array, instead of manually typing it, we can divide **the total size of the array** by **the size of one element**.
+
+```C
+int num_elements = sizeof(scores) / sizeof(scores[0]);
+```
+
 
 
 Code Execution:
@@ -3562,13 +3568,13 @@ functions.c
 ```C
 void dump(response r){
     printf("Dear %s,\n", r.name);
-    puts("Unfortunately you last data contacted us to");
+    puts("Unfortunately your last data contacted us to");
     puts("say that they will not be seeing you again");
 }
 
 void second_chance(response r){
     printf("Dear %s,\n", r.name);
-    puts("Good news: you last data has asked us to");
+    puts("Good news: your last data has asked us to");
     puts("arrange another meeting. Please call ASAP.");
 }
 
@@ -4440,4 +4446,8 @@ Calories burned: 1028.39 cal
 chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3$ 
 
 ```
+
+---
+
+### Chapter 9 - processes and system calls
 

@@ -3979,3 +3979,93 @@ libhfcal.so: hfcal.o
   
 
 - This will embed `./libs` as a runtime search path in the `elliptical` executable itself.
+
+
+
+#### Bullet Points - Chapter 8
+
+- Dynamic libraries are linked to programs at run time.
+- Dynamic libraries are created from one or more object files.
+- The `-shared` compiler option creates a dynamic library.
+- Dynamic libraries have different names on different systems.
+- The `ar` command creates a library archive of object files.
+- `# include <>` looks in standard directories such as `/usr/include`.
+- `gcc -shared` converts object files into dynamic libraries.
+- Dynamic libraries have `.so`, `.dylib`, `.dll`, or `.dll.a` extensions.
+- `-l<name>` links to a file in standard directories such as `/usr/lib`.
+- `-I<name>` adds a directory to the list of standard include directories.
+- `-L<name>` adds a directory to the list of standard library directories.
+- Library archives have names like `libsomething.a`.
+- Library archives are statically linked.
+
+
+
+Q: Why are dynamic libraries so different on different OS?
+
+A: OS like to optimize the way they load dynamic libraries, so they've each evolved different requirements for dynamic libraries.
+
+
+
+Q: I tried to change the name of my library by renaming the file, but the compiler couldn't find it anymore. Why not?
+
+A: When the compiler creates a dynamic library, it stores the name of the library inside the file. If you rename the file, it will then have the wrong name inside the file and will get confused. If you want to change its name, you should recompile the library.
+
+
+
+Q: Why doesn't Linux just store library pathnames in executables? That way, you wouldn't need to set `LD_LIBRARY_PATH`?
+
+A: It was a design choice. By not storing the pathname, it gives you a lot more control over which version of a library a program can use--- which is great when you're developing new libraries.
+
+
+
+Q: Which is better? Static or dynamic linking?
+
+A: It depends. Static linking means you get small, fast executable file that is easier to move from machine to machine. Dynamic linking means that you can configure the program at run time more.
+
+
+
+Q: If different programs use the same dynamic library, does it get loaded more than once? Or is it shared in memory?
+
+A: That depends on the OS. Some OS will load separate copies for each process. Others load shared copies to save memory.
+
+
+
+Q: Are dynamic libraries the best way of configuring an application?
+
+A: Usually, it's simpler to use configuration files. But if you're going to connect to some external device, you'd normally need separate dynamic libraries to act as drivers.
+
+---
+
+
+
+### Chapter 9 - processes and system calls
+
+#### System calls are your hotline to the OS
+
+- C programs rely on the OS for pretty much everything.
+
+- They make **system calls** if they want to talk to the hardware. 
+
+- System calls are just functions that live inside the OS's kernel.
+
+- Most of the code in the C Standard Library depends on them. 
+
+- Whenever you call `printf()` to display something on the command line, somewhere at the back of things, a system call is made to the OS to send the string of text to the screen.
+
+- `system()` takes a single string parameter and executes it as if we had typed it on the command line:
+
+  ```C
+  system("dir D:");
+  // This will print out the contents of the D: drive.
+  
+  system("gedit");
+  // This will launch an editor on Linux
+  
+  system("say 'End of line'");
+  // This will read to you on the Mac.
+  
+  ```
+
+- The `system()` function is an easy way of running other programs from our code --- particularly if we are creating a quick prototype and we'd sooner call external programs rather than write lots and lots of C code.
+
+  
