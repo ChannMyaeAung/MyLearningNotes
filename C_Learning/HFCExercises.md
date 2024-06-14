@@ -3239,6 +3239,8 @@ void find(int (*match)(char*));
 
 ```
 
+ `void find(int (*match)(char *))` -`find` is a function that takes one argument: a pointer to a function. This function, in turn, accepts a `char *` as its parameter and returns an `int`.
+
 functions.c
 
 ```C
@@ -4447,7 +4449,142 @@ chan@CMA:~/C_Programming/HFC/chapter_8/exercise_3$
 
 ```
 
+
+
+### Suggestions for Improvement
+
+1. **Directory Structure**: It's a good practice to place your object files in a separate directory (e.g., `obj`) and your source files in another (e.g., `src`). This keeps your project organized.
+
+2. **Compiler Flags**: Consider adding compiler flags for warnings and debugging. For example:
+
+   ```makefile
+   CFLAGS = -Wall -Wextra -g
+   ```
+
+3. **Phony Targets**: Add `.PHONY` to indicate non-file targets to avoid conflicts with files named `all` or `clean`:
+
+   ```makefile
+   .PHONY: all clean
+   ```
+
+4. **Clean Target**: Add a `clean` target to remove compiled files and the executable:
+
+   ```makefile
+   clean:
+       rm -f *.o ./libs/libfunctions.a practice
+   ```
+
+5. **Library Path**: Use a variable for the library path to make it easier to change:
+
+   ```makefile
+   LIBDIR = ./libs
+   ```
+
+### Updated Makefile
+
+Here’s an updated version of your Makefile with these improvements:
+
+```makefile
+CC = gcc
+CFLAGS = -Wall -Wextra -g
+LIBDIR = ./libs
+
+all: practice
+
+practice: practice.o $(LIBDIR)/libfunctions.a
+	$(CC) practice.o -L$(LIBDIR) -lfunctions -o practice
+
+practice.o: practice.c practice.h
+	$(CC) $(CFLAGS) -c practice.c
+
+functions.o: functions.c practice.h
+	$(CC) $(CFLAGS) -c functions.c
+
+functions_2.o: functions_2.c practice.h
+	$(CC) $(CFLAGS) -c functions_2.c
+
+$(LIBDIR)/libfunctions.a: functions.o functions_2.o
+	mkdir -p $(LIBDIR)
+	ar -rcs $(LIBDIR)/libfunctions.a functions.o functions_2.o
+
+.PHONY: clean
+clean:
+	rm -f *.o $(LIBDIR)/libfunctions.a practice
+```
+
+### Explanation
+
+1. **Variables**: Using `CC` for the compiler and `CFLAGS` for compiler flags makes it easy to update these settings.
+2. **Library Path**: The `LIBDIR` variable centralizes the library path, making it easy to change.
+3. **Phony Target**: `.PHONY: clean` ensures the `clean` target is always run when called.
+4. **Clean Target**: The `clean` target removes object files, the library, and the executable.
+
+
+
+
+
 ---
 
 ### Chapter 9 - processes and system calls
+
+#### Chapter 9 - Exercise 1
+
+main.c
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+char *now(){
+    time_t t;
+    time(&t);
+    return asctime(localtime(&t));
+}
+
+int main(){
+    char comment[80];
+    char cmd[120];
+    fgets(comment, 80, stdin);
+    sprintf(cmd, "echo '%s %s' >> reports.log", comment, now());
+    
+    system(cmd);
+    return 0;
+}
+```
+
+Code Breakdown:
+
+- `fgets(comment, 80, stdin)` - Using `fgets` for unstructured text.
+- `sprintf(cmd, "echo '%s %s' >> reports.log", comment, now())` - 
+  - `sprintf` will print the characters to a string.
+  - `cmd` - The formatted string will be stored in the `cmd` array.
+  - `"echo '%s %s' >> reports.log"` - This is the command template. The command will append the comment to a file.
+  - `comment` - The comment will appear first.
+  - `now()` - The timestamp appears second.
+- `system(cmd)` - This runs the contents of the `cmd` string.
+
+Code Execution:
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_9/exercise_1
+$ ./main
+Checked in Crom - a compound interest program.
+
+chan@CMA:~/C_Programming/HFC/chapter_9/exercise_1
+$ ./main
+Blue Leader reports breach in jet walls.
+
+chan@CMA:~/C_Programming/HFC/chapter_9/exercise_1$ 
+```
+
+reports.log
+
+```markdown
+Checked in Crom - a compound interest program.
+ Fri Jun 14 22:54:34 2024
+
+Blue Leader reports breach in jet walls.
+ Fri Jun 14 22:55:34 2024
+```
 
