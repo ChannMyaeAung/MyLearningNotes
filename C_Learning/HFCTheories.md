@@ -4223,9 +4223,7 @@ In C, `sprintf` is a function used to format and store a series of characters an
 
 ### Prototype
 
-```
-c
-Copy code
+```C
 int sprintf(char *str, const char *format, ...);
 ```
 
@@ -4314,3 +4312,172 @@ int main() {
 ```
 
 This ensures that the formatted string does not exceed the size of the buffer, thus preventing buffer overflow.
+
+
+
+### `localtime`
+
+**Prototype**:
+
+```C
+struct tm *localtime(const time_t *timep);
+```
+
+**Function**:
+
+- **Purpose**: Converts a `time_t` value (which represents calendar time) to a `struct tm` representing local time.
+- **Parameters**: Takes a pointer to a `time_t` object.
+- **Return Value**: Returns a pointer to a `struct tm` that represents the local time.
+
+**Details**:
+
+- The `time_t` type is typically used to store the number of seconds since the Epoch (00:00:00 UTC on 1 January 1970).
+- The `struct tm` structure holds the time broken down into its components (e.g., year, month, day, hour, minute, second).
+- `localtime` adjusts the time for the local time zone and Daylight Saving Time if applicable.
+
+### Example Usage of `localtime`:
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    time_t t;
+    time(&t); // Get the current calendar time
+    struct tm *local = localtime(&t); // Convert to local time
+
+    printf("Local time: %s", asctime(local));
+    return 0;
+}
+```
+
+### `asctime`
+
+**Prototype**:
+
+```C
+char *asctime(const struct tm *tm);
+```
+
+**Function**:
+
+- **Purpose**: Converts a `struct tm` representing a broken-down time to a human-readable string.
+- **Parameters**: Takes a pointer to a `struct tm` object.
+- **Return Value**: Returns a pointer to a statically allocated string representing the time in the form: "Www Mmm dd hh:mm yyyy\n".
+
+**Details**:
+
+- The `asctime` function formats the `struct tm` into a fixed 26-character string.
+- This string includes the day of the week, month, day of the month, hour, minute, second, and year.
+
+### Example Usage of `asctime`:
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    time_t t;
+    time(&t); // Get the current calendar time
+    struct tm *local = localtime(&t); // Convert to local time
+
+    char *time_str = asctime(local); // Convert to string
+    printf("Formatted local time: %s", time_str);
+    return 0;
+}
+```
+
+### Combined Example
+
+Here is how both functions work together in our code:
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+char *now() {
+    time_t t;
+    time(&t); // Get the current calendar time
+    return asctime(localtime(&t)); // Convert to local time and then to string
+}
+
+int main() {
+    char comment[80];
+    char cmd[120];
+
+    fgets(comment, 80, stdin); // Read a comment from the user
+    sprintf(cmd, "echo '%s %s' >> reports.log", comment, now()); // Format the command string
+    system(cmd); // Execute the command to append to reports.log
+
+    return 0;
+}
+```
+
+### Summary:
+
+- **`localtime`**: Converts calendar time (`time_t`) to local time (`struct tm`).
+- **`asctime`**: Converts local time (`struct tm`) to a human-readable string.
+
+
+
+#### Downside to the `system()` function
+
+It's quick and easy tot use but it's also kind of sloppy.
+
+The code worked by stitching together a string containing a command like this:
+
+```C
+echo '<comment> <timestamp>' >> reports.log
+```
+
+
+
+But what if someone entered a comment like this?
+
+```C
+echo '&& ls / && echo <timestamp>' >> reports.log
+```
+
+
+
+By injecting some command-line code into the text, one can make the program run whatever code he likes:
+
+
+
+```bash
+chan@CMA:~/C_Programming/HFC/chapter_9/exercise_1
+$ ./main
+'&& ls / && echo' 
+
+bin    dev   lib    libx32	mnt   root  snap      sys  var
+boot   etc   lib32  lost+found	opt   run   srv       tmp
+cdrom  home  lib64  media	proc  sbin  swapfile  usr
+sh: 3: echo
+ Sun Jun 16 21:49:14 2024
+: not found
+
+```
+
+
+
+#### Security's not the only problem
+
+This example injects a piece of code to list the contents of the root directory, but it could have deleted files or launched a virus. But we shouldn't just worry about security:
+
+- What if the comments contain apostrophes? 
+
+  This might break the quotes in the command.
+
+- What if the PATH variable causes the `system()` function to call the wrong program?
+
+- What if the program we're calling needs to have a specific set of environment variables set up first?
+
+
+
+The `system()` function is easy to use, but most of the time, we're going to need something more structured --- some way of calling a specific program, with a set of command-line arguments and maybe even some environment variables.
+
+**System calls are the functions that our program uses to talk to the kernel.**
+
+**Note - detailed explanations of the kernel are in the `essentials.md` file inside the CS folder.**
+

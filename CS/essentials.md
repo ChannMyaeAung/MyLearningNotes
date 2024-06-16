@@ -1,6 +1,22 @@
 # Computer Science Essentials
 
+### What is the kernel?
 
+On most machines, system calls are functions that live inside the `kernel` of the operating system. But what is the kernel? We never actually see the kernel on the screen but it's always there, controlling our computer. The kernel is the most important program on our computer, and it's in charge of **three things**:
+
+#### Processes
+
+No program can run on the system without the kernel loading it into memory. The kernel creates processes and makes sure they get the resources they need. The kernel also watches for processes that become too greedy or crash.
+
+#### Memory
+
+Our machine has a limited supply of memory, so the kernel has to carefully ration the amount of memory each process can take. The kernel can increase the **virtual memory size** by quietly loading and unloading sections of memory to disk.
+
+#### Hardware
+
+The kernel uses device drivers to talk to the equipment that's plugged into the computer. Our program can use the keyboard and the screen and the graphics processor without knowing too much about them, because the kernel talks to them on our behalf.
+
+**System calls are the functions that our program uses to talk to the kernel.**
 
 ## ASCII
 
