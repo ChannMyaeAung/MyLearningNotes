@@ -4481,3 +4481,175 @@ The `system()` function is easy to use, but most of the time, we're going to nee
 
 **Note - detailed explanations of the kernel are in the `essentials.md` file inside the CS folder.**
 
+
+
+#### The `exec()` functions give you more control
+
+- When we call the `system()` function, the OS has to interpret the command string and decide which programs to run and how to run them.
+- And that's where the problem is: the OS needs to interpret the string and we've already seen how easy it is to get that wrong.
+- The solution is to remove the **ambiguity** and tell the OS precisely which program we want to run. That's what the the `exec()` functions are for.
+
+
+
+#### `exec()` functions replace the current process
+
+- A process is just a program running in memory.
+
+- If we type **taskmgr** on Windows or `ps -ef` on most other machines, we'll see the processes running on our system.
+
+- The OS tracks each process with a number called the **process identifier (PID).**
+
+  ```bash
+  chan@CMA:~$ ps -ef
+  UID          PID    PPID  C STIME TTY          TIME CMD
+  root           1       0  0 14:18 ?        00:00:01 /sbin/init splash
+  root           2       0  0 14:18 ?        00:00:00 [kthreadd]
+  ....
+  ```
+
+​	![](/home/chan/Pictures/Screenshots/Screenshot from 2024-06-17 17-47-29.png)
+
+- The `exec()` functions **replace the current process** by running some other program.
+- We can say which *command-line-arguments* or *environment variables* to use, and when the new program starts, it will have exactly the same *PID* as the old one.
+- It's like a relay race, where your program hands over its process to the new program.
+
+#### Two groups of `exec()` functions:
+
+- The list functions
+- The array functions
+- The `exec()` functions are in `unistd.h`.
+
+
+
+#### The list functions: `execl()`, `execlp()`, `execle()`
+
+- The list functions accept command-line arguments as a list of parameters like this:
+
+- **The program**
+
+  This might be the full pathname of the program -- `execl() / execle()` -- or just a command name to search for --- `execlp()` --- but the first parameter tells the `exec()` function what program it will run.
+
+- **The command-line arguments**
+
+  We need to list one by one the command-line arguments we want to use. The first command-line argument is always the name of the program. That means the first two parameters passed to a list version of `exec()` should always be the same string.
+
+- **NULL**
+
+  After the last command-line argument, we need a **NULL**. This tells the function that there are no more arguments.
+
+- **Environment variables (maybe)**
+
+  If we call an `exec()` function whose name ends with `...e()`, we can also pass an array of environment variables. This is just an array of strings like `"POWER=4"`, `"SPEED=17"`, `"PORT=OPEN"`, ...
+
+```C
+execl("/home/flynn/clu", "/home/flynn/clu", "paranoids", "contract", NULL);
+// execl = a LIST of arguments
+// all the parameters except the first one are the arguments.
+// The second parameter should be the same as the first.
+// We should end the list with NULL.
+
+
+execlp("clu", "clu", "paranoids", "contract", NULL);
+// execLP = a LIST of arguments + search on the PATH.
+
+
+execle("/home/flynn/clu", "/home/flynn/clu", "paranoids", "contract", NULL, env_vars);
+
+// execlE = a LIST of arguments + ENVIRONMENT variables.
+// env_vars = an array of strings containing environment variables.
+```
+
+#### The array functions: `execv()`, `execvp()`, `execve()`
+
+If we already have our command-line arguments stored in an array, we might find these two versions easier to use:
+
+```C
+execv("/home/flynn/clu", my_args);
+
+// execV = an array or VECTOR of arguments.
+
+execvp("clu", my_args);
+
+// execVP = an array/VECTOR of arguments + search on the PATH.
+
+// my_args = The arguments need to stored in the my_args string array.
+```
+
+The only difference between these two functions is that `execvp` will search for the program using the PATH variable.
+
+#### How to remember the `exec()` functions
+
+`execl` - the list functions
+
+`execv`- the array functions
+
+We can see `l` and `v` at the end of `exec` where `l` means lists and `v` means vector (array). 
+
+- Each `exec()` function can be followed by one or two characters that must be `l`, `v`, `p` or `e`. The characters tell us which feature we want to use.
+
+```markdown
+execle = exec + l + e = LIST of arguments + an ENVIRONMENT
+```
+
+- The `l` and `v` characters always come before `p` and `e` , and the `p` and `e` characters are optional.
+
+
+
+| Uses                 | Character |
+| -------------------- | --------- |
+| List of args         | `l`       |
+| Array/vector of args | `v`       |
+| Search the path      | `p`       |
+| Environment vars     | `e`       |
+
+
+
+exec --> l or v --> p or e
+
+- All `exec()` functions begin with `exec`.
+- `l` - take a list of arguments
+- `v` - Take a vector/array of arguments
+- `p` - Search for the program on the path.
+- `e` - Use an array of environment strings.
+- We don't have to include `p` or `e`.
+
+
+
+#### Passing environment variables
+
+- Every process has a set of environment variables. 
+- These are the values we see when we type `set` or `env` on the command line and they usually tell the process useful information, such as where to find the commands.
+- C programs can read environment variables with the `getenv()` system call.
+- To use `exec()` functions, we need to include `unistd` first like `#include <unistd.h>`.
+
+```C
+char *my_env[] = {"JUICE=peach and apple", NULL};
+```
+
+- We can create a set of environment variables as an array of string pointers.
+- Each variable in the environment is name=value.
+- The last item in the array must be NULL.
+
+```C
+execle("diner_info", "diner_info", "4", NULL, my_env)
+```
+
+
+
+- The `execle()` function will set the command-line arguments and environment variables and then replace the current process with `diner_info`.
+
+​	`diner_info.c`
+
+```C
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]){
+    printf("Diners: %s\n", argv[1]);
+    printf("Juice: %s\n", getenv("JUICE"));
+    return 0;
+}
+```
+
+- `getenv()` in `stdlib.h` lets us read environment variables.

@@ -702,3 +702,83 @@ To determine what package is responsible for the installation of a particular fi
 
 E.g rpm -qf /usr/bin/vim
 
+
+
+To install the "Space Mono" font on Ubuntu and use it in Visual Studio Code (VS Code), you can follow these steps:
+
+### Step 1: Download and Extract the Font
+
+1. **Download the font**: You've already downloaded the "Space Mono" font as a zip file.
+
+2. Extract the zip file:
+
+   - Open the terminal and navigate to the directory where the zip file is located.
+
+   - Use the `unzip`command to extract the zip file. For example:
+
+     ```sh
+     unzip space-mono.zip -d space-mono
+     ```
+
+### Step 2: Install the Font
+
+1. Create a directory for the font: 
+
+   ​	Fonts can be installed either system-wide or for a single user. For simplicity, we'll install it for a single user.
+
+   ```sh
+   mkdir -p ~/.local/share/fonts
+   ```
+
+2. Copy the font files: Move the extracted font files (usually  `.ttf`or  `.otf` files) to the fonts directory.
+
+   ```sh
+   cp space-mono/*.ttf ~/.local/share/fonts/
+   ```
+
+3. Update the font cache:
+
+   ```sh
+   fc-cache -fv
+   ```
+
+### Step 3: Configure VS Code to Use the Font
+
+1. **Open VS Code**: Launch Visual Studio Code.
+
+2. Open Settings:
+
+   - You can open the settings by clicking on the gear icon in the lower left corner and then selecting "Settings".
+   - Alternatively, you can press `Ctrl` + `,` to open the settings directly.
+
+3. **Search for Font Family**: In the search bar at the top of the settings window, type `Font Family`.
+
+4. Set the Font Family: In the "Editor: Font Family" field, add `"Space Mono"`at the beginning of the list of fonts. Make sure to enclose the font name in double quotes. For example:
+
+   ```tex
+   "Space Mono", Consolas, "Courier New", monospace
+   ```
+
+### Verifying the Installation
+
+1. **Restart VS Code**: Sometimes, VS Code needs to be restarted to apply the new font settings.
+2. **Check the Font**: Open any file in VS Code and check if the font has changed to "Space Mono".
+
+### Example Commands
+
+Here is a summary of the commands you might use in the terminal:
+
+```shell
+cd ~/Downloads
+unzip space-mono.zip -d space-mono
+mkdir -p ~/.local/share/fonts
+cp space-mono/*.ttf ~/.local/share/fonts/
+fc-cache -fv
+```
+
+### Troubleshooting
+
+- **Font not appearing**: If the font does not appear in VS Code, ensure that the font files are correctly copied to the `~/.local/share/fonts` directory and that the font cache is updated.
+- **Correct font name**: Double-check that the font name in VS Code settings matches the actual font name. Sometimes the name in the settings might need to match exactly, including capitalization.
+
+By following these steps, you should be able to install the "Space Mono" font on Ubuntu and configure VS Code to use it.
