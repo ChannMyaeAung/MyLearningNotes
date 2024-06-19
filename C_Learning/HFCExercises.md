@@ -4609,3 +4609,93 @@ A: No. The `system()` function -- like all system calls -- doesn't live in our p
 Q: So, when I make a system call, I'm making a call to some external piece of code, like a library?
 
 A: Kind of. But the details depend on the OS. On some OS, the code for a system call lives inside the kernel of the OS. On other OS, it might simply be stored in some dynamic library.
+
+
+
+#### Exercise 2 - Chapter 9 (`exec` functions)
+
+`example.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(){
+    printf("PID of example.c = %d\n", getpid());
+    
+    // arguments for the new program
+    char *args[] = {"./hello", "Hello", "C", "Programming", NULL};
+    
+    // Replace the current process image with a new one
+    if(execv("./hello", args) == -1){
+        // if execv fails, print this error.
+        perror("execv failed");
+    }
+    printf("Back to example.c");
+    return 0;
+}
+
+```
+
+`hello.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]){
+    printf("We are in Hello.c\n");
+    printf("PID of hello.c = %d\n", getpid());
+    
+    // printing the argument counts.
+    printf("argc = %d\n", argc);
+    
+    // Print the arguments passed to this program.
+    for(int i = 0; i < argc; i++){
+        printf("argv[%d] = %s\n",i, argv[i]);
+    }
+    return 0;
+}
+```
+
+Makefile
+
+```make
+CC = clang
+CFLAGS = -Wall -Wextra -g
+
+example: example.c
+	$(CC) $(CFLAGS) example.c -o example
+	
+hello: hello.c
+	$(CC) $(CFLAGS) hello.c -o hello
+```
+
+Code execution:
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/example
+$ make example
+make: 'example' is up to date.
+
+chan@CMA:~/C_Programming/HFC/chapter_9/example
+$ make hello
+clang -Wall -Wextra -g hello.c -o hello
+
+chan@CMA:~/C_Programming/HFC/chapter_9/example
+$ ./example
+PID of example.c = 31661
+We are in Hello.c
+PID of hello.c = 31661
+argc = 4
+argv[0] = ./hello
+argv[1] = Hello
+argv[2] = C
+argv[3] = Programming
+
+```
+
+- argc - argument count
+- argv - argument vector

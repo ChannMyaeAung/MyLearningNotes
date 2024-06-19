@@ -1,6 +1,10 @@
 ## Theories from HFC Book 
 
+**Compiler Flags**: `CFLAGS = -Wall -Wextra -g` 
 
+- `-Wall`: Enables all the commonly used warning messages.
+- `-Wextra`: Enables additional warning messages that are not included by `-Wall`.
+- `-g`: Generates debug information to use with GDB (or any debugger).
 
 #### Chapter 2 - Memory and pointers
 
@@ -4512,6 +4516,18 @@ The `system()` function is easy to use, but most of the time, we're going to nee
 - The `exec()` functions **replace the current process** by running some other program.
 - We can say which *command-line-arguments* or *environment variables* to use, and when the new program starts, it will have exactly the same *PID* as the old one.
 - It's like a relay race, where your program hands over its process to the new program.
+- By definition, the `exec` functions replace the current process image with a new process image. This means the process ID remains the same, but the code, data and stack are replaced by those of the new program.
+
+#### `exec` family of functions
+
+- `execl`
+- `execle`
+- `execlp`
+- `execv`
+- `execve`
+- `execvp`
+
+Two commonly used functions are `execv` and `execvp`.
 
 #### Two groups of `exec()` functions:
 
@@ -4576,6 +4592,16 @@ execvp("clu", my_args);
 ```
 
 The only difference between these two functions is that `execvp` will search for the program using the PATH variable.
+
+```C
+int execv(const char *path, char *const argv[]);
+
+```
+
+- `path`: The path to the executable file.
+- `argv` : An array of argument strings passed to the new program. The last element of this array must be NULL.
+
+`execvp` is similar to `execv` but it searches for the executable in the directories listed in the `PATH` environment variable.
 
 #### How to remember the `exec()` functions
 
@@ -4653,3 +4679,94 @@ int main(int argc, char *argv[]){
 ```
 
 - `getenv()` in `stdlib.h` lets us read environment variables.
+
+#### But what if there's a problem?
+
+- If there is a problem calling the program, the existing process will keep running.
+
+
+
+#### Most system calls go wrong in the same way
+
+- Because system calls depend on something outside our program, they might go wrong in some way that we can't control. To deal with this problem, most system calls go wrong in the same way.
+- If an `exec()` call is successful, the current program stops running.
+- So if the program runs anything after the call to `exec()`, there must have been a problem.
+
+```C
+execle("diner_info", "diner_info", "4", NULL, my_env);
+puts("Dude - the diner_info code must be busted");
+```
+
+- If `execle()` worked, the `puts` line would never run.
+- But just telling if a system call worked is not enough. We normally want to know why a system call failed.
+- That's why most system calls follow the **golden rules of failure.**
+
+#### The Golden Rules of Failure
+
+- Tidy up as much as you can.
+- Set the `errno` variable to an error value.
+- Return -1.
+
+The `errno` variable is a global variable that's defined in `errno.h` along with a whole bunch of standard error values, like:
+
+```markd
+EPERM= 1   Operation not permitted
+ENOENT= 2  No such file or directory
+ESRCH=3    No such process
+EMULLET=81 Bad haircut // This value is not available on all systems.
+```
+
+Now we could check the value of `errno` against each of these values, or we could look up a standard piece of error text using a function in `string.h` called `strerror()`:
+
+```C
+puts(strerror(errno));
+
+// strerror() converts an error number into a message.
+
+```
+
+So, if the system can't find the program we are running and it sets the `errno` variable to `ENOENT`, the above code will display this message:
+
+```sh
+No such file or directory
+```
+
+
+
+[`int argc`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) and `char *argv[]` are parameters to the [`main`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) function that represent the command-line arguments to the program.
+
+- [`argc`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) (argument count) is an integer that specifies the number of arguments passed to the program from the command line, including the name of the program itself.
+- [`argv`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) (argument vector) is an array of character pointers (strings). Each element in this array points to a string that represents each argument passed to the program. The first element, [`argv[0\]`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html), is the name of the program itself. The array is terminated by a `NULL` pointer.
+
+We use a pointer to char (`char *`) for [`argv`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) because each command-line argument is a string, and in C, strings are represented as an array of characters. Since an array in C is essentially a constant pointer to its first element, we can represent an array of strings as an array of character pointers (`char *argv[]`).
+
+Here's an example to illustrate this:
+
+If you run your program like this:
+
+```bash
+./myprogram arg1 arg2 arg3
+```
+
+Then `argc` would be 4, and `argv` would be an array that looks like this:
+
+```C
+argv[0] = "./myprogram";
+
+argv[1] = "arg1";
+
+argv[2] = "arg2";
+
+argv[3] = "arg3";
+
+argv[4] = NULL;
+```
+
+So [`argv`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) is an array of pointers, where each pointer points to the first character of a string representing a command-line argument.
+
+#### Summary
+
+- The `exec` family of functions allows a process to replace its current image with a new one.
+- The process ID remains unchanged, but the new program takes over, starting from its `main` function.
+- If `exec` is successful, it does not return to the original program.
+- If it fails, the original continues executing, allowing for error handling.

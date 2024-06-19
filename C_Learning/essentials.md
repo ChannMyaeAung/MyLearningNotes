@@ -19,6 +19,12 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+
+
+#### C Concepts
+
+- An array in C is essentially a constant pointer to its first element, we can represent an array of strings as an array of character pointers.
+
 #### Escaping Sequence
 
 \n - newline
