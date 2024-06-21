@@ -4770,3 +4770,40 @@ So [`argv`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/el
 - The process ID remains unchanged, but the new program takes over, starting from its `main` function.
 - If `exec` is successful, it does not return to the original program.
 - If it fails, the original continues executing, allowing for error handling.
+
+
+
+Q: Isn't `system()` just easier to use than `exec()`?
+
+A: Yes. But because the OS needs to interpret the string we pass to `system()`, it can be a bit buggy. Particularly if we create the command string dynamically.
+
+
+
+Q: Why are there so many `exec()` functions?
+
+A: Over time, people wanted to create processes in different ways. The different versions of `exec()` were created for more flexibility.
+
+
+
+Q: Do I always have to check the return value of a system call? Doesn't it make the program really long?
+
+A: If we make system calls and don't check for errors, our code will be shorter. But it will probably also have more bugs. It is better to thank about errors when we first write code. It will make it much easier to catch bugs later on.
+
+
+
+Q: If I call an `exec()` function, can I do anything afterward?
+
+A: No. if the `exec()` function is successful,  it will change the process so that it runs the new program instead of our program. That means  the program containing the `exec()` call will stop as soon as it runs the `exec()` function.
+
+
+
+#### Bullet Points - Chapter 9
+
+- System calls are functions that live in the OS.
+- When we make a system call, we are calling code outside our program.
+- `system()` is a system call to run a command string.
+- `system()` is easy to use but it can cause bugs.
+- The `exec()` system calls let us run programs with more control.
+- There are several versions of the `exec()` system call.
+- System calls usually, but not always return -1 if there's a problem.
+- They will also set the `errno` variable to an error number.

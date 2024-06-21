@@ -4699,3 +4699,184 @@ argv[3] = Programming
 
 - argc - argument count
 - argv - argument vector
+
+
+
+#### Exercise 3 - Chapter 9 (diner info)
+
+`diner_info.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(){
+    printf("We are inside diner_info.c.\n");
+    printf("PID of diner_info.c: %d\n", getpid());
+    
+    char *my_env[] = {"JUICE=peach and apple", NULL};
+    
+    char *args[] = {"./main", "Fears", "quiet", "magic", "4", NULL};
+    
+    if(execve("./main", args, my_env)){
+        perror("execve failed!");
+    }
+    
+    printf("Back in diner_info.c.\n");
+    
+    return 0;
+}
+```
+
+
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]){
+    printf("We are now inside main.c.\n");
+    printf("PID of main.c: %d\n", getpid());
+    
+    int i;
+    for(i = 0; i < argc; i++){
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
+    
+    printf("Diners: %s\n", argv[4]);
+    printf("Juice: %s\n", getenv("JUICE"));
+    
+    return 0;
+}
+```
+
+`Makefile`
+
+```makefile
+CC = clang
+CFLAGS = -Wall -Wextra -g
+
+main: main.c 
+	$(CC) $(CFLAGS) main.c -o main
+
+diner_info: diner_info.c
+	$(CC) $(CFLAGS) diner_info.c -o diner_info
+	
+clean:
+	rm -f main diner_info
+```
+
+
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/diner_info
+$ make main
+clang -Wall -Wextra -g main.c -o main
+
+chan@CMA:~/C_Programming/HFC/chapter_9/diner_info
+$ make diner_info
+make: 'diner_info' is up to date.
+
+chan@CMA:~/C_Programming/HFC/chapter_9/diner_info
+$ ./diner_info
+
+We are now inside diner_info.c
+PID of diner_info.c: 6543
+We are now inside main.c.
+PID of main.c: 6543
+argv[0]: ./main
+argv[1]: Fears
+argv[2]: quiet
+argv[3]: magic
+argv[4]: 4
+Diners: 4
+Juice: peach and apple
+
+chan@CMA:~/C_Programming/HFC/chapter_9/diner_info$ 
+
+
+```
+
+
+
+#### Exercise 4 - Chapter 9 
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+
+int main(){
+    if(execl("/sbin/ifconfig", "/sbin/ifconfig", NULL) == -1){
+        if(execlp("ipconfig", "ipconfig", NULL) == -1){
+            fprintf("stderr", "Cannot run ipconfig: %s\n", strerr(errno));
+            return -1;
+        }
+    }
+}
+```
+
+ Code Breakdown:
+
+- `#include <unistd.h>` - We need this for the `exec()` functions.
+- `#include <errno.h>` - We need this for the `errno` variable.
+- `#include <string.h>` - This will let us display errors with `strerror()`.
+- `execl("/sbin/ifconfig", "/sbin/ifconfig", NULL) == -1` - We use `execl()` because we have the path to the program file.
+- If `execl()` returns -1, it failed, so we should probably look for `ipconfig`.
+- `execlp()` will let us find the `ipconfig`  command on the path.
+- The `strerror()` function will display any problems.
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ make all
+make: Nothing to be done for 'all'.
+
+chan@CMA:~/C_Programming/test
+$ ./final
+
+We are in hello.c
+PID of hello.c: 8147
+strcmp(str1, str2): -15
+strcmp(str1,str3): -33
+s1: Xbcdef
+s2: abcdef
+enp2s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.105  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::19f0:82d1:7ed0:8796  prefixlen 64  scopeid 0x20<link>
+        ether e4:a8:df:ba:4d:a0  txqueuelen 1000  (Ethernet)
+        RX packets 31195  bytes 22229071 (22.2 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 33688  bytes 31468061 (31.4 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 97624  bytes 11603767 (11.6 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 97624  bytes 11603767 (11.6 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlo1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.124  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::fb0b:eac9:3edd:121a  prefixlen 64  scopeid 0x20<link>
+        ether 38:d5:7a:65:22:fb  txqueuelen 1000  (Ethernet)
+        RX packets 3580  bytes 1009135 (1.0 MB)
+        RX errors 0  dropped 407  overruns 0  frame 0
+        TX packets 1761  bytes 184536 (184.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+```
+
