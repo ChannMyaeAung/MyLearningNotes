@@ -25,6 +25,31 @@ In general, if you see a non-zero return value from a C program or function, you
 
 - An array in C is essentially a constant pointer to its first element, we can represent an array of strings as an array of character pointers.
 
+- Strings in C are compared using the `strcmp` function from the `<string.h>` library because strings are arrays of characters, and the `==` operator compares the addresses of the arrays rather than their contents.
+
+- String comparison is based on the lexicographical order which is determined by the Unicode values (or ASCII values for simplicity) of the characters in the strings. 
+
+- Lexicographical order compares strings character by character from left to right. If the characters are different, the comparison stops and the result is based on the difference between these characters. If they are the same, the comparison moves to the next character.
+
+- Example: "apple" vs "banana". First characters: 'a' (Unicode: 97) and 'b' (Unicode: 98). Since 97 ('a') is less than 98 ('b'), "apple" is considered less than "banana". No further comparison is needed because the first character comparison already determined the result.
+
+- ```C
+  // Character Array
+  char str1[] = "apple";
+  
+  // Pointer to a String Literal
+  char *str2 = "apple";
+  
+  // Array of String Literals
+  char *str3[] = {"apple", "banana", "cherry"};
+  ```
+
+- `char str1[] = "apple"` : We can modify `str1` (e.g., `str1[0] = 'A';`). Allocates memory on the stack and copies the string into it.
+
+- `char *str1 = "apple"`: Modifying the string literal via `str1` (e.g., `str1[0] = 'A';`) leads to undefined behavior because string literals are stored in read-only memory. The pointer points to a fixed location in memory where the string literal is stored.
+
+- What does `i->name` equivalent in pointer notation? `i->name` is equivalent to `(i*).name`. This notation dereferences the pointer `i` to access the `name` member of the structure(`struct`) it points to.
+
 #### Escaping Sequence
 
 \n - newline
@@ -383,3 +408,18 @@ float average(int length, int array[]){
 }
 ```
 
+---
+
+### Key Differences:
+
+- **Memory Allocation:**
+  - `char arr[]` allocates contiguous memory for the characters of the string and null terminator.
+  - `char *arr[]` allocates memory for an array of pointers, where each pointer can point to a different string.
+- **Modification:**
+  - You can modify `char arr[]` directly because it's an array of characters.
+  - You can modify `char *arr[]` to point to different strings, but modifying the string literals themselves (`"apples"`, etc.) directly is not allowed because they are typically stored in read-only memory.
+- **Usage:**
+  - `char arr[]` is used for a single mutable string.
+  - `char *arr[]` is used for an array of mutable pointers to strings or string literals.
+
+In summary, `char arr[] = {"apples"}` represents a single mutable string stored as an array of characters, while `char *arr[] = {"apples"}` represents an array of pointers where each pointer can point to a string or string literal. The choice between them depends on whether you need a single mutable string (`char arr[]`) or an array of pointers to strings (`char *arr[]`).

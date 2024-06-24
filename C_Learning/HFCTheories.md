@@ -4807,3 +4807,185 @@ A: No. if the `exec()` function is successful,  it will change the process so th
 - There are several versions of the `exec()` system call.
 - System calls usually, but not always return -1 if there's a problem.
 - They will also set the `errno` variable to an error number.
+
+
+
+#### `exec()` is the end of the line for our program
+
+- The `exec()` functions replace the current function by running a new program. 
+- But what happens to the original program? It terminates immediately.
+- But what if we want to start another process and keep our original process running?
+
+#### `fork()` will clone our process
+
+- `fork()` makes a complete copy of the current process.
+- The brand-new copy will be running the same program, on the same line number.
+- It will have exactly the same variables that contain exactly the same values.
+- The only difference is that the copy process will have a different process identifier from the original.
+- The original process is called the parent process and the newly created copy is called the child process.
+- Return -1 for errors, 0 to the new process, and the process ID of the new process to the old process.
+
+```C
+#include <sys/types.h>
+int main(int argc, char *argv[]){
+    pid_t id = fork();
+    printf("Hello world from id: %d\n", id);
+}
+```
+
+​	Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ ./final
+Hello world from id: 12479 // parent
+Hello world from id: 0 //Child 
+
+```
+
+
+
+#### Running a child process with `fork()` + `exec()`
+
+The trick is to only call an `exec()~ function on a child process. That way, our original parent process will be able to continue running.
+
+1. Make a copy
+   - Begin by making a copy of our current process by calling the `fork()` system call.
+   - The processes need some way of telling which of them is the parent process and which is the child.
+   - So, the `fork()` function returns 0 to the child process and it will return **non-zero** value to the parent process.
+2. If you're the child process, call `exec()`
+   - At this point, we have two identical processes running, both of them using identical code, But the child process (the one that received a 0 from the `fork()` call) now needs to replace itself by calling `exec()`.
+
+
+
+#### what the fork()?
+
+```C
+pid_t pid = fork();
+```
+
+- `fork()` will actually return an integer value that is 0 for the child process and positive for the parent process.
+- The parent process will receive the process identifier of the child proces.
+- But what is `pid_t`? 
+- Different OS use different kinds of integers to store process IDs: some might use `short`s and some might use `int`s. So `pid_t` is always set to the type that the OS uses.
+- To use `pid_t`, we have to include `#include <sys/types.h>` header file.
+- On Ubuntu Linux, and generally in GNU systems, `__pid_t` is an internal type definition used in system headers. The double underscore (__) prefix indicates that it is intended for internal use by the implementation and is not meant to be used directly by application code. Instead, we should use the standard `pid_t` type.
+
+
+
+```C
+#include <sys/types.h>
+int main(int argc, char *argv[]){
+    fork();
+    fork();
+    printf("Hello World.\n");
+    return 0;
+}
+```
+
+- If we call `fork()` two times, the result will be outputted 4 times because both the parent and child will create another child processes.
+- The number of fork() calls = 2**n (if we call 4 times, then we get 16.)
+
+Code Execution
+
+```sh
+chan@CMA:~/C_Programming/test
+$ ./final
+Hello world.
+Hello world.
+Hello world.
+Hello world.
+```
+
+But what if we only want to have 3 processes ? 
+
+Well, we just need to use the id since fork() returns 0 to the new process (child), we can say we will only fork the new process from the main process.
+
+```C
+#include <sys/types.h>
+int main(int argc, char *argv[]){
+    pid_t id = fork();
+    if(id != 0){
+        fork();
+    }
+    print("Hello World.\n");
+    return 0;
+}
+```
+
+​	Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hello world.
+Hello world.
+Hello world.
+
+```
+
+Q: Does `system()` run programs in a separate process?
+
+A: Yes. But `system()` gives us less control over exactly how the program runs.
+
+
+
+Q: Isn't fork-ing processes really inefficient? I mean, it copies an entire process and a moment later we replace the child process by doing an `exec()`?
+
+A: OS use lots of tricks to make `fork`-ing processes really quick. For example, the OS cheats and avoids making an actual copy of the parent process's data. Instead the child and parent processes share the same data.
+
+
+
+Q: But what if one of the processes changes some data in memory? Won't that screw things up?
+
+A: It would, but the OS will catch that a piece of memory is going to change and then it will make a separate copy of that piece of memory for the child process.
+
+
+
+Q: Why doesn't Windows support the `fork()` system call?
+
+A: Windows manages processes very differently from other OS, and the kinds of tricks `fork()` needs to do in order to work efficiently are very hard to do on Windows. This may be why there isn't a version of `fork()` built in. Cygwin lets `fork()` but it is slower.
+
+Q: Won't the output of the various feeds get mixed up?
+
+A: The OS will make sure that each string is printed completely.
+
+
+
+Q: Is a `pid_t` just an int?
+
+A: It depends on the platform. The only thing we know is that it will be some integer type.
+
+
+
+Q: I stored the result of a `fork()` call in an `int` and it worked just fine.
+
+A: It's best to always use `pid_t` to store process IDs. If we don't, we might cause problems with other system calls or if our code is compiled on another machine. While `pid_t` is often an alias for `int` on many systems, using `int` directly can reduce the portability and clarity of your code. Different systems might have different underlying representations for process IDs, and relying on `pid_t` ensures that our code adapts to these differences. For getting the return value of `fork()`, you should use `pid_t` rather than `int`. This ensures that our code is portable and correctly represents process IDs according to the POSIX standard.
+
+
+
+#### Bullet Points - Chapter - 9
+
+- `system()` will run a string like a console command.
+
+- System calls are functions that live in the kernel.
+
+- The `exec()` functions give us more control than `system()`.
+
+- The `exec()` functions replace the current process.
+
+- The `fork()` function duplicates the current process.
+
+- System calls usually return -1 if they fail.
+
+- Failed system calls set the `errno` variable to the error number.
+
+- ```markdown
+  execl() = list of args
+  execle() = list of args + environment
+  execlp() = list of args + search on path
+  execv() = array of args
+  execve() = array of args + environment
+  execvp() = array of args + search on path
+  ```
+
+- `fork()` + `exec()` creates a child process.

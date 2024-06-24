@@ -4880,3 +4880,106 @@ wlo1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 ```
 
+---
+
+#### Exercise 5 - Chapter 9 (Mixed Messages Solution)
+
+`main.c`
+
+```C
+int main(){
+    char *my_env[] = {"FOOD=coffee", NULL};
+    
+    if(execle("./coffee", "./coffee", "donuts", NULL, my_env) == -1){
+        fprintf(stderr, "Can't run process 0: %s\n", strerror(errno));
+        return 1;
+    }
+ 	return 0;   
+}
+```
+
+`coffee.c`
+
+```C
+int main(int argc, char *argv[]){
+    char *w = getenv("EXTRA"); // Try to get the value of the environment variable "EXTRA".
+    if(!w) // if "EXTRA" is not set,
+        w = getenv("FOOD"); // then try to get the value of the environment variable "FOOD"
+    if(!w) // if neither "EXTRA" nor "FOOD" is set,
+        w = argv[argc - 1]; // use the last command-line argument as the value for w.
+    
+    char *c = getenv("EXTRA"); // Try to get the value of the environment variable "EXTRA".
+    if(!c) // If "EXTRA" is not set,
+        c = argv[argc - 1]; // use the last command-line argument as the value for c.
+    printf("%s with %s\n", c, w);
+    return 0; // Return 0 to indicate successful execution.
+}
+```
+
+Code Execution for the main program above:
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/coffee
+$ ./main
+donuts with coffee
+
+```
+
+for this code in `main.c`: (2nd)
+
+```C
+char *my_env[] = {"FOOD=donuts", NULL};
+
+    if (execle("./coffee", "coffee", NULL, my_env) == -1)
+    {
+        fprintf(stderr, "Can't run process 3: %s\n", strerror(errno));
+        return 1;
+    }
+```
+
+Code Execution will be: (2nd)
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/coffee
+$ ./main
+coffee with donuts
+```
+
+for this code in `main.c`: (3rd)
+
+```C
+	if (execl("./coffee", "coffee", NULL) == -1)
+    {
+        fprintf(stderr, "Can't run process 3: %s\n", strerror(errno));
+        return 1;
+    }
+```
+
+Code Execution will be: (3rd)
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/coffee
+$ ./main
+coffee with coffee
+```
+
+for this code in `main.c`: (4th)
+
+```C
+char *my_env[] = {"FOOD=donuts", NULL};	
+if (execle("./coffee", "./coffee", "cream", NULL, my_env) == -1)
+    {
+        fprintf(stderr, "Can't run process 3: %s\n", strerror(errno));
+        return 1;
+    }
+```
+
+Code Execution will be: (4th)
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_9/coffee
+$ ./main
+cream with donuts
+
+```
+
