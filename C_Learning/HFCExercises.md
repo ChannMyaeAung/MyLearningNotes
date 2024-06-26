@@ -1958,7 +1958,7 @@ typedef struct{
 
 void happy_birthday(turtle t){
     t.age = t.age + 1;
-    printf("Happy Birthday %s! You are now %i years old!\n");
+    printf("Happy Birthday %s! You are now %i years old!\n", t.name, t.age);
 }
 
 int main(){
@@ -2144,7 +2144,7 @@ int main(void){
     printf("Enter your name: \n");
     fgets(name, sizeof(name), stdin);
     name[strcspn(name, "\n")] = '\0';
-    name_length(name);
+    printf("Your name is %d letters long.\n", name_length(name));
     return 0;
 }
 
