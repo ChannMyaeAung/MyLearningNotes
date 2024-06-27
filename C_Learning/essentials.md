@@ -19,7 +19,56 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+### Conditional Statements
 
+- **In conditional statements**, `1` (or any non-zero value) typically means **true**, and `0` means **false**.
+- This is why `if (!pid)` checks if `pid` is `0` (false), meaning the code inside this block runs in the child process, because `fork()` returns `0` in the child process.
+
+### Return Values in `main` Function
+
+- **In the `main` function**, returning `0` means **success**.
+- Returning a **non-zero value** indicates an **error** or some other special condition.
+
+### Example Breakdown
+
+#### Conditional Statement:
+
+```C
+if (!pid)
+{
+    // This block runs in the child process
+}
+```
+
+- Here, `!pid` evaluates to true if `pid` is `0` (which is the case in the child process after a successful `fork()`).
+
+#### `main` Function Return:
+
+```C
+int main()
+{
+    // Your code here
+    return 0;  // Indicates success
+}
+```
+
+- Returning `0` from the `main` function indicates that the program executed successfully.
+- Returning a non-zero value indicates an error or abnormal termination. For example:
+
+```C
+int main()
+{
+    // Your code here
+    return 1;  // Indicates an error
+}
+```
+
+### Summary
+
+- **Conditional Statements**: `1` (or any non-zero value) means true; `0` means false.
+- **`main` Function Return**: `0` means success; non-zero means error.
+
+These conventions are widely used in C and many other programming languages.
 
 #### C Concepts
 

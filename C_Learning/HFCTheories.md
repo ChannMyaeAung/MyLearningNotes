@@ -4994,3 +4994,185 @@ A: It's best to always use `pid_t` to store process IDs. If we don't, we might c
 
 ---
 
+### Chapter 10 - Interprocess communication
+
+Interprocess communication lets processes work together to get the job done.
+
+
+
+- The Standard Output is one of the three default **data streams**.
+- A data stream is exactly what it sounds like: a stream of data that goes into, or comes out of, a process.
+- There are data streams for the Standard Input, Output, and Error, and there are also data streams for other things, like files or network connections.
+
+
+
+#### A look inside a typical process
+
+- Every process will contain the program it's running, as well as space for stack and heap data.
+- But it will also need somewhere to record where data streams like the Standard Output are connected. 
+- Each data stream is represented by a file descriptor, which, under the surface, is just a number.
+- A file descriptor is a number that represents a data stream.
+- The process keeps everything straight by storing the file descriptors and their data streams in a **descriptor table**.
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-06-27 16-26-49.png)
+
+- The descriptor table has one column for each of the file descriptor numbers.
+- Even though these are called file descriptors, they might not be connected to an actual file on the hard disk.
+- The first three slots in the table are always the same. Slot 0 is the Standard Input, slot 1 is the Standard Output and slot  2 is the Standard Error.
+- The other slots in the table are either empty or connected to data streams that the process has opened.
+- For example, every time our code opens a file for reading or writing, another slot is filled in the descriptor table.
+- File descriptors don't necessarily refer to files.
+- When the process is created, the Standard Input is connected to the keyboard, and the Standard Output and Error are connected to the screen. And they will stay connected that way until something redirects them somewhere else.
+
+
+
+#### Redirection just replaces data streams
+
+The Standard Input, Output and Error are always fixed in the same places in the descriptor table. But the data streams they point to can change.
+
+That means, if we want to redirect the Standard Output, we just need to switch the data stream against descriptor 1 in the table.
+
+| #    | Data Stream                     |
+| ---- | ------------------------------- |
+| 0    | The keyboard                    |
+| 1    | ~~The screen~~ File stories.txt |
+| 2    | The screen                      |
+| 3    | Database connection             |
+
+All of the functions, like `printf()`, that send data to the Standard Output will first look in the descriptor table to see where descriptor 1 is pointing. They will then write data out to the correct data stream.
+
+#### So, that's why it's 2>
+
+- We can redirect the Standard Output and Standard Error on the command line using the > and 2> operators.
+
+  ```sh
+  ./myprog > output.txt 2> errors.log
+  ```
+
+- The `2` refers to the number of the Standard Error in the descriptor table.
+
+- On most OS, we can use `1>` as an alternative way of redirecting the Standard Output, and on Unix-based systems, we can even redirect the Standard Error to the same place as the Standard Output.
+
+  ```sh
+  ./myprog 2>&1
+  ```
+
+  2> means "redirect Standard Error". &1 means "to the Standard Input"
+
+- So, `./myprog 2>&1` means `"run myprog and redirect its error output (stderr) to the same place as its standard output (stdout)"`. This is useful when you want to capture all output from a program (both normal and error output) in the same place, such as when piping the output to another command or saving it to a file.
+
+#### Processes can redirect themselves
+
+- Every time we've used redirection so far, it's been from the command line using the > and < operators. 
+- But processes can their own redirection by **rewiring the descriptor table**.
+
+
+
+#### `fileno()` tells you the descriptor
+
+- Every time we open a file, the OS registers a new item in the descriptor table.
+
+- Let's say we open a file with something like this:
+
+  ```C
+  FILE *my_file = fopen("guitar.mp3", "r");
+  ```
+
+- The OS will open the `guitar.mp3` file and return a pointer to it, but it will also skim through the descriptor table until it finds an empty slot and register the new file there.
+
+- Once we've got a file pointer, we find it in the descriptor table by calling the `fileno()` function.
+
+  | #    | Data stream         |
+  | ---- | ------------------- |
+  | 0    | The keyboard        |
+  | 1    | The screen          |
+  | 2    | The screen          |
+  | 3    | Database connection |
+  | 4    | File guitar.mp3     |
+
+  
+
+  ```C
+  int descriptor = fileno(my_file);
+  
+  // This will return the value 4.
+  ```
+
+- `fileno()` is one of the few system functions that doesn't return `-1` it it fails.
+
+- As long as we pass `fileno()` the pointer to an open file, it should always return **the descriptor number**.
+
+
+
+#### `dup2()` duplicates data streams
+
+Opening a file will fill a slot in the descriptor table, but what if we want to change the data stream already registered against a descriptor?
+
+What if we want to change the file descriptor 3 to point to a different data stream?
+
+- We can do it with the `dup2()` funciton.
+
+- `dup2()` duplicates a data stream from one slot to another.
+
+- So, if we have a file pointer to `guitar.mp3` plugged in to file descriptor 4, the following code will connect it to the file descriptor 3 as well.
+
+  ```C
+  dup2(4,3);
+  ```
+
+  | #    | data stream                             |
+  | ---- | --------------------------------------- |
+  | 0    | The keyboard                            |
+  | 1    | The screen                              |
+  | 2    | The screen                              |
+  | 3    | ~~Database connection~~ File guitar.mp3 |
+  | 4    | File guitar.mp3                         |
+
+- There's still just one `guitar.mp3` file, and there's still just one data stream connected to it.
+
+- But the data stream(the `FILE*`) is now registered with file descriptors 3 and 4.
+
+
+
+#### Removing duplicated code block
+
+```C
+pid_t pid = fork();
+if(pid == -1){
+    fprintf(stderr, "Can't fork process: %s\n", strerror(errno));
+    return 1;
+}
+
+if(execle(...) == -1){
+    fprintf(stderr, "Can't run script: %s\n", strerror(errno));
+    return 1;
+}
+```
+
+- Duplicated code can be the cause of unwarranted coding stress.
+- By creating a simple fire-and-forget error() function, we'll make our duplicated code a thing of the past.
+- The `exit()` system call is the fastest way to stop our program in its tracks.
+- No more worrying about returning to main(), just call exit() and our program's history!
+- First, we remove all of our error code into **a separate function** called error() and replace that tricky return with a call to `exit()`.
+- To ensure we have the exit system call available, we need to include `stdlib.h`.
+
+```C
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(1);
+}
+// exit(1) will terminate our program with status 1 immediately.
+```
+
+```C
+pid_t pid = fork();
+if(pid == -1){
+    error("Can't fork process");
+}
+
+if(execle(...) == -1){
+    error("Can't run script");
+}
+```
+
+**Warning: offer limited to one `exit()` call per program execution. Do not operate `exit()` if you have a fear of sudden program termination.**

@@ -226,6 +226,61 @@ int main(){
 
 
 
+### Calculator
+
+```C
+#include <stdio.h>
+
+int main(){
+    double num1;
+    double num2;
+    char math_operation = '\0';
+    double result = 0.0;
+    
+    printf("Enter num1: ");
+    scanf("%lf", &num1);
+    
+    printf("Enter num2: ");
+    scanf("%lf", &num2);
+    
+    while(math_operation != '+' && math_operation != '-' && math_operation != '*' && math_operation != '/'){
+        printf("Enter the math_operation: (+, -, *, /): ");
+        scanf(" %c", &math_operation); // space before %c to consume any newline character left in the input buffer.
+    }
+    
+    switch(math_operation){
+        case '+':
+            result = num1 + num2;
+            break;
+        case '-':
+            result = num1 - num2;
+            break;
+        case '*':
+            result = num1 * num2;
+            break;
+        case '/':
+            result = num1 / num2;
+            break;
+        default:
+            printf("Invaid math_operation\n");
+            break;
+    }
+    printf("Result: %.2lf\n", result);
+    return 0;
+}
+```
+
+​	Code Execution:
+
+```sh
+Enter num1: 4
+Enter num2: 5
+Enter math_operation: (+, -, *, /): /
+Result: 0.80
+```
+
+
+
 #### Circle Circumference
 
 ```c
