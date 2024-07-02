@@ -4998,7 +4998,8 @@ A: It's best to always use `pid_t` to store process IDs. If we don't, we might c
 
 Interprocess communication lets processes work together to get the job done.
 
-
+- Redirecting input and output, and making processes wait for each other, are all simple forms of **interprocess communication**.
+- When processes are able to cooperate by sharing data or by waiting for each other, they become much more powerful.
 
 - The Standard Output is one of the three default **data streams**.
 - A data stream is exactly what it sounds like: a stream of data that goes into, or comes out of, a process.
@@ -5176,3 +5177,268 @@ if(execle(...) == -1){
 ```
 
 **Warning: offer limited to one `exit()` call per program execution. Do not operate `exit()` if you have a fear of sudden program termination.**
+
+
+
+#### Sometimes we need to wait...
+
+- The `newshound` program in `HFCExercises.md` fires off a separate process to run the `rssgossip.py` script.
+- But once that child process gets created, it's **independent** of its parent.
+- We could run the `newshound` program and still have an empty `stories.txt`., just because the `rssgossip.py` isn't finished yet.
+- That means the OS has to give us some way of waiting for the child process to complete.
+
+#### The `waitpid()` function
+
+- The `waitpid()` function won't return until the child process dies.
+
+- That means we can add a little code to our program so that it won't exit until the `rssgossip.py` script has stopped running.
+
+  ```C
+  #include <sys/wait.h>
+  ```
+
+  We need to include the `sys/wait.h` header.
+
+```C
+int pid_status;
+if(waitpid(pid, &pid_status, 0) == -1){
+    error("Error waiting for child process");
+}
+return 0;
+
+// pid - The process ID
+// &pid_status - (A pointer to an int) This variable is used to store information about the process.
+// 0 - We can add options here.
+```
+
+`waitpid()` takes three parameters:
+
+```C
+waitpid(pid, pid_status, options)
+```
+
+- **pid** - This is the process ID that the parent process was given when it forked the child.
+- **pid_status**- This will store exit information about the process, `waitpid()` will update it, so it needs  to be a pointer.
+- **options** - There are several options we can pass to `waitpid()`, and typing `man waitpid` will give us more info. If we set the options to `0`, the function waits until the process finishes.
+
+#### What's the status?
+
+- When the `waitpid()` function has finished waiting, it stores a value in `pid_status` that tells us how the process did.
+
+- To find the exit status of the child process, we'll have to pass the `pid_status` value through a macro called `WEXITSTATUS()`.
+
+- ```C
+  if(WEXITSTATUS(pid_status)){ // if the exit status is not zero
+      puts("Error status non-zero");
+  }
+  ```
+
+- The reason we need the macro is because the `pid_status` contains several pieces of information, and only the first 8 bits represent the exit status.
+
+- The macro tells us the value of just those 8 bits.
+
+- Adding a `waitpid()` to the program was easy to do and it made the program more reliable.
+
+- Before, we couldn't be sure that the subprocess had finished writing, and that meant there was no way we could use the `newshound` program as a proper tool.
+
+- We couldn't use it in scripts and we couldn't create a GUI frontend for it.
+
+- Redirecting input and output, and making processes wait for each other, are all simple forms of **interprocess communication**.
+
+- When processes are able to cooperate by sharing data or by waiting for each other, they become much more powerful.
+
+- `exit()` is a quick way of ending a program.
+
+- All open files are recorded in the descriptor table.
+
+- We can redirect input and output by changing the descriptor table.
+
+- `fileno()` will find a descriptor in the table.
+
+- `dup2()` can be used to change the descriptor table.
+
+- `waitpid()` will wait for processes to finish.
+
+Q: Does `exit()` end the program faster than just returning from `main()`?
+
+A: No, but if we call `exit()`, we don't need to structure our code to get back to the `main()` function. As soon as we call `exit()`, our program is dead.
+
+
+
+Q: Should I check for -1 when I call `exit()`, in case it doesn't work?
+
+A: No. `exit()` doesn't return a value, because `exit()` never fails. `exit()` is the only function that is guaranteed never to return a value and never to fail.
+
+
+
+Q: Is the number I pass to `exit()` the exit status?
+
+A: Yes.
+
+
+
+Q: Are the Standard Input, Output, and Error always in slots 0, 1, and 2 of the descriptor table?
+
+A: Yes, they are.
+
+
+
+Q: So, if I open a new file, it is automatically added to the descriptor table?
+
+A: Yes
+
+
+
+Q: Is there a rule about which slot it gets?
+
+A: New files are always added to the available slot with the lowest number. So, if slot number 4 is the first available one, that's the one our new file will use.
+
+
+
+Q: How big is the descriptor table?
+
+A: It has slots from 0 to 255.
+
+
+
+Q: The descriptor table seems kinda complicated, Why is it there?
+
+A: Because it allows us to rewire the way a program works. Without the descriptor table, redirection isn't possible.
+
+
+
+Q: Is there a way of sending data to the screen without using the Standard Output?
+
+A: On some systems. For example, on Unix-based machines, if we open `/dev/tty`, it will send data directly to the terminal.
+
+
+
+Q: Can I use `waitpid()` to wait for any process? Or just the processes I started?
+
+A: We can use `waitpid()` to wait for any proceess.
+
+
+
+Q: Why isn't the `pid_status` in `waitpid(..., &pid_status, ...)` just an exit status?
+
+A: Because the `pid_status` contains other information such as `WIFSIGNALED(pid_status)` will be false if a process ended naturally, or true if something killed it off.
+
+
+
+Q: How can an integer variable like `pid_status` contain several pieces of information?
+
+A: It stores different things in different bits. The first 8 bits store the exit status. The other information is stored in the other bits.
+
+
+
+Q: So, if I can extract the first 8 bits of the `pid_status` value, I don't have to use `WEXITSTATUS()`?
+
+A: It's always best to use `WEXITSTATUS()`. It's easier to read and it will work on whatever the native `int` size is on the platform.
+
+
+
+Q: Why is `WEXITSTATUS()` in uppercase?
+
+A: Because it's a macro rather than a function. The compiler replaces macro statements with small pieces of code at runtime.
+
+
+
+#### Connect the processes with pipes
+
+- Pipes are used on the command line to connect the **output** of one process with the **input** of another process.
+- The `grep` filters the output of the script.
+
+
+
+#### Piped commands are parents and children
+
+- Whenever we pipe commands together on the command line, we are actually connecting them together as parent and child processes.
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-07-02 17-13-08.png)
+
+- Pipes are used a lot on the command line to allow users to connect processes together.
+
+#### Pipe() opens two data streams
+
+- Because the child is going to send data to the parent, we need a pipe that's connected to the Standard Output of the child and the Standard Input of the parent.
+- We can create the pipe using the `pipe()` function.
+- `pipe()` function creates two connected streams and adds them to the descriptor table.
+- Whatever is written into one stream can be read  from the other.
+
+| #    | DAta stream                    |
+| ---- | ------------------------------ |
+| 0    | Standard Input                 |
+| 1    | Standard Output                |
+| 2    | Standard Error                 |
+| 3    | Read-end of the pipe // fd[0]  |
+| 4    | Write-end of the pipe // fd[1] |
+
+- Calling `pipe()` creates these two descriptors.
+
+- When `pipe()` creates the two lines in the descriptor table, it will store their file descriptors in a two-element array:
+
+  ```C
+  int fd[2]; // The descriptors will be stored in this array
+  
+  // We pass the name of the array to the pipe() function
+  if(pipe(fd) == -1){
+      error("Can't create the pipe");
+  }
+  ```
+
+- The `pipe()` command creates a pipe and tells us two descriptors: `fd[1]` is the descriptor that **writes** to the pipe and `fd[0]` is the descriptor that **reads** from the pipe.
+
+- `fd[1]` writes to the pipe; `fd[0]` reads from it.
+
+- Once we've got the descriptors, we'll need to use them in the parent and child processes.
+
+
+
+#### In the child
+
+- In the child process, we need to **close** the `fd[0]` end of the pipe and then change the child process's Standard Output to point to the same stream as descriptor `fd[1]`.
+
+```C
+// The child won't read from the pipe.
+close(fd[0]); // This will close the read end of the pipe.
+
+dup2(fd[1], 1); // The child then connects the write end to the Standard Output.
+
+```
+
+| #    | DATA STREAM                               |
+| ---- | ----------------------------------------- |
+| 0    | Standard Input                            |
+| 1    | ~~Standard output~~ Write-end of the pipe |
+| 2    | Standard Error                            |
+| 3    | ~~Read-end of the pipe~~                  |
+| 4    | Write-end of the pipe                     |
+
+- Slot 3 is `fd[0]`, the read end of the pipe.
+- Slot 4 is `fd[1]`, the write end of the pipe.
+- The child won't read from the pipe but will write.
+
+
+
+#### In the parent
+
+- In the parent process, we need to close the `fd[1]` end of the pipe because we won't be writing to it.
+- And then redirect the parent process's Standard Input to read its data from the same place as descriptor `fd[0]`.
+
+```C
+dup2(fd[0], 0); // fd[0] is the read end of the pipe
+
+close(fd[1]); // This will close the write end of the pipe.
+```
+
+| #    | DATA STREAM                             |
+| ---- | --------------------------------------- |
+| 0    | ~~Standard Input~~ Read-end of the pipe |
+| 1    | Standard Output                         |
+| 2    | Standard Error                          |
+| 3    | Read-end of the pipe                    |
+| 4    | ~~Write-end of the pipe~~               |
+
+- The parent will read from the pipe, but won't write.
+- Everything that the child writes to the pipe will be read through the Standard Input of the parent process.
+
