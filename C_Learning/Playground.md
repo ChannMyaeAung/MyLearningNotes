@@ -305,6 +305,283 @@ int main(){
 }
 ```
 
+---
+
+### Number Guessing Game
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+void numberGuessingGame(){
+    int number = 0;
+    int guess = 0;
+    int attempts = 0;
+    srand(time(0));
+    number = rand() % 10 + 1;
+    
+    printf("Welcome to the Number Guessing Game!\n");
+    printf("I have selected a number between 1 and 10. Try to guess it!\n");
+    
+    do{
+        printf("Enter your guess: ");
+        scanf("%d", &guess);
+        attempts++;
+        
+        if(guess > number){
+            printf("Too high! Try again.\n");
+        }else if(guess < number){
+            printf("Too low! Try again.\n");
+        }else{
+            printf("Congratulations! You guessed the number in %d attempts.\n", attempts);
+        }
+        
+    }while(guess != number);
+}
+```
+
+Code Exeuction:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ ./final
+
+Welcome to the Number Guessing Game!
+I have selected a number between 1 and 10. Try to guess it!
+Enter your guess: 9
+Too high! Try again.
+Enter your guess: 7
+Too high! Try again.
+Enter your guess: 4
+Congratuations! You guessed the number in 3 attempts.
+
+```
+
+Added features (allowed attempts)
+
+```C
+int allowed_attempts = 0;
+
+do{
+    printf("Enter your guess: ");
+    scanf("%d", &guess);
+    attempts++;
+    allowed_attempts++;
+    
+    if(allowed_attempts == 3){
+        printf("Sorry, you've exceeded the maximum number of attempts. The number was %d.\n", number);
+        return 1;
+    }
+    ...
+}while(guess !=number);
+```
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ ./final
+
+Welcome to the Number Guessing Game!
+I have selected a number between 1 and 10. Try to guess it!
+Enter your guess: 1
+Too low! Try again.
+Enter your guess: 2
+Too low! Try again.
+Enter your guess: 3
+Sorry, you've exceeded the maximum number of attempts. The number was 5.
+```
+
+
+
+---
+
+### Quiz App
+
+```C
+void quizApp(){
+    int score = 0;
+    int answer;
+    printf("\nWelcome to the Quiz App!\n");
+    printf("Answer the following questions:\n");
+
+    // Question 1
+    printf("\n1. What is the capital of France?\n");
+    printf("1. Berlin\n2. Madrid\n3. Paris\n4. Rome\n");
+    printf("Enter your answer: ");
+    scanf("%d", &answer);
+    if (answer == 3) {
+        printf("Correct!\n");
+        score++;
+    } else {
+        printf("Wrong! The correct answer is Paris.\n");
+    }
+
+    // Question 2
+    printf("\n2. Who wrote 'To Kill a Mockingbird'?\n");
+    printf("1. Harper Lee\n2. Mark Twain\n3. J.K. Rowling\n4. Ernest Hemingway\n");
+    printf("Enter your answer: ");
+    scanf("%d", &answer);
+    if (answer == 1) {
+        printf("Correct!\n");
+        score++;
+    } else {
+        printf("Wrong! The correct answer is Harper Lee.\n");
+    }
+
+    // Question 3
+    printf("\n3. What is the largest planet in our Solar System?\n");
+    printf("1. Earth\n2. Mars\n3. Jupiter\n4. Saturn\n");
+    printf("Enter your answer: ");
+    scanf("%d", &answer);
+    if (answer == 3) {
+        printf("Correct!\n");
+        score++;
+    } else {
+        printf("Wrong! The correct answer is Jupiter.\n");
+    }
+
+    printf("\nYou scored %d out of 3.\n", score);
+    
+}
+```
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/practice
+$ ./practice
+Welcome to the Quiz App!
+Answer the following questions:
+
+1. What is the capital of France?
+1. Berlin
+2. Madrid
+3. Paris
+4. Rome
+Enter your answer: 1
+Wrong! The correct answer is Paris.
+
+2. Who wrote 'To Kill a Mockingbird'?
+1. Harper Lee
+2. Mark Twain
+3. J.K. Rowling
+4. Ernest Hemingway
+Enter your answer: 2
+Wrong! The correct answer is Harper Lee.
+
+3. What is the largest planet in our Solar System?
+1. Earth
+2. Mars
+3. Jupiter
+4. Saturn
+Enter your answer: 3
+Correct!
+You scored 1 out of 3.
+
+```
+
+
+
+#### Two in one program
+
+`main.c`
+
+```C
+int main(){
+    int choice;
+    
+    printf("Choose an option:\n");
+    printf("1. Play Number Guessing Game\n");
+    printf("2. Take a QUizz\n");
+    printf("3. Exit\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    
+    switch(choice){
+        case 1:
+            numberGuessingGame();
+            break;
+        case 2:
+            quizApp();
+            break;
+        case 3:
+            printf("Goodbye!\n");
+            break;
+        default:
+            printf("Invalid choice! Please select 1, 2, or 3.\n");
+            break;
+    }
+    return 0;
+}
+```
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/practice
+$ ./practice
+
+Choose an option:
+1. Play Number Guessing Game
+2. Take a Quiz
+3. Exit
+Enter your choice: 3
+Goodbye!
+
+chan@CMA:~/C_Programming/practice
+$ ./practice
+
+Choose an option:
+1. Play Number Guessing Game
+2. Take a Quiz
+3. Exit
+Enter your choice: 1
+Welcome to the Number Guessing Game!
+I have selected a number between 1 and 10. Try to guess it!
+Enter your guess: 3
+Too high! Try again.
+Enter your guess: 2
+Too high! Try again.
+Enter your guess: 1
+Sorry, you've exceeded the maximum number of attempts. The number was 1.
+chan@CMA:~/C_Programming/practice
+$ ./practice
+
+Choose an option:
+1. Play Number Guessing Game
+2. Take a Quiz
+3. Exit
+Enter your choice: 2
+Welcome to the Quiz App!
+Answer the following questions:
+
+1. What is the capital of France?
+1. Berlin
+2. Madrid
+3. Paris
+4. Rome
+Enter your answer: 3
+Correct!
+
+2. Who wrote 'To Kill a Mockingbird'?
+1. Harper Lee
+2. Mark Twain
+3. J.K. Rowling
+4. Ernest Hemingway
+Enter your answer: 1
+Correct!
+
+3. What is the largest planet in our Solar System?
+1. Earth
+2. Mars
+3. Jupiter
+4. Saturn
+Enter your answer: 3
+Correct!
+You scored 3 out of 3.
+```
+
 
 
 ---
