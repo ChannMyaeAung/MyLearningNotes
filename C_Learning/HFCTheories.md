@@ -5442,3 +5442,180 @@ close(fd[1]); // This will close the write end of the pipe.
 - The parent will read from the pipe, but won't write.
 - Everything that the child writes to the pipe will be read through the Standard Input of the parent process.
 
+
+
+Q: Is a pipe a file?
+
+A: It's up to the OS how it creates pipes, but pipes created with the `pipe()` function are not normally files.
+
+
+
+Q: So pipes might be files?
+
+A: It's possible to create pipes based on files, which are normally called named pipes or FIFO(first-in/first-out) files.
+
+
+
+Q: Why would anyone want a pipe that uses a file?
+
+A: Pipes based on files have names. That means they are useful if two processes need to talk to each other and they are not parent and child processes. As long as both processes know the name of the pipe, they can talk with it.
+
+
+
+Q: Great! So how do I use named pipes?
+
+A: Using the `mkfifo()` system call. 
+
+
+
+Q: If most pipes are not files, what are they?
+
+A: Usually, they are just pieces of memory. Data is written at one point and read at another.
+
+
+
+Q: What happens if I try to read from a pipe and there's nothing in there?
+
+A: Our program will wait until something is there.
+
+
+
+Q: How does the parent know when the child is finished?
+
+A: When the child process dies, the pipe is closed and the `fgets()` command receives an end-of-file, which means the `fgets()` function returns 0 and the loop ends.
+
+
+
+Q: Can parents speak to children?
+
+A: Absolutely. There's no reason why we can't connect our pipes the other way around, so that the parent sends data to the child process.
+
+
+
+Q: Can you have a pipe that works in both directions at once? That way, my parent and child processes could have a two-way conversation.
+
+A: No, we can't do that. Pipes always work in only one direction. But we can create two pipes: one from the parent to the child, and one from the child to the parent.
+
+
+
+#### Bullet Points
+
+- Parent and child processes can communicate using pipes.
+- The `pipe()` function creates a pipe and two descriptors.
+- The descriptors are for the read and write ends of the pipe.
+- You can redirect Standard Input and Output to the pipe.
+- The parent and child processes use different ends of the pipe.
+
+
+
+#### The OS controls our program with signals
+
+- When we call the `fgets()` function, the OS reads data from the keyboard, and when it sees the user hit **CTRL-C**, sends an interrupt signal to the program.
+- The process runs its default interrupt handler and calls `exit()`.
+- A signal is just a short message: a single integer value.
+- When the signal arrives, the process has to stop whatever it's doing and go deal with the signal.
+- The process looks at a table of signal mappings that link each signal with a function called the **signal handler**.
+- The default signal handler for the interrupt signal just calls the `exit()` function.
+- So, why doesn't the OS just kill the program? Because the signal table lets us run our **own code** when our process receives a signal.
+
+| Signal | Handler     |
+| ------ | ----------- |
+| SIGURG | Do nothing  |
+| SIGINT | Call exit() |
+
+- `SIGINT` is the interrupt signal and has the value 2.
+
+
+
+#### Catching signals and running our own code
+
+Sometimes we'll want to run our own code if someone interrupts our program.
+
+For example, if our process has files or network connections open, it might want to close things down and tidy up before exiting.
+
+We can do it with `sigaction`s.
+
+#### A `sigaction` is a function wrapper
+
+- A `sigaction` is a `struct` that contains a pointer to a function.
+- `sigaction`s are used to tell the OS which function it should call when a signal is sent to a process.
+- So, if we have a function called `diediedie()` that we want the OS to call if someone sends an interrupt signal to our process, we'll need to wrap the `diediedie()` function up as a `sigaction`.
+
+```C
+// Create a new action.
+struct sigaction action;
+
+// diediedie is the name of the function we want the computer to call.
+// The function that the sigaction wraps is called a handler.
+action.sa_handler = diediedie;
+
+// The mask is a way of filtering the signals that the sigaction will handle. We'll want to use an empty mask, like here.
+sigemptyset(&action.sa_mask);
+
+// some additional flags. We can just set them to zero.
+action.sa_flags = 0;
+
+
+```
+
+- The function wrapped by a `sigaction` is called the **handler** because it will be used to deal with or handle a signal that's sent to it.
+- If we want to create a handler , it will need to be written in a certain way.
+
+#### All handlers take signal arguments
+
+- Signals are just integer values, and if we create a custom handler function, it will need to accept an `int` argument like this:
+
+```C
+void diediedie(int sig){
+    puts("Goodbye cruel world...\n");
+    exit(1);
+}
+
+// int sig - the signal number the handler has caught.
+```
+
+- Because the handler is passed the number of the signal, we can reuse the same handler for several signals.
+- Or , we can have a separate handler for each signal.
+- Handlers are intended to be short, fast pieces of code.
+
+
+
+#### `sigactions` are registered with `sigaction()`
+
+- Once we have created a `sigaction`, we will need to tell the OS about it. We can do it with `sigaction()` function:
+
+```C
+sigaction(signal_no, &new_action, &old_action);
+```
+
+- `sigaction()` takes three parameters:
+  - **The signal number**: The integer value of the signal we want to handle. Usually, we'll pass one of the standard signal symbols, like `SIGINT` or `SIGQUIT`.
+  - **The new action**: This is the **address** of the new `sigaction` we want to register.
+  - **The old action**: If we pass a pointer to another `sigaction`, it will be filled with details of the current handler that we're about to replace. If we don't care about the existing signal handler, we can set this to NULL.
+- The `sigaction()` function will return -1 if it fails and will also set the `errno` function.
+
+```C
+// int sig - The signal number
+// (*handler) - A pointer to the handler function
+
+int catch_signal(int sig, void (*handler)(int)){
+	// Create an action
+    struct sigaction action;
+    
+    // set the action's handler to the handler function that was passsed in.
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    
+    
+    // return the value of sigaction(), so we can check for errors.
+    return sigaction (sig, &action, NULL);
+}
+```
+
+- This function will allow us to set a signal handler by calling `catch_signal()` with a signal number and a function name:
+
+```C
+catch_signal(SIGINT, diediedie);
+```
+

@@ -5291,3 +5291,7 @@ Opening in existing browser session.
 Child process finished with status 0
 ```
 
+- The program ran the `rssgossip.py` in a separate process and told it to display URLs for each story it found.
+- All of the output of the screen was redirected through a pipe that was connected to the parent process.
+- Pipes are a great way of connecting processes together.
+- Now, we have the ability to not only **run** processes and **control** their environments, but we also have a way of **capturing their output**.
