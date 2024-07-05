@@ -5295,3 +5295,85 @@ Child process finished with status 0
 - All of the output of the screen was redirected through a pipe that was connected to the parent process.
 - Pipes are a great way of connecting processes together.
 - Now, we have the ability to not only **run** processes and **control** their environments, but we also have a way of **capturing their output**.
+
+
+
+#### Signal Handler Exercise
+
+`hello.c`
+
+```C
+#include <signal.h> // We need to include signal.h header.
+// This is our new signal handler.
+void diediedie(int sig){ // The OS passes signal to the handler.
+	puts("Goodbye cruel world...\n");
+    exit(1);
+}
+
+int catch_signal(int sig, void (*handler)(int)){
+    
+    struct sigaction action; // Declare a variable 'action' of type 'struct sigaction'
+    
+    action.sa_handler = handler; // Set the signal handler to the provided 'handler' function
+    
+    sigemptyset(&action.sa_mask); // Initialize the signal set to empty (no signals blocked during the handler execution)
+    
+    action.sa_flags = 0; // Set the flags to 0 (no special options)
+    return sigaction (sig, &action, NULL);
+    // Set the action for signal 'sig' using 'sigaction' system call
+}
+```
+
+**`struct sigaction action;`**:
+
+- This declares a variable `action` of type `struct sigaction`, which is used to specify how to handle a particular signal.
+
+**`action.sa_handler = handler;`**:
+
+- This sets the `sa_handler` member of the `struct sigaction` to the function pointer `handler`. This means that when the specified signal (`sig`) occurs, the `handler` function will be called.
+
+**`sigemptyset(&action.sa_mask);`**:
+
+- This initializes the signal set `sa_mask` to be empty. This means that no additional signals are blocked during the execution of the signal handler.
+
+**`action.sa_flags = 0;`**:
+
+- This sets the `sa_flags` member to 0, which means no special flags are set. It uses the default behavior for handling the signal.
+
+**`return sigaction(sig, &action, NULL);`**:
+
+- This calls the `sigaction` system call to change the action taken by the process on receipt of signal `sig`. It sets the action to the one specified by `action`. The third argument is `NULL`, which means we do not need to retrieve the old action.
+
+`main.c`
+
+```C
+int main(){
+    
+    // SIGINT means we're capturing the interrupt signal
+    if(catch_signal(SIGINT, diediedie) == -1){
+        fprintf(stderr, "Can't map the handler");
+        exit(2);
+    }
+    
+    char name[30];
+    printf("Enter your name: ");
+    fgets(name, 30, stdin);
+    printf("Hello %s\n", name);
+    return 0;
+}
+```
+
+- `SIGINT` - the interrupt signal typically triggered by pressing `Ctrl+C`. 
+- When press `Ctrl+C`, the OS will automatically send the process an interrupt signal (`SIGINT`).
+- The interrupt signal will be handled by the `sigaction` that was registered in the `catch_signal()` function. 
+- The `sigaction` contains a pointer to the `diediedie()` function.
+- This will then be called and the program will display a message and `exit()`.
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter your name: ^CGoodbye cruel world....
+
+```
+

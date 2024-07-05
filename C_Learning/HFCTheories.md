@@ -5619,3 +5619,124 @@ int catch_signal(int sig, void (*handler)(int)){
 catch_signal(SIGINT, diediedie);
 ```
 
+### Understanding SIGQUIT and Core Dump Files
+
+**SIGQUIT** is a signal in Unix-like operating systems that is sent to a process to instruct it to quit and dump its core. It is typically initiated by the user by pressing `Ctrl+\`.
+
+### What Happens When SIGQUIT is Sent?
+
+1. **Process Interruption**:
+   - When a process receives the `SIGQUIT` signal, it is expected to terminate. Unlike `SIGINT` (triggered by `Ctrl+C`), which politely asks a process to terminate, `SIGQUIT` also forces the process to produce a core dump before quitting.
+2. **Core Dump File**:
+   - A core dump (or core file) is a file that captures the memory of a running process at a specific point in time, usually when the process crashes. It contains:
+     - The contents of the process's memory.
+     - The state of the CPU registers.
+     - The state of the process's stack and heap.
+     - Information about the process's environment, open files, etc.
+   - The core dump file is usually named `core` and is placed in the directory where the program was running, although this can vary depending on system configuration.
+
+### Purpose of Core Dumps:
+
+1. **Debugging**:
+   - Core dumps are primarily used for debugging. They allow developers to analyze the state of a program at the moment it crashed, helping them to identify and fix bugs.
+2. **Post-mortem Analysis**:
+   - By loading a core dump into a debugger (like `gdb`), developers can inspect the state of the program, such as variable values, the call stack, and memory contents, to understand why the program terminated unexpectedly.
+
+### Example Scenario:
+
+Imagine you have a program that crashes due to a segmentation fault or some other unexpected error. If you run this program and it receives a `SIGQUIT`, the operating system will generate a core dump file before the program exits. You can then use tools like `gdb` to load this core dump and investigate the issue.
+
+### Commands and Usage:
+
+- **Generating a Core Dump**:
+
+  - You can manually trigger a core dump by sending `SIGQUIT` to a process:
+
+    ```sh
+    kill -QUIT <pid>
+    ```
+
+- **Analyzing a Core Dump**:
+
+  - Use a debugger like `gdb` to load and analyze the core dump:
+
+    ```sh
+    gdb <program> core
+    ```
+
+  - Once inside `gdb`, you can use various commands to inspect the state of the program:
+
+    - `bt` (backtrace): to see the call stack.
+    - `info registers`: to see the state of CPU registers.
+    - `list`: to view the source code.
+    - `print <variable>`: to inspect the value of a variable.
+
+### Example Code Handling SIGQUIT:
+
+Here’s a small example to illustrate how a program might handle `SIGQUIT`:
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+
+// Signal handler function
+void handle_sigquit(int sig) {
+    printf("Received SIGQUIT, preparing to dump core...\n");
+    abort(); // This will create a core dump
+}
+
+int main() {
+    // Set up the SIGQUIT signal handler
+    if (signal(SIGQUIT, handle_sigquit) == SIG_ERR) {
+        perror("Unable to catch SIGQUIT");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Running program. Send SIGQUIT (Ctrl+\\) to create a core dump.\n");
+
+    // Infinite loop to keep the program running
+    while (1) {
+        pause(); // Wait for signals
+    }
+
+    return 0;
+}
+```
+
+In this example:
+
+- The `handle_sigquit` function is set up to handle `SIGQUIT`.
+- When `SIGQUIT` is received, the handler prints a message and then calls `abort()`, which generates a core dump.
+- The `main` function sets up the signal handler and then waits for signals indefinitely using `pause()`.
+
+### Conclusion:
+
+- **SIGQUIT** instructs a process to quit and produce a core dump.
+- **Core Dumps** are valuable debugging tools that capture the state of a process at the time of its crash.
+- Developers use core dumps to perform post-mortem debugging and analyze the causes of crashes.
+
+
+
+| signals    | cause                                                        |
+| ---------- | ------------------------------------------------------------ |
+| `SIGINT`   | The process was interrupted.                                 |
+| `SIGQUIT`  | Someone asked the process to stop and dump the memory in a core dump file. |
+| `SIGFPE`   | Floating-point error.                                        |
+| `SIGTRAP`  | The debugger asks where the process is.                      |
+| `SIGSEGV`  | The process tried to access illegal memory.                  |
+| `SIGWINCH` | The terminal window changed size.                            |
+| `SIGTERM`  | Someone just asked the kernel to kill the process.           |
+| `SIGPIPE`  | The process wrote to a pipe that nothing's reading.          |
+
+
+
+Q: If the interrupt handler didn't call `exit()`, would the program still have ended?
+
+A: No.
+
+
+
+Q: So, I could write a program that completely ignores interrupts?
+
+A: You could, but it is not a good idea. In general, if our program receives an error signal, it's best to exit with an error, even if we run some of our own code first.
