@@ -5377,3 +5377,8 @@ Enter your name: ^CGoodbye cruel world....
 
 ```
 
+#### Chapter 10 - Long Exercise 
+
+```C
+```
+

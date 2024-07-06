@@ -5740,3 +5740,116 @@ A: No.
 Q: So, I could write a program that completely ignores interrupts?
 
 A: You could, but it is not a good idea. In general, if our program receives an error signal, it's best to exit with an error, even if we run some of our own code first.
+
+
+
+#### Use `kill` to send signals
+
+- `kill` sends a signal to a process. By default, the command sends a `SIGTERM` signal to the process but we can use it to send any signal we like.
+
+```sh
+> ps
+77868 ttys003  0:00.02 bash
+78222 ttys003  0:00.01 ./testprog
+
+>kill 78222
+>kill -INT 78222
+>kill -SEGV 78222
+>kill -KILL 78222
+```
+
+- `ps` displays our current processes.
+- `kill 78222` - This sends `SIGTERM` to the program
+- `kill -INT 78222` - This sends `SIGINT` to the program.
+- `kill -SEGV 78222`- This sends `SIGSEGV` to the program
+- `kill -KILL 78222` - This sends `SIGKILL` which can't be ignored.
+- Each of these `kill` commands will send signals to the process and run whatever handler the process has configured.
+- The exception is the `SIGKILL` signal.
+- The `SIGKILL` signal can't be caught by code and it can't be ignored.
+- That means if we have a bug in our code and it is ignoring every signal, we can **always** stop the process with `kill -KILL`.
+- `kill -KILL <pid>` will always kill our program.
+
+
+
+#### Send signals with `raise()`
+
+- Sometimes we might want a process to send a signal to **itself**, which we can do with the `raise()` command.
+
+```C
+raise(SIGTERM);
+```
+
+- Normally, the `raise()` command is used inside our own custom signal handlers.
+- It means our code can receive signal for something minor and then choose to raise a more serious signal. This is called **signal escalation**.
+
+
+
+#### Sending our code a wake-up call
+
+- The OS sends signals to a process when something has happened that the process needs to know about.
+- It might be that the user has tried to interrupt the process, or someone has tried to kill it or even that the process has tried to do something it shouldn't have, like trying to access a restricted piece of memory.
+- But signals are not just used when things go wrong.
+- Sometimes, a process might actually want to generate its own signals.
+- One example of that is the **alarm signal, `SIGALRM`**.
+- The alarm signal is usually created by the process's **interval timer**.
+- The interval timer is like an alarm clock: we set it for some time in the future and in the meantime our program can go and do something else:
+
+```C
+// This will make the timer fire in 120 seconds.
+alarm(120);
+
+// Meanwhile our code does something else.
+do_important_busy_work();
+do_more_busy_work();
+```
+
+- But even though our  program is busy doing other things, the timer is still **running in the background**.
+
+So, when the 120 seconds are up, **the timer fires a `SIGALRM` signal**.
+
+- When a process receives a signal, it **stops doing everything else** and handles the signal.
+- However, with an alarm signal, it **stops the process**.
+
+```C
+catch_signal(SIGALRM, pour_coffee);
+alarm(120);
+```
+
+- It is **not recommended** to use `alarm()` and `sleep()` at the same time.
+- The `sleep()` function puts our program to sleep for a few seconds, but it works by using the same interval timer as the `alarm()` function.
+- So, if we try to use the two functions at the same time, they will interfere with each other.
+- Alarm signals let us **multitask**.
+- If we need to run a particular job every few seconds, or if we want to limit the amount of time we spend doing a job, then alarm signals are a great way of getting a program to **interrupt itself**.
+
+We've seen how to set custom signal handlers, but...
+
+#### What if we want to restore the default signal handler?
+
+- The `signal.h` header has a special symbol `SIG_DFL` which means **handle it the default way**.
+
+```C
+catch_signal(SIGTERM, SIG_DFL);
+```
+
+- `SIG_IGN` tells the process to completely **ignore** a signal.
+
+```C
+catch_signal(SIGINT, SIG_IGN);
+```
+
+- But, we should be very careful before we choose to ignore a signal.
+- Signals are an important way of controlling, and stopping processes.
+
+Q: Can I set an alarm for less than a second?
+
+A: Yes, but it's a little more complicated. We need to use a different function called `setitimer()`. It lets us set the process's interval timer directly in either seconds or fractions of a second.
+
+Q: Why is there only one timer for a process?
+
+A: The timers have to be managed by the OS's kernel and if processes had lots of timers, the kernel would go slower and slower. To prevent this from happening, the OS limits each process to one timer.
+
+
+
+Q: What happens if I set one timer and it had already been set?
+
+A: Whenever we call the `alarm()` function, we reset the timer. That means if we set the alarm for 10 seconds, then a moment later we set it for 10 minutes, the alarm won't fire until 10 minutes are up. The original 10-second timer will be lost.
