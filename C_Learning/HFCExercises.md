@@ -5377,8 +5377,142 @@ Enter your name: ^CGoodbye cruel world....
 
 ```
 
-#### Chapter 10 - Long Exercise 
+#### Chapter 10 - Long Exercise
+
+#### `hello.c` 
 
 ```C
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <signal.h>
+#include "hello.h"
+
+void error(char *msg)
+{
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(1);
+}
+
+void diediedie(int sig)
+{
+    puts("Goodbye cruel world....\n");
+    exit(1);
+}
+
+void end_game(int sig)
+{
+    printf("\nFinal score: %d\n", score);
+    exit(0);
+}
+
+int catch_signal(int sig, void (*handler)(int))
+{
+    struct sigaction action;
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    return sigaction(sig, &action, NULL);
+}
+
+void times_up(int sig)
+{
+    puts("\nTIME'S UP!");
+    raise(SIGINT);
+}
+
 ```
 
+`hello.h`
+
+```C
+extern int score;
+
+void error(char *msg);
+
+void diediedie(int sig);
+
+void end_game(int sig);
+int catch_signal(int sig, void (*handler)(int));
+
+void times_up(int sig);
+```
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <signal.h>
+#include "hello.h"
+
+int main()
+{
+    catch_signal(SIGALRM, times_up);
+    catch_signal(SIGINT, end_game);
+    srandom(time(0));
+    while (1)
+    {
+        int a = random() % 11;
+        int b = random() % 11;
+        char txt[4];
+        alarm(5);
+        printf("\nWhat is %d times %d? ", a, b);
+        fgets(txt, 4, stdin);
+        int answer = atoi(txt);
+        if (answer == a * b)
+            score++;
+        else
+            printf("\nWrong! Score: %d\n", score);
+    }
+    return 0;
+}
+
+```
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ ./final
+
+What is 6 times 0? 
+TIME'S UP!
+
+Final score: 0
+
+chan@CMA:~/C_Programming/test$ ./final
+
+What is 6 times 4? 24
+
+What is 5 times 4? 20
+
+What is 10 times 2? 20
+
+What is 1 times 2? 2
+
+What is 10 times 7? 70
+
+What is 2 times 1? 3
+
+Wrong! Score: 5
+
+What is 5 times 0? ^C
+Final score: 5
+chan@CMA:~/C_Programming/test$ 
+```
+
+- The first testing, instead of hitting `CTRL-C`, we waited for at least five seconds on one of the answers and we can see that the alarm signal (`SIGALRM`) fires. The program was waiting for the user to enter an answer but because he took so long, the timer signal was sent; the process immediately displays "TIME'S UP!" message and then escalates the signal to a `SIGINT` that causes the program to display the final score.
+- The second time, we hit `CTRL-C`, which sends the process an interrupt signal (`SIGINT`) that makes the program display the final score and then `exit()`.
+- Signals are a little complex, but incredibly useful.
+- They allow our programs to end gracefully, and the interval timer can help us deal with tasks that are taking too long.

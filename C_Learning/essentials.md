@@ -19,6 +19,8 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+The `while(1)` loop in C is an infinite loop. It continuously executes the block of code inside the loop without stopping, because the condition `1` (which represents a non-zero value, and thus `true` in C) never changes. To exit from such a loop, you typically need to use a break statement, return statement, or any other form of interrupt (like a signal handler in the case of a Unix-like system) that can alter the flow of control out of the loop.
+
 ### Conditional Statements
 
 - **In conditional statements**, `1` (or any non-zero value) typically means **true**, and `0` means **false**.

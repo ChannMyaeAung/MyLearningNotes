@@ -5853,3 +5853,93 @@ A: The timers have to be managed by the OS's kernel and if processes had lots of
 Q: What happens if I set one timer and it had already been set?
 
 A: Whenever we call the `alarm()` function, we reset the timer. That means if we set the alarm for 10 seconds, then a moment later we set it for 10 minutes, the alarm won't fire until 10 minutes are up. The original 10-second timer will be lost.
+
+
+
+#### `atoi()`
+
+- The `atoi()` function takes a C-style string (`const char *str`) and converts the initial portion of the string to an `int` value. If the string does not contain a valid integer, the result is undefined.
+- It is part of the C standard library, defined in `<stdlib.h>`. 
+- The function scans the input string for the first sequence of characters that can be interpreted as a representation of an integer, ignoring any initial whitespace characters. 
+- It then converts this part of the string into an integer value. 
+- If the first sequence of non-whitespace characters in the string is not a valid integer (or if there are no such sequences), the function returns zero.
+- It converts the subsequent characters (digits) into an integer until it encounters a non-digit character or the end of the string.
+
+##### Function Prototype
+
+```C
+int atoi(const char *str);
+```
+
+
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    char str1[] = "1234";
+    char str2[] = "   -567";
+    char str3[] = "42abc";
+    char str4[] = "abc42";
+
+    int num1 = atoi(str1);
+    int num2 = atoi(str2);
+    int num3 = atoi(str3);
+    int num4 = atoi(str4);
+
+    printf("String: '%s' -> Integer: %d\n", str1, num1);  // Output: String: '1234' -> Integer: 1234
+    printf("String: '%s' -> Integer: %d\n", str2, num2);  // Output: String: '   -567' -> Integer: -567
+    printf("String: '%s' -> Integer: %d\n", str3, num3);  // Output: String: '42abc' -> Integer: 42
+    printf("String: '%s' -> Integer: %d\n", str4, num4);  // Output: String: 'abc42' -> Integer: 0
+
+    return 0;
+}
+
+```
+
+### Important Considerations
+
+1. **Error Handling**: `atoi()` does not provide a way to detect errors. If the string does not contain a valid integer, `atoi()` returns 0, which can be ambiguous as 0 might also be a valid result.
+2. **Undefined Behavior**: If the value is out of the range of `int`, the behavior is undefined.
+3. **Better Alternatives**: Due to its limitations, it's often better to use functions like `strtol()`, `strtoll()`, `strtoul()`, or `strtoull()`, which provide error checking and can handle larger integer types.
+
+### Alternative with `strtol()`
+
+Here's an example of how to use `strtol()` for better error handling:
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <limits.h>
+
+int main() {
+    char str[] = "1234abc";
+    char *endptr;
+    errno = 0; // To distinguish success/failure after call
+
+    long val = strtol(str, &endptr, 10);
+
+    // Check for various possible errors
+    if (errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) {
+        printf("Out of range error\n");
+    } else if (errno != 0 && val == 0) {
+        printf("Conversion error\n");
+    } else if (endptr == str) {
+        printf("No digits were found\n");
+    } else if (*endptr != '\0') {
+        printf("Further characters after number: %s\n", endptr);
+    } else {
+        printf("Converted number: %ld\n", val);  // Output: Converted number: 1234
+    }
+
+    return 0;
+}
+
+```
+
+In this example:
+
+- `strtol()` converts the string to a `long` and provides detailed error checking.
+- `endptr` is used to determine where the conversion stopped, which can help identify invalid characters in the string.
