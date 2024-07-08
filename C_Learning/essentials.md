@@ -19,7 +19,29 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+#### while(1)
+
 The `while(1)` loop in C is an infinite loop. It continuously executes the block of code inside the loop without stopping, because the condition `1` (which represents a non-zero value, and thus `true` in C) never changes. To exit from such a loop, you typically need to use a break statement, return statement, or any other form of interrupt (like a signal handler in the case of a Unix-like system) that can alter the flow of control out of the loop.
+
+```C
+while(1){
+    printf("This will print indefinitely.\n");
+}
+```
+
+```C
+int count = 0;
+while(1){
+    printf("Count: %d\n", count);
+    count++;
+    if(count == 10){
+        break; //Exit the loop when the count reaches 10
+    }
+}
+printf("Exited the loop.\n");
+```
+
+
 
 ### Conditional Statements
 
@@ -100,6 +122,17 @@ These conventions are widely used in C and many other programming languages.
 - `char *str1 = "apple"`: Modifying the string literal via `str1` (e.g., `str1[0] = 'A';`) leads to undefined behavior because string literals are stored in read-only memory. The pointer points to a fixed location in memory where the string literal is stored.
 
 - What does `i->name` equivalent in pointer notation? `i->name` is equivalent to `(i*).name`. This notation dereferences the pointer `i` to access the `name` member of the structure(`struct`) it points to.
+
+- In C, `void (*handler)(int)` is a declaration of a pointer to a function that takes an integer as its argument and returns nothing (`void`). This syntax is used for defining function pointers, which are variables that can store the address of a function. In this context, `handler` is a function pointer that is expected to point to a function designed to handle signals, with the signal number being passed as the integer argument.
+
+  Here's a breakdown of the syntax:
+
+  - `void` indicates the return type of the function that `handler`can point to, meaning the function does not return a value.
+  - `(*handler)` is the function pointer itself. The parentheses around `*handler` are necessary to indicate that `handler` is a pointer to a function, not a function returning a pointer.
+  - `(int)` specifies the type of argument that the function pointed to by `handler` takes, which is a single integer.
+
+  Function pointers like `handler` are commonly used in C for callback functions, where you pass the address of a function into another function to be called later. 
+
 
 #### Escaping Sequence
 

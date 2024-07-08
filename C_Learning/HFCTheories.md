@@ -5943,3 +5943,49 @@ In this example:
 
 - `strtol()` converts the string to a `long` and provides detailed error checking.
 - `endptr` is used to determine where the conversion stopped, which can help identify invalid characters in the string.
+
+
+
+Q: Are signals always received in the same order they are sent?
+
+A: Not if they are sent very close together. The OS might choose to reorder the signals if it thinks one is more important than the others.
+
+Q: Is that always true?
+
+A: It depends on the platform. On most versions of Cygwin, for example, the signals will always be sent and received in the same order. But in general, we shouldn't rely on it.
+
+Q: If I send the same signal twice, will it be received twice by the process?
+
+A: Again, it depends. On Linux and the Mac, if the same signal is repeated very quickly, the kernel might choose to only send the signal once to the process. On Cygwin, it will always send both signals. But again, we shouldn't assume that just because we sent the same signal twice, it will be received twice.
+
+#### Chapter 10 - Bullet Points
+
+- The OS talks to processes using signals.
+- Programs are normally stopped using signals.
+- When a process receives a signal, it runs a handler.
+- For most error signals, the default handler stops the program.
+- Handlers can be replaced with `signal()` function.
+- We can send signals to ourselves with `raise()`.
+- The interval timer sends `SIGALRM` signals.
+- The `alarm()` function sets the interval timer.
+- There is one timer per process.
+- Don't use `sleep()` and `alarm()` at the same time.
+- `kill` sends signals to a process.
+- `kill -KILL` will always kill a process.
+- `exit()` stops the program immediately.
+- `waitpid()` waits for a process to finish.
+- `fileno()` finds the descriptor.
+- `dup2()` duplicates a data stream.
+- `pipe()` creates a communication pipe.
+- Processes can communicate using pipes.
+- Signals are messages from the OS.
+- A program can send signals to itself with `raise()`.
+- `sigaction()` lets us handle signals.
+- `alarm()` sends a `SIGALRM` after a few seconds.
+
+---
+
+
+
+### Chapter 11 - Sockets and Networking
+
