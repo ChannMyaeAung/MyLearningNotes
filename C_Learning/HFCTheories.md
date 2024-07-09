@@ -5214,7 +5214,7 @@ return 0;
 `waitpid()` takes three parameters:
 
 ```C
-waitpid(pid, pid_status, options)
+waitpid(pid, &pid_status, options)
 ```
 
 - **pid** - This is the process ID that the parent process was given when it forked the child.
@@ -5988,4 +5988,107 @@ A: Again, it depends. On Linux and the Mac, if the same signal is repeated very 
 
 
 ### Chapter 11 - Sockets and Networking
+
+#### The Internet knock-knock server
+
+- C is used to write most of the low-level networking code on the Internet.
+- Most networked applications need two separate programs: a **server** and a **client**.
+- Other than telling us it's running, the server won't display anything else on the screen.
+- If we open a second console, we'll be able to connect to the server using a client program called **telnet**.
+- Telnet takes two parameters: the **address** of the server and the **port** the server is running on.
+- If we are running telnet on the same machine as the server, we can use **127.0.0.1** for the address like this:
+
+```sh
+telnet 127.0.0.1 30000
+```
+
+- 30000 is the number of the network port.
+
+
+
+#### Knock-knock server overview
+
+- The server will be able to talk to several clients at onace.
+- The client and the sever will have a structured conversation called a **protocol**.
+- There are different protocols used on the Internet. Some of them are low-level protocols, like the **internet protocol(IP)** which are used to control how many 1s and 0s are sent around the Internet. Other protocols are high-level protocols, like the **hypertext transfer protocol(HTTP)** which controls how web browsers talk to web severs.
+- The joke server is going  to use a custom high-level protocol called the **Internet knock-knock protocol(IKKP)**.
+- A **protocol** always has a strict set of rules. As long as the client and the server both follow those rules, everything is fine.
+- But if one of them breaks the rules, the conversation usually stops pretty abruptly.
+
+
+
+#### BLAB: how severs talk to the Internet
+
+- When C programs need to talk to the outside world, they use **data streams** to read and write bytes.
+- If we're going to write a program talk to the network, we need a new kind of data stream called a **socket**.
+
+```C
+#include <sys/socket.h> // We'll need this header.
+
+int listener_d = socket(PF_INET, SOCK_STREM, 0); // Create a new IPv4 TCP socket
+
+if(listener_d == -1) // Check if socket creation failed
+    error("Can't open socket!");
+
+```
+
+- `int listener_d`: Declares a variable `listener_d` of type `int`. This variable will store the file descriptor of the socket.
+- `socket(PF_INET, SOCK_STREAM, 0)`: This function call creates a new socket.
+  - `PF_INET`: Specifies the protocol family to be used, which is IPv4 in this case. `PF_INET` stands for "Protocol Family Internet".
+  - `SOCK_STREAM`: Specifies the type of socket to be created. `SOCK_STREAM` indicates that this will be a stream socket, which is typically used for TCP (Transmission Control Protocol) communication.
+  - `0`: Specifies the protocol to be used. When `0` is passed, it means the default protocol for the specified socket type will be used, which is TCP for `SOCK_STREAM`.
+
+If the socket is successfully created, `socket()` returns a file descriptor (an integer) that can be used to refer to the socket in subsequent operations. If it fails, it returns `-1`.
+
+
+
+- Before a server can use a socket to talk to a client program, it needs to go through four stages that we can remember with the acronym **BLAB** : **Bind, Listen, Accept, Begin**.
+- Bind to a port. Listen. Accept a connection. Begin talking.
+
+#### 1. Bind to a port
+
+- A computer might need to run several programs at once.
+- It might be sending out web pages, posting email, and running a chat server all at the same time.
+- To prevent the different conversations from getting confused, each server uses a different **port**.
+- A port is just like a channel on a TV.
+- Different ports are used for different network services, just like different channels are used for different content.
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-07-09 23-04-46.png)
+
+- When a server starts up, it needs to tell the OS which port it's going to use. This is called **binding the port**.
+- The knock-knock server is going to use port 30000 and to bind it we'll need two things: the **socket descriptor** and a **socket name**.
+- A socket name is just a `struct` that means "Internet port 30000".
+
+```C
+#include <arpa/inet.h> // We'll need this header for creating Internet addresses.
+
+...
+struct sockaddr_in name;
+name.sin_family = PF_INET;
+name.sin_port = (in_port_t)htons(30000);
+name.sin_addr.s_addr = htonl(INADDR_ANY);
+int c = bind (listener_d, (*struct socketaddr *) &name, sizeof(name));
+if(c == -1)
+    error("Can't bind to socket");
+```
+
+- `struct sockaddr_in name;`: Declares a variable `name` of type `struct sockaddr_in`. This structure is used to specify the address to which the socket will be bound.
+- `name.sin_family = PF_INET;`: Sets the address family to `PF_INET`, which stands for IPv4.
+- `name.sin_port = (in_port_t)htons(30000);`: Sets the port number to `30000`. The `htons` function converts the port number to network byte order (big-endian), which is necessary for network communication.
+- `name.sin_addr.s_addr = htonl(INADDR_ANY);`: Sets the IP address to `INADDR_ANY`, which means the socket will be bound to all available network interfaces on the machine. The `htonl` function converts the IP address to network byte order.
+
+**Binding the Socket to the Address:**
+
+```C
+int c = bind(listener_d, (struct sockaddr *) &name, sizeof(name));
+if(c == -1)
+    error("Can't bind to socket");
+```
+
+- `int c = bind(listener_d, (struct sockaddr *) &name, sizeof(name));`: This function call binds the socket `listener_d`to the address specified by the `name`structure.
+  - `listener_d`: The file descriptor of the socket to be bound.
+  - `(struct sockaddr *) &name`: A pointer to the `sockaddr_in` structure cast to a pointer of type `struct sockaddr`.
+  - `sizeof(name)`: The size of the `sockaddr_in` structure.
+
+If the `bind` function is successful, it returns `0`. If it fails, it returns `-1`.
 

@@ -5240,7 +5240,7 @@ int main(int argc, char *argv[]){
         // We will read from the stdin because that's connected to the pipe.
         // We could also put fd[0].
         while(fgets(line, 255, stdin)){
-            fprintf("Received line: %s", line);
+            printf("Received line: %s", line);
             if(line[0] == '\t'){
                 open_url(line + 1); // open url if it starts with a tab
                 // line + 1 is the string starting after the tab character.

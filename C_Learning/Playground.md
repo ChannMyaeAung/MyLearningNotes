@@ -137,7 +137,7 @@ void printFibonacci(int n){
     
     for(int i = 1; i <= n; i++){
         if(i == n){
-            printf("%d", t1); // Print the last term without a comma
+            printf("%d\n", t1); // Print the last term without a comma
         } else{
             printf("%d, ", t1); // Print the terms with a comma
         }
