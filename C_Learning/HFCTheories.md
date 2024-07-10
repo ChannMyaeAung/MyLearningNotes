@@ -6008,7 +6008,7 @@ telnet 127.0.0.1 30000
 
 #### Knock-knock server overview
 
-- The server will be able to talk to several clients at onace.
+- The server will be able to talk to several clients at once.
 - The client and the sever will have a structured conversation called a **protocol**.
 - There are different protocols used on the Internet. Some of them are low-level protocols, like the **internet protocol(IP)** which are used to control how many 1s and 0s are sent around the Internet. Other protocols are high-level protocols, like the **hypertext transfer protocol(HTTP)** which controls how web browsers talk to web severs.
 - The joke server is going  to use a custom high-level protocol called the **Internet knock-knock protocol(IKKP)**.
@@ -6067,7 +6067,7 @@ struct sockaddr_in name;
 name.sin_family = PF_INET;
 name.sin_port = (in_port_t)htons(30000);
 name.sin_addr.s_addr = htonl(INADDR_ANY);
-int c = bind (listener_d, (*struct socketaddr *) &name, sizeof(name));
+int c = bind (listener_d, (struct socketaddr *) &name, sizeof(name));
 if(c == -1)
     error("Can't bind to socket");
 ```
@@ -6092,3 +6092,78 @@ if(c == -1)
 
 If the `bind` function is successful, it returns `0`. If it fails, it returns `-1`.
 
+
+#### 2. Listen
+
+- If our server becomes popular, we'll probably get lots of clients connecting to it at once.
+- The `listen()` system call tells the OS how long we want the queue to be:
+
+```C
+if(listen(listener_d, 10) == -1){
+    error("Can't listen");
+}
+```
+
+- Calling `listen()` with a queue length of 10 means that up to 10 clients can try to connect to the server at once.
+- They won't be immediately answered, but they'll be able to wait.
+- The 11th and 12th clients will be told the server is too busy.
+
+#### 3. Accept a connection
+
+- Once we've bound a port and set up a listen queue, we then just have to wait.
+- Servers spend most of their lives waiting for clients to contact them.
+- The `accept()` system call waits until a client contacts the server and then it returns a **second socket descriptor** that we can use to hold a conversation on.
+
+```C
+struct sockaddr_storage client_addr;
+unsigned int address_size = sizeof(client_addr);
+int connect_d = accept(listener_d, (struct sockaddr *)&client_addr, &address_size);
+
+if(connect_d == -1){
+    error("Can't open secondary socket");
+}
+```
+
+
+
+This new **connection descriptor** (connect_d) is the one the the server will use to...
+
+#### 4. Begin talking
+
+
+
+#### A socket's not our typical data stream
+
+- Data streams have all been the same.
+- Whether we're connected to files or Standard I/O, we've been able to use functions like `fprintf()` and `fscanf()` to talk to them.
+- Sockets are a little different. 
+- A socket is **two way**: it can be used for input and output which means it needs different functions to talk to it.
+- If we want to output data on a socket, we can't use `fprintf()`. Instead, we use a function called `send()`.
+
+```C
+
+// This is the message we're going to send over the network.
+char *msg = "Internet Knock-Knock Protocol Server\r\nVersion 1.0\r\nKnock! Knock!\r\n>";
+
+
+if(send(connect_d, msg, strlen(msg),0) == -1){
+    error("Send");
+}
+
+// connect_d = the socket descriptor
+// msg = message
+// strlen(msg) = message's length
+// 0 = The final parameter is used for advanced options. This can be left as 0.
+```
+
+- It's important to always check the return value of system calls like `send()`. Network errors are really common and our servers will have to cope with them.
+
+#### Which port should we use?
+
+- There are lots of different servers available and we need to make sure we don't use a port number that's normally used for some other program.
+- On Cygwin and most Unix-style machies, we'll find a file called `/etc/services/` that lists the ports used by most of the common servers.
+- When choosing a port, make sure there isn't another application that already uses the same one.
+- Port numbers can be between **0 and 65535** and we need to decide whether we want to use a low number(< 1024) or a high one.
+- Port numbers that are lower than 1024 are usually only available to the superuser or administrator on most systems.
+- This is because the low port numbers are reserved for well-known services, like web servers and mail servers.
+- Most of the time, we'll probably want to use a port number greater than 1024.
