@@ -5530,3 +5530,174 @@ chan@CMA:~/C_Programming/test$
 - The second time, we hit `CTRL-C`, which sends the process an interrupt signal (`SIGINT`) that makes the program display the final score and then `exit()`.
 - Signals are a little complex, but incredibly useful.
 - They allow our programs to end gracefully, and the interval timer can help us deal with tasks that are taking too long.
+
+---
+
+### Chapter 11 - sockets and networking
+
+#### Chapter 11 - Exercise 1
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include "header.h"
+
+int main(){
+    
+    // Array of advice strings to be sent to clients
+    char *advice[] = {
+        "Take smaller bites\r\n",
+        "Go for the tight jeans. No they do NOT make you look fat.\r\n",
+        "One word: inappropriate\r\n",
+        "Just for today, be honest. Tell your boss what you *really* think\r\n",
+        "You might want to rethink that haircut\r\n"};
+    
+    // Create a socket using the Internet address family (PF_INET) and TCP (SOCK_STREAM)
+    int listener_d = socket(PF_INET, SOCK_STREAM, 0);
+    if(listener_d == -1){
+        error("Can't open socket!"); // Handle error if socket creation fails
+    }
+    
+    // Set up the address structure
+    struct sockaddr_in name;
+    name.sin_family = PF_INET; // Use the internet address family
+    
+    // Set port number to 30000, converting to network byte order
+    name.sin_port = (in_port_t)htons(30000);
+    
+    // Bind to any available network interface
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+    // bind the socket to the address and port number specified in the 'name' struct
+    int c = bind(listener_d, (struct sockaddr *)&name, sizeof(name));
+    if(c == -1){
+        // Handle error if binding fails
+        error("Can't bind to socket\n");
+    }
+    
+    // Listen for incoming connections, with a backlog of 10 pending connections
+    if(listen(listener_d, 10) == -1)){
+     	error("Can't listen");   
+    }
+    puts("Waiting for connection"); // Print a message indicating the server is waiting for connections
+    
+    // Infinite loop to handle incoming connections
+    while(1){
+        struct sockaddr_storage client_addr;
+    unsigned int address_size = sizeof(client_addr);
+    int connect_d = accept(listener_d, (struct sockaddr *)&client_addr, &address_size);
+    if(connect_d == -1){
+        error("Can't open secondary socket!");
+    }
+    char *msg = advice[rand() % 5];
+    
+    if(send(connect_d, msg, strlen(msg), 0) == -1){
+        error("send");
+    }
+    close(connect_d);
+    }
+    
+    return 0;
+}
+```
+
+- We should always check if socket, bind, listen, accept or send return -1.
+
+`functions.c`
+
+```C
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(0);
+}
+
+```
+
+`header.h`
+
+```C
+void error(char *msg);
+```
+
+
+
+Code Execution:
+
+
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ make all
+clang -Wall -Wextra -g -c main.c
+clang -Wall -Wextra -g main.o functions.o -o test
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Waiting for connection
+^C
+```
+
+On the second console
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Just for today, be honest. Tell your boss what you *really* think
+Connection closed by foreign host.
+
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Go for the tight jeans. No they do NOT make you look fat.
+Connection closed by foreign host.
+
+```
+
+
+
+- We're using **127.0.0.1** as the IP address because the client is running on the same machine as the server.
+- We could have connected to the server from anywhere on the network and we'd have gotten the same response.
+
+If I start the server, then run the client one time, it works.
+
+But then if I stop the server and restart it real quick, the client can't get a response anymore!
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Can't bind to socket: Address already in use
+
+```
+
+On the second console
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+telnet: Unable to connect to remote host: Connection refused
+
+```
+
+The error message "Can't bind to socket: Address already in use" indicates that the port your server is trying to bind to is already occupied by another process. This is a common issue when a server process is terminated and immediately restarted. The underlying socket remains in a `TIME_WAIT` state for a period, preventing another process from binding to the same port.
+
+To resolve this issue, you can set the `SO_REUSEADDR` socket option on your listener socket. This option tells the kernel that you're okay with reusing the local address (`port`), even if it's still in the `TIME_WAIT` state. Here's how you can modify your code to include this option:
+
+1. Include the `setsockopt` function call right after creating your listener socket and before binding it to an address.
+2. Use `SO_REUSEADDR` to allow the port to be reused.
+
+Here's an example snippet showing how to set `SO_REUSEADDR`:
+
+We have to insert it after creating the listener socket(`listener_d`) and before we bind it to an address.
+
+```C
+int yes = 1;
+if (setsockopt(listener_d, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+    error("Can't set the 'reuse address' option on the socket");
+}
+```
+
