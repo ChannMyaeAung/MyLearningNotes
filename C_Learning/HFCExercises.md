@@ -5683,11 +5683,14 @@ telnet: Unable to connect to remote host: Connection refused
 
 ```
 
-The error message "Can't bind to socket: Address already in use" indicates that the port your server is trying to bind to is already occupied by another process. This is a common issue when a server process is terminated and immediately restarted. The underlying socket remains in a `TIME_WAIT` state for a period, preventing another process from binding to the same port.
+- When we bind a socket to a port, the OS will prevent anything else from rebinding to it for the next 30 seconds or so, and that includes the program that bound the port in the first place.
+- To get around the problem, we need to set an option on the socket before we bind it:
 
-To resolve this issue, you can set the `SO_REUSEADDR` socket option on your listener socket. This option tells the kernel that you're okay with reusing the local address (`port`), even if it's still in the `TIME_WAIT` state. Here's how you can modify your code to include this option:
+The error message "Can't bind to socket: Address already in use" indicates that the port our server is trying to bind to is already occupied by another process. This is a common issue when a server process is terminated and immediately restarted. The underlying socket remains in a `TIME_WAIT` state for a period, preventing another process from binding to the same port.
 
-1. Include the `setsockopt` function call right after creating your listener socket and before binding it to an address.
+To resolve this issue, you can set the `SO_REUSEADDR` socket option on our listener socket. This option tells the kernel that we're okay with reusing the local address (`port`), even if it's still in the `TIME_WAIT` state. Here's how we can modify our code to include this option:
+
+1. Include the `setsockopt` function call right after creating our listener socket and before binding it to an address.
 2. Use `SO_REUSEADDR` to allow the port to be reused.
 
 Here's an example snippet showing how to set `SO_REUSEADDR`:
@@ -5695,9 +5698,71 @@ Here's an example snippet showing how to set `SO_REUSEADDR`:
 We have to insert it after creating the listener socket(`listener_d`) and before we bind it to an address.
 
 ```C
-int yes = 1;
-if (setsockopt(listener_d, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+// We need an int variable to store the option. Setting it to 1 means "Yes, reuse  the port"
+int reuse = 1;
+if (setsockopt(listener_d, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(int)) == -1) {
     error("Can't set the 'reuse address' option on the socket");
 }
+```
+
+- If the server has responded to a client and then gets stopped and restarted, the call to the bind system call fails.
+- If we didn't check for errors, the rest of the server code would run even though it couldn't use the server port.
+- The above code makes the socket **reuse the port** when it's bound. That means now we can stop and restart the server and there will be no errors.
+
+`(void *)&reuse`
+
+The reason for casting it to a different pointer type, such as `(char *)` or more appropriately `(void *)`, is primarily historical and due to the generic interface of `setsockopt`. The function is designed to accept a wide variety of option values, and thus it expects a pointer to `void` to accommodate this flexibility.
+
+However, in modern C programming, casting to `(void *)` is the preferred approach when passing the address of `reuse` to `setsockopt`. This is because `(void *)` is a generic pointer type that can point to any type of data. Casting to `(char *)` works, but it's not semantically correct in this context since we're not working with character data. The correct and clear way to pass an integer option value to `setsockopt` is by using `(void *)&reuse`, as this accurately reflects that we're passing a pointer to an integer, treated generically.
+
+
+
+#### Test Run
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Waiting for connection
+^C
+
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Waiting for connection
+```
+
+On the second console:
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Just for today, be honest. Tell your boss what you *really* think
+Connection closed by foreign host.
+
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Just for today, be honest. Tell your boss what you *really* think
+Connection closed by foreign host.
+
+```
+
+
+
+#### Chapter 11 - Long Exercise
+
+`functions.c`
+
+```C
+```
+
+`main.c`
+
+```C
+```
+
+Code Execution:
+
+```sh
 ```
 

@@ -6167,3 +6167,131 @@ if(send(connect_d, msg, strlen(msg),0) == -1){
 - Port numbers that are lower than 1024 are usually only available to the superuser or administrator on most systems.
 - This is because the low port numbers are reserved for well-known services, like web servers and mail servers.
 - Most of the time, we'll probably want to use a port number greater than 1024.
+
+
+
+#### Reading from the client
+
+- In the same way the sockets have a special `send()` function to write data, they also have a `recv()` function to read data.
+
+```C
+<bytes read> = recv(<descriptor>, <buffer>, <bytes to read>, 0);
+```
+
+- If someone types in a line of text into a client and hits return, the `recv()` function stores the text into a character array like this:
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-07-12 22-18-35.png)
+
+- `recv()` will return the value 14, because there are 14 characters sent from the client.
+
+Things to remember:
+
+- The characters are not terminated with a `\0` character.
+- When someone types text in telnet, the string always ends `\r\n`.
+- The `recv()` will return the number of characters, or -1 if there's an error, or 0 if the client has closed the connection.
+- We're not guaranteed to receive all the characters in a single call to `recv()` which means we might have to call `recv()` more than once.
+- We might need to call `recv()` a few times to get all the characters.
+- `recv()` can be tricky to use. It's best to wrap `recv()` in a function that stores a simple `\0-terminated` string in the array it's given.
+
+```C
+int read_in(int socket, char *buf, int len) // This reads all the characters until it reaches '\n'
+{
+    // Initialize a pointer 's' to point to the buffer 'buf'
+    char *s = buf;
+    
+    // Store the original length of the buffer in 'slen'
+    int slen = len;
+    
+    // recv reads data from the socket into the buffer 's' with max length 'slen'
+    int c = recv(socket, s, slen, 0);
+    // Keep reading until there're no more characters or reach '\n'
+    while((c > 0) && (s[c-1] != '\n')){
+        
+        // Move the pointer 's' forward by 'c' characters
+        s += c; 
+        
+        // Decrease the remaining lenght by 'c'
+        slen -= c;
+        
+        // Read more data from the socket
+        // Read more data into the remaining part of the buffer
+        c = recv(socket, s, slen, 0);
+    }
+    if(c < 0)
+        return c; // In case there's an error, return the error code 'c'
+    else if (c == 0)
+        buf[0] = '\0'; // Nothing read; send back an empty string (set the first character of the buffer to '\0' to indicate an empty string)
+    else
+        s[c - 1] = '\0'; // Replace the last character read ('\r' character) with a '\0' to terminate the string
+    
+    // Return the number of characters read (initial length - remaining length)
+    return len - slen;
+}
+```
+
+1. **Function Signature**:
+
+   ```C
+   int read_in(int socket, char *buf, int len)
+   ```
+
+   - The function `read_in` takes three arguments: a socket descriptor (`socket`), a buffer to store the read data (`buf`), and the length of the buffer (`len`).
+
+2. **Pointer and Length Initialization**:
+
+   ```C
+   char *s = buf; 
+   int slen = len;
+   ```
+
+   - `s` is a pointer initialized to the start of `buf`.
+   - `slen` is initialized to the length of the buffer (`len`).
+
+3. **Initial Data Read**:
+
+   ```C
+   int c = recv(socket, s, slen, 0);
+   ```
+
+   - `recv` reads data from the socket into the buffer `s` up to `slen` bytes. The return value `c` is the number of bytes read or a negative value if an error occurs.
+
+4. **Loop to Continue Reading Until Newline**:
+
+   ```C
+   while ((c > 0) && (s[c-1] != '\n')) {
+       s += c; 
+       slen -= c;
+       c = recv(socket, s, slen, 0);
+   }
+   ```
+
+   - The loop continues reading as long as there are more characters (`c > 0`) and the last character read is not a newline (`s[c-1] != '\n`).
+   - Inside the loop:
+     - `s += c` moves the pointer `s` forward by `c` characters.
+     - `slen -= c` decreases the remaining buffer length by `c`.
+     - `recv` reads more data into the remaining part of the buffer.
+
+5. **Error Handling and String Termination**:
+
+   ```C
+   if (c < 0)
+       return c;
+   else if (c == 0)
+       buf[0] = '\0';
+   else
+       s[c - 1] = '\0';
+   ```
+
+   - If `c < 0`, an error occurred, and the function returns the error code `c`.
+   - If `c == 0`, no data was read (EOF), so the buffer is set to an empty string.
+   - Otherwise, the last character read is replaced with `\0` to terminate the string.
+
+6. **Return Number of Characters Read**:
+
+   ```C
+   return len - slen;
+   ```
+
+   - The function returns the number of characters read, calculated as the initial length (`len`) minus the remaining length (`slen`).
+
+This function ensures that the buffer contains a complete line of input terminated by `\0`, and handles cases where data is read in chunks, not all at once.
