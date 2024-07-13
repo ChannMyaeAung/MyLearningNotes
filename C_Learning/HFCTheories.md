@@ -6132,6 +6132,29 @@ This new **connection descriptor** (connect_d) is the one the the server will us
 
 
 
+#### Some Essentials Networking Concepts
+
+**`sockaddr_in` vs. `sockaddr_storage`**:
+
+- `sockaddr_in`: Used specifically for IPv4 addresses. Contains fields for address family (`sin_family`), port (`sin_port`), and IP address (`sin_addr`).
+- `sockaddr_storage`: A generic structure that is large enough to hold either IPv4 or IPv6 address structures. Used for protocol-independent code.
+
+**Fields in `sockaddr_in`**:
+
+- `sin_family`: Specifies the address family (e.g., `PF_INET` for IPv4).
+- `sin_port`: The port number, which must be in network byte order.
+- `sin_addr`: A structure containing a single field `s_addr` that holds the IP address in network byte order.
+
+**Byte Order Conversion**:
+
+- `htons` (Host to Network Short): Converts a 16-bit (short) value from host byte order to network byte order.
+- `htonl` (Host to Network Long): Converts a 32-bit (long) value from host byte order to network byte order.
+- Network byte order is big-endian, which ensures consistent interpretation of multi-byte values across different platforms.
+
+**Type Casting with `in_port_t`**:
+
+- `in_port_t` is a type defined for port numbers. Casting to `in_port_t` ensures the port number is of the correct type for network operations.
+
 #### A socket's not our typical data stream
 
 - Data streams have all been the same.

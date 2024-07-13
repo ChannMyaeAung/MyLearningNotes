@@ -507,3 +507,156 @@ float average(int length, int array[]){
   - `char *arr[]` is used for an array of mutable pointers to strings or string literals.
 
 In summary, `char arr[] = {"apples"}` represents a single mutable string stored as an array of characters, while `char *arr[] = {"apples"}` represents an array of pointers where each pointer can point to a string or string literal. The choice between them depends on whether you need a single mutable string (`char arr[]`) or an array of pointers to strings (`char *arr[]`).
+
+#### `strcasecmp()` and `strcmp()`
+
+To use the `strcasecmp` function in C, we need to include the `strings.h` header file. 
+
+- This function is used to compare two strings in a case-insensitive manner.
+
+Here's a brief example of how to use `strcasecmp`:
+
+```C
+#include <stdio.h>
+#include <strings.h>
+
+int main() {
+    const char *str1 = "Hello";
+    const char *str2 = "hello";
+
+    if (strcasecmp(str1, str2) == 0) {
+        printf("The strings are equal (case-insensitive comparison).\n");
+    } else {
+        printf("The strings are not equal (case-insensitive comparison).\n");
+    }
+
+    return 0;
+}
+```
+
+In this example:
+
+- The `strcasecmp` function is used to compare `str1` and `str2` without considering the case of the characters.
+- If `strcasecmp` returns 0, the strings are considered equal.
+- Otherwise, the strings are considered not equal.
+
+
+
+There are important differences between `strcmp` and `strcasecmp` in C:
+
+1. **Case Sensitivity**:
+   - `strcmp`: This function compares two strings in a case-sensitive manner. This means it distinguishes between uppercase and lowercase characters.
+   - `strcasecmp`: This function compares two strings in a case-insensitive manner. It treats uppercase and lowercase characters as equivalent.
+2. **Function Signatures**:
+   - `strcmp`: The signature is `int strcmp(const char *s1, const char *s2);`
+   - `strcasecmp`: The signature is `int strcasecmp(const char *s1, const char *s2);`
+3. **Return Values**: Both functions return an integer value:
+   - If the strings are equal, both functions return `0`.
+   - If the first non-matching character in `s1` is less than the corresponding character in `s2`, both functions return a negative value.
+   - If the first non-matching character in `s1` is greater than the corresponding character in `s2`, both functions return a positive value.
+
+Here's an example to illustrate the difference:
+
+```C
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+
+int main() {
+    const char *str1 = "Hello";
+    const char *str2 = "hello";
+
+    // Case-sensitive comparison
+    if (strcmp(str1, str2) == 0) {
+        printf("strcmp: The strings are equal.\n");
+    } else {
+        printf("strcmp: The strings are not equal.\n");
+    }
+
+    // Case-insensitive comparison
+    if (strcasecmp(str1, str2) == 0) {
+        printf("strcasecmp: The strings are equal.\n");
+    } else {
+        printf("strcasecmp: The strings are not equal.\n");
+    }
+
+    return 0;
+}
+```
+
+Output:
+
+```sh
+strcmp: The strings are not equal.
+strcasecmp: The strings are equal.
+```
+
+In this example, `strcmp` reports that the strings are not equal because it considers the case of the characters, while `strcasecmp` reports that the strings are equal because it ignores the case of the characters.
+
+
+
+#### `strncasecmp()`
+
+The `strncasecmp` function in C is similar to `strcasecmp` but with an additional parameter that limits the number of characters to compare. This function performs a case-insensitive comparison of the first `n` characters of two strings.
+
+### Function Signature
+
+```C
+int strncasecmp(const char *s1, const char *s2, size_t n);
+```
+
+### Parameters
+
+- `s1`: A pointer to the first null-terminated string.
+- `s2`: A pointer to the second null-terminated string.
+- `n`: The maximum number of characters to compare.
+
+### Return Value
+
+The return value is similar to `strcmp` and `strcasecmp`:
+
+- If the first `n` characters of `s1` and `s2` are equal (ignoring case), the function returns `0`.
+- If the first non-matching character in `s1` is less than the corresponding character in `s2`, the function returns a negative value.
+- If the first non-matching character in `s1` is greater than the corresponding character in `s2`, the function returns a positive value.
+
+### Example Usage
+
+Here's an example to illustrate how `strncasecmp` works:
+
+```C
+#include <stdio.h>
+#include <strings.h>
+
+int main() {
+    const char *str1 = "HelloWorld";
+    const char *str2 = "helloEveryone";
+
+    // Compare first 5 characters in a case-insensitive manner
+    if (strncasecmp(str1, str2, 5) == 0) {
+        printf("The first 5 characters of the strings are equal (case-insensitive comparison).\n");
+    } else {
+        printf("The first 5 characters of the strings are not equal (case-insensitive comparison).\n");
+    }
+
+    // Compare first 10 characters in a case-insensitive manner
+    if (strncasecmp(str1, str2, 10) == 0) {
+        printf("The first 10 characters of the strings are equal (case-insensitive comparison).\n");
+    } else {
+        printf("The first 10 characters of the strings are not equal (case-insensitive comparison).\n");
+    }
+
+    return 0;
+}
+```
+
+Output:
+
+```sh
+The first 5 characters of the strings are equal (case-insensitive comparison).
+The first 10 characters of the strings are not equal (case-insensitive comparison).
+```
+
+In this example:
+
+- When comparing the first 5 characters, `strncasecmp` considers the strings equal because "Hello" and "hello" match in a case-insensitive manner.
+- When comparing the first 10 characters, `strncasecmp` finds a difference beyond the 5th character ("W" vs "E"), so it determines the strings are not equal.

@@ -5751,18 +5751,351 @@ Connection closed by foreign host.
 
 #### Chapter 11 - Long Exercise
 
+#includes are removed to save space.
+
 `functions.c`
 
 ```C
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(0);
+}
+
+int catch_signal(int sig, void (*handler)(int)){
+    struct sigaction action;
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    return sigaction(sig, &action, NULL);
+}
+
+int open_listener_socket(){
+    int s = socket(PF_INET, SOCK_STREAM, 0);
+    if(s == -1){
+        error("Can't open socket");
+    }
+    return s;
+}
+
+void bind_to_port(int socket, int port){
+    
+    // Create a structure to hold the address
+    struct sockaddr_in name;
+    
+    // Use the IPv4 protocol family
+    name.sin_family = PF_INET;
+    
+    // Convert the port to network byte order
+    name.sin_port = (in_port_t)htons(port);
+    
+    // Bind to any available network interface
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+    // Allow reuse of local addresses
+    // Useful for avoiding "address already in use" error
+    int reuse = 1;
+    if(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(int)) == -1){
+        error("Can't set the reuse option on the socket.");
+    }
+    
+    // Bind the socket to the address and port
+    int c = bind(socket, (struct sockaddr *)&name, sizeof(int));
+    if(c == -1){
+        error("Can't bind to socket");
+    }
+}
+
+// Function to send a message to a socket
+int say(int socket, char *s){
+    // Send the message
+    int result = send(socket, s, strlen(s), 0);
+    
+    // Don't call error() if there's a problem. We don't want to stop the server if there's just a problem with one client.
+    if(result == -1){
+        fprintf(stderr, "%s: %s\n", "Error talking to the client", strerror(errno));
+    }
+    return result;
+}
+
+// Function to read data from a socket
+int read_in(int socket, char *buf, int len){
+    // Pointer to the buffer
+    char *s = buf;
+    
+    // Length of the buffer
+    int slen = len;
+    
+    // Receive data from the socket
+    int c = recv(socket, s, strlen(s), 0);
+    
+    // Continue receiving until a newline character is found
+    while((c > 0) && (s[c-1] != '\n')){
+        s += c; // Move the buffer pointer
+        slen -= c; // Decrease the remaining length
+        
+        // Receive more data
+        c = recv(socket, s, strlen(s), 0);
+    }
+    
+    // Check if receiving failed
+    if(c < 0){
+        return c; // Return the error code
+    }else if(c == 0){ // Check if the connection is closed
+        buf[0] = '\0'; // Null-terminate the buffer
+    }else{
+        s[c-1] = '\0'; // Replace the newline character with null terminator.
+    }
+    
+    // Return the number of bytes read
+    return len - slen;
+}
+
+// Global variable for the listener socket descriptor
+int listener_d;
+
+// If someone hits CTRL+C when the server is running, this function will close the socket before the program ends.
+void handle_shutdown(){
+    
+    // Closes the listener socket if it is open
+    if(listener_d){
+        close(listener_d);
+    }
+    
+    // Print a message before exiting the program.
+    fprintf(stderr, "Bye!\n");
+    exit(0);
+}
 ```
 
 `main.c`
 
 ```C
+// Main function, entry point of the program
+int main(int argc, char *argv[]){
+    
+    // Set up signal handler for SIGINT (Ctrl+C)
+    if(catch_signal(SIGINT, handle_shutdown) == -1){
+        error("Can't set the interrupt handler.");
+    }
+    
+    // Open a listening socket
+    listener_d = open_listener_socket();
+    
+    // Bind the socket to port 30000
+    bind_to_port(listener_d, 30000);
+    
+    // Start listening for incoming connections
+    if(listen(listener_d, 10) == -1){
+        error("Can't listen");
+    }
+    
+    // Storage for client address
+    struct sockaddr_storage client_addr;
+    // Size of the address
+    unsigned int address_size = sizeof(client_addr);
+    puts("Waiting for connection");
+    
+    char buf[255]; // Buffer to store receive data
+    
+    // Infinite loop to accept and handle incoming connections
+    while(1){
+        // Accept a new connection
+        int connect_d = accept(listener_d, (struct sockaddr*)&client_addr, &address_size);
+        if(connect_d == -1){
+            error("Can't open secondary socket");
+        }
+        
+        // Send a welcome message to the client
+        if(say(connect_d, "Internet Knock-Knock Protocol Server\r\nVersion 1.0\r\nKnock!Knock!\r\n>") != -1)
+        {
+            // Read client's response
+            read_in(connect_d, buf, sizeof(buf));
+            // Check if the client responded with "Who's there?"
+            if(strncasecmp("Who's there?", buf, 12)){
+                // If not, prompt the correct response
+                say(connect_d, "You should say 'Who's there?!");
+            }else{
+                // If correct, proceed with the joke
+                if(say(connect_d, "Oscar\r\n") != -1){
+                    // Read client's next response
+                    read_in(connect_d, buf, sizeof(buf));
+                    // Check if the client responded with "Oscar who?"
+                    if(strncasecmp("Oscar who?", buf, 10)){
+                        // If not, prompt the correct response
+                        say(connect_d, "You should say 'Oscar who?'!\r\n");
+                    }else{
+                        // Complete the joke
+                        say(connect_d, "Oscar silly question, you get a silly answer\r\n");
+                    }
+                }
+            }
+            // Close the connection to the client
+            close(connect_d);
+        }
+    }
+    return 0;
+}
 ```
 
 Code Execution:
 
 ```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Waiting for connection
+^CBye!
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+Waiting for connection
+
+
 ```
 
+On the second console
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Internet Knock-Knock Protocol Server
+Version1.0
+Knock!Knock!
+>Who's there?
+Oscar
+> Oscar who?
+Oscar silly question, you get a silly answer
+Connection closed by foreign host.
+
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Internet Knock-Knock Protocol Server
+Version1.0
+Knock!Knock!
+>Come in
+You should say 'Who's there?'!Connection closed by foreign host.
+
+```
+
+Code Explanation (`main.c`)
+
+**Signal Handling**:
+
+```C
+if (catch_signal(SIGINT, handle_shutdown) == -1)
+{
+    error("Can't set the interrupt handler");
+}
+```
+
+- Sets up a signal handler for `SIGINT` (interrupt signal, typically sent when the user presses Ctrl+C). If it fails, it calls the `error` function.
+
+**Open Listening Socket**:
+
+```C
+listener_d = open_listener_socket();
+```
+
+- Opens a socket for listening to incoming connections.
+
+**Bind to Port**:
+
+```C
+bind_to_port(listener_d, 30000);
+```
+
+- Binds the opened socket to port 30000.
+
+**Start Listening**:
+
+```C
+if (listen(listener_d, 10) == -1)
+{
+    error("Can't listen");
+}
+```
+
+- Starts listening on the bound socket with a backlog of 10 connections.
+
+**Client Address Storage**:
+
+```C
+struct sockaddr_storage client_addr;
+unsigned int address_size = sizeof(client_addr);
+puts("Waiting for connection");
+char buf[255];
+```
+
+- Prepares a structure to store client address information, gets the size of this structure, prints a waiting message, and allocates a buffer for reading data.
+
+**Infinite Loop for Accepting Connections**:
+
+```C
+while (1)
+{
+```
+
+- Starts an infinite loop to continuously accept and handle incoming connections.
+
+**Accept Connection**:
+
+```C
+int connect_d = accept(listener_d, (struct sockaddr *)&client_addr, &address_size);
+if (connect_d == -1)
+{
+    error("Can't open secondary socket");
+}
+```
+
+- Accepts a new connection. If it fails, calls the `error` function.
+
+**Send Welcome Message**:
+
+```C
+if (say(connect_d, "Internet Knock-Knock Protocol Server\r\nVersion1.0\r\nKnock!Knock!\r\n>") != -1)
+{
+```
+
+- Sends a welcome message to the connected client. If it succeeds, proceeds to the next steps.
+
+**Read Client's Response**:
+
+```C
+read_in(connect_d, buf, sizeof(buf));
+if (strncasecmp("Who's there?", buf, 12))
+{
+    say(connect_d, "You should say 'Who's there?'!");
+}
+```
+
+- Reads the client's response into `buf`. If the response is not "Who's there?" (case-insensitive comparison), sends a prompt for the correct response.
+
+**Proceed with the Joke**:
+
+```C
+else
+{
+    if (say(connect_d, "Oscar\r\n> ") != -1)
+    {
+        read_in(connect_d, buf, sizeof(buf));
+        if (strncasecmp("Oscar who?", buf, 10))
+        {
+            say(connect_d, "You should say 'Oscar who?'!\r\n");
+        }
+        else
+        {
+            say(connect_d, "Oscar silly question, you get a silly answer\r\n");
+        }
+    }
+}
+```
+
+- If the client responds correctly with "Who's there?", proceeds to the next part of the joke. If the client responds correctly with "Oscar who?", completes the joke.
+
+**Close Connection**:
+
+```C
+close(connect_d);
+```
+
+- Closes the connection to the client after handling the interaction.
