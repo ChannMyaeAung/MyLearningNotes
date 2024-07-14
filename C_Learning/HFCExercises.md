@@ -5709,6 +5709,11 @@ if (setsockopt(listener_d, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(int)
 - If we didn't check for errors, the rest of the server code would run even though it couldn't use the server port.
 - The above code makes the socket **reuse the port** when it's bound. That means now we can stop and restart the server and there will be no errors.
 
+`SOL_SOCKET`is a constant used in socket programming to specify that the options being set or retrieved apply at the socket level, as opposed to a protocol level. 
+
+- It's used with `setsockopt`and `getsockopt` functions to set or get options that are applicable to all types of sockets, regardless of the communication protocol chosen (e.g., TCP, UDP). 
+- Essentially, `SOL_SOCKET` specifies that the options are to be interpreted by the socket layer itself, not by any specific protocol implementation.
+
 `(void *)&reuse`
 
 The reason for casting it to a different pointer type, such as `(char *)` or more appropriately `(void *)`, is primarily historical and due to the generic interface of `setsockopt`. The function is designed to accept a wide variety of option values, and thus it expects a pointer to `void` to accommodate this flexibility.
@@ -5799,7 +5804,7 @@ void bind_to_port(int socket, int port){
     }
     
     // Bind the socket to the address and port
-    int c = bind(socket, (struct sockaddr *)&name, sizeof(int));
+    int c = bind(socket, (struct sockaddr *)&name, sizeof(name));
     if(c == -1){
         error("Can't bind to socket");
     }
@@ -5826,7 +5831,7 @@ int read_in(int socket, char *buf, int len){
     int slen = len;
     
     // Receive data from the socket
-    int c = recv(socket, s, strlen(s), 0);
+    int c = recv(socket, s, slen, 0);
     
     // Continue receiving until a newline character is found
     while((c > 0) && (s[c-1] != '\n')){
@@ -5834,7 +5839,7 @@ int read_in(int socket, char *buf, int len){
         slen -= c; // Decrease the remaining length
         
         // Receive more data
-        c = recv(socket, s, strlen(s), 0);
+        c = recv(socket, s, slen, 0);
     }
     
     // Check if receiving failed
@@ -5911,6 +5916,9 @@ int main(int argc, char *argv[]){
             // Read client's response
             read_in(connect_d, buf, sizeof(buf));
             // Check if the client responded with "Who's there?"
+            // Checking if the return value is not zero which means the strings aren't equal.
+            // non-zero = true so it's like saying if(true) if strings aren't equal
+            // zero = false which means strings are equal. So the condition becomes false and we proceed to else block.
             if(strncasecmp("Who's there?", buf, 12)){
                 // If not, prompt the correct response
                 say(connect_d, "You should say 'Who's there?!");
@@ -5976,6 +5984,8 @@ Knock!Knock!
 You should say 'Who's there?'!Connection closed by foreign host.
 
 ```
+
+- If we break the protocol and send back in invalid response like the second one "Come in", the server is able to validate the data we send and close the connection immediately.
 
 Code Explanation (`main.c`)
 
@@ -6099,3 +6109,195 @@ close(connect_d);
 ```
 
 - Closes the connection to the client after handling the interaction.
+
+Right now, our servers can only talk to one person at a time.
+
+first console:
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Waiting for connection
+
+
+```
+
+second console is accessed by one user.
+
+```sh
+chan@CMA:~/C_Programming/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Internet Knock-Knock Protocol Server
+Version 1.0
+Knock!Knock!
+>
+
+```
+
+If someone else tries to get through to the server, he can't; it's busy with the first user:
+
+```sh
+chan@CMA:~/C_Programming/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+
+```
+
+- The server is still busy talking to the first guy.
+- The main server socket will keep the client waiting until the server calls the `accept()` system call again.
+
+But
+
+#### We can fork() a process for each client
+
+- When the clients connect to the server, they start to have conversation on a separate, newly created socket.
+- That means the main server socket is free to go and find another client.
+- When a client connects, we can `fork()` a separate child process to deal with the conversation between the server and the client.
+- While the client is talking to the child process, the server's parent process can go connect to the next client.
+
+
+
+#### The parent and child use different sockets
+
+- One thing to bear in mind is that the parent server process will only need to use the main listener socket.
+- That's because the main listener socket is the one that's used to `accept()` new connections.
+- On the other hand, the child process will only ever need to deal with the secondary socket that gets created by the `accept()` call. 
+- That means once the parent has forked the child, the parent can close the secondary socket and the child can close the main listener socket.
+
+```C
+// After forking the child, the parent can close this socket
+close(connect_d);
+
+// Once the child gets created, it can close this socket.
+close(listener_d);
+```
+
+Q: If I create a new process for each client, what happens if hundreds of clients connect? Will my machine create hundreds of processes?
+
+A: Yes. If we think our server will get a lot of clients, we need to control how many processes we create. The child can signal us when it's finished with a client and we can use that to maintain a count of current child processes.
+
+
+
+#### Modified Code for our Exercise (`main.c`)
+
+```C
+while(1){
+    int connect_d = accpet(listener_d, (struct sockaddr*)&client_addr, &address_size);
+    if(connect_d == -1){
+        error("Can't open secondary socket");
+    }
+    
+    // This creates the child process and we know that if the fork() call returns 0, we must be in the child.
+    if(!fork()){
+        
+        // In the child, we need to close the main listener socket.
+        // The child will use only the connect_d socket to talk to the client
+        close(listener_d);
+        if(say(connect_d, "Internet Knock-Knock Protocol Server\r\nVersion 1.0\r\nKnock! Knock!\r\n>") != -1){
+            read_in(connect_d, buf, sizeof(buf));
+            if(strncasecmp("Who's there?", buf, 12)){
+                say(connect_d, "You should say 'Who's there?!");
+            }else{
+                if(say(connect_d, "Oscar\r\n> ") != -1){
+                    read_in(connect_d, buf, sizeof(buf));
+                    if(strncasecmp("Oscar who?", buf, 10)){
+                        say(connect_d, "You should say 'Oscar who?'!\r\n");
+                    }else{
+                        say(connect_d, "Oscar silly question, you get a silly answer\r\n");
+                    }
+                }
+            }
+        }
+        // Once the conversation is over, the child can close the socket to the client.
+        close(connect_d);
+        
+        // Once the child has finished talking, it should exit. That will prevent it from falling into the main server loop.
+        exit(0);
+    }
+    close(connect_d);
+}
+return 0;
+```
+
+
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/test$ ps -ef
+...
+chan       10928    3699  0 22:40 pts/0    00:00:00 ./final
+chan       10931    9619  0 22:40 pts/1    00:00:00 telnet 127.0.0.1 30000
+chan       10932   10928  0 22:40 pts/0    00:00:00 ./final
+
+```
+
+```sh
+  10928 pts/0    00:00:00 final
+  10931 pts/1    00:00:00 telnet
+  10932 pts/0    00:00:00 final
+  11640 ?        00:00:00 chrome
+  11659 ?        00:00:00 kworker/10:0H-kblockd
+  11660 ?        00:00:00 kworker/u32:0-events_power_efficient
+  11746 pts/2    00:00:00 telnet
+  11747 pts/0    00:00:00 final
+
+```
+
+
+
+- There are now two processes for the server: one for the parent and one for the child.
+- That means we can connect, even while the first client is still talking to the server.
+
+Now running our program
+
+first console:
+
+```sh
+chan@CMA:~/C_Programming/test
+$ make all
+Compiling the main file
+clang -Wall -Wextra -g -c main.c 
+Linking and producing the final application
+clang -Wall -Wextra -g main.o hello.o -o final
+
+chan@CMA:~/C_Programming/test
+$ ./final
+Waiting for connection
+
+```
+
+
+
+second console:
+
+```sh
+chan@CMA:~/C_Programming/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Internet Knock-Knock Protocol Server
+Version 1.0
+Knock!Knock!
+>Who's there?
+Oscar
+
+```
+
+
+
+third console:
+
+```sh
+chan@CMA:~/C_Programming/test$ telnet 127.0.0.1 30000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Internet Knock-Knock Protocol Server
+Version 1.0
+Knock!Knock!
+>Who's there?
+
+```

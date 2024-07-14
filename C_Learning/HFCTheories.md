@@ -6276,7 +6276,7 @@ int read_in(int socket, char *buf, int len) // This reads all the characters unt
    int c = recv(socket, s, slen, 0);
    ```
 
-   - `recv` reads data from the socket into the buffer `s` up to `slen` bytes. The return value `c` is the number of bytes read or a negative value if an error occurs.
+   - `recv` reads data from the socket into the buffer `s` up to `slen` bytes. The return value `c` is **the number of bytes read** or **a negative value** if an error occurs.
 
 4. **Loop to Continue Reading Until Newline**:
 

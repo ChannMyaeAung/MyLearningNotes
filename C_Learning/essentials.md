@@ -19,6 +19,71 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+
+
+### `(*pointer)` vs `(pointer *)`
+
+There is a significant difference between `(*pointer)` and `(pointer*)` in C. They are used in different contexts and serve different purposes.
+
+### `(*pointer)`
+
+`(*pointer)` is used to dereference a pointer. Dereferencing a pointer means accessing the value that the pointer is pointing to. Here, `pointer` is a variable that holds the address of another variable. The `*` operator, when placed before the `pointer`, accesses the value at the address stored in `pointer`.
+
+Example:
+
+```C
+int value = 10;
+int *pointer = &value; // pointer holds the address of value
+printf("%d\n", *pointer); // prints 10, the value stored at the address
+```
+
+### `(pointer*)`
+
+`(pointer*)` is a type cast operation in C. It is used to cast one type of pointer to another type. This is typically done to interpret the data in a different way.
+
+Example:
+
+```C
+void *void_pointer;
+int value = 10;
+void_pointer = &value; // void_pointer now holds the address of value
+
+int *int_pointer = (int*)void_pointer; // casting void_pointer to int*
+printf("%d\n", *int_pointer); // prints 10, the value stored at the address
+```
+
+### Key Differences
+
+1. **Dereferencing (`*pointer`)**:
+   - Accesses the value stored at the address pointed to by `pointer`.
+   - Used to get or set the value of the variable that `pointer` is pointing to.
+2. **Type Casting (`(pointer*)`)**:
+   - Changes the type of a pointer.
+   - Used to interpret the pointed-to data in a different type.
+
+### Examples to Illustrate the Difference
+
+**Dereferencing Example**:
+
+```C
+int value = 42;
+int *pointer = &value; // pointer holds the address of value
+printf("Value: %d\n", *pointer); // Dereferencing pointer to print value: 42
+```
+
+**Type Casting Example**:
+
+```C
+void *void_pointer;
+int value = 42;
+void_pointer = &value; // void_pointer now holds the address of value
+
+// Casting void_pointer to int* and then dereferencing to get the value
+printf("Value: %d\n", *(int*)void_pointer); // Type casting and then dereferencing: 42
+```
+
+In summary, `(*pointer)` is for dereferencing to access the value stored at the pointer's address, whereas `(pointer*)` is for type casting a pointer to a different pointer type.
+
 #### while(1)
 
 The `while(1)` loop in C is an infinite loop. It continuously executes the block of code inside the loop without stopping, because the condition `1` (which represents a non-zero value, and thus `true` in C) never changes. To exit from such a loop, you typically need to use a break statement, return statement, or any other form of interrupt (like a signal handler in the case of a Unix-like system) that can alter the flow of control out of the loop.
@@ -71,7 +136,7 @@ if (!pid)
 ```C
 int main()
 {
-    // Your code here
+    // code
     return 0;  // Indicates success
 }
 ```
@@ -82,7 +147,7 @@ int main()
 ```C
 int main()
 {
-    // Your code here
+    // code
     return 1;  // Indicates an error
 }
 ```
@@ -150,7 +215,11 @@ int main(void){
 }
 ```
 
+\r - carriage return character
 
+In C, `\r` is an escape sequence that represents the carriage return character. When output to a terminal or console, the carriage return (`\r`) moves the cursor to the beginning of the current line without advancing to the next line. This can be used to overwrite the contents of the current line in the terminal.
+
+For example, if you print `"Hello, World!\rGoodbye!"`, the output will end up being `"Goodbye! World!"` because the cursor returns to the beginning of the line after `"Hello, World!"` is printed, and `"Goodbye!"` starts overwriting `"Hello, World!"` from the beginning of the line.
 
 ---
 
