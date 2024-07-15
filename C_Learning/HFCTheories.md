@@ -6318,3 +6318,189 @@ int read_in(int socket, char *buf, int len) // This reads all the characters unt
    - The function returns the number of characters read, calculated as the initial length (`len`) minus the remaining length (`slen`).
 
 This function ensures that the buffer contains a complete line of input terminated by `\0`, and handles cases where data is read in chunks, not all at once.
+
+
+
+#### Writing a web client
+
+- All protocols are structured conversations.
+- Most web servers run on port 80.
+- telnet doesn't support HTTPS.
+- We can use a tool called `curl` instead of telnet.
+
+GET https:///wiki/O'Reilly_Media HTTP/1.1
+
+Host: en.wikipedia.org
+
+```sh
+curl -L "https://en.wikipedia.org/wiki/O'Reilly_Media"
+
+```
+
+```sh
+chan@CMA:~$ curl -L "https://en.wikipedia.org/wiki/O'Reilly_Media"
+<!DOCTYPE html>
+<html class="client-nojs vector-feature-language-in-header-enabled vector-feature-language-in-main-page-header-disabled vector-feature-sticky-header-disabled vector-feature-page-tools-pinned-disabled vector-feature-toc-pinned-clientpref-1 vector-feature-main-menu-pinned-disabled vector-feature-limited-width-clientpref-1 vector-feature-limited-width-content-enabled vector-feature-custom-font-size-clientpref-1 vector-feature-appearance-enabled vector-feature-appearance-pinned-clientpref-1 vector-feature-night-mode-disabled skin-theme-clientpref-day vector-toc-available" lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<title>O'Reilly Media - Wikipedia</title>
+<script>(function(){var className="client-js vector-feature-language-in-header-enabled vector-feature-language-in-main-page-header-disabled vector-feature-sticky-header-disabled vector-feature-page-tools-pinned-disabled vector-feature-toc-pinned-cli
+```
+
+- We'll get a whole bunch of script files of that page it seems.
+
+#### Clients are in charge
+
+- Clients and servers communicate using sockets.
+- A sever spends most of its life waiting for a fresh connection from a client.
+- Until a client connects, a server really can't do anything.
+- Clients don't have that problem. 
+- A client can connect and start talking to a server whenever it likes.
+
+Below is the sequence for a client:
+
+1. Connect to a remote port.
+2. Begin talking.
+
+Below is the sequence of servers (BLAB):
+
+1. Bind a port
+2. Listen
+3. Accept a conversation
+4. Begin talking
+
+#### Remote ports and IP addresses
+
+- When a server connects to a network, it just has to decide which port it's going to use.
+- But clients need to know a little more: they need to know **the port of the remote server**, but they also need to know its **internet protocol(IP) address:**
+
+```sh
+208.201.239.100
+```
+
+- Addresses with 4 digits are in IP version 4 format. Most will eventually be replaced with longer version  6 addresses.
+- Internet addresses are kind of hard to remember which is why most of the time human beings use **domain names**.
+- A domain name is just an easier-to-remember piece of text like `www.oreilly.com`.
+- Even though we prefer domain names, the actual packets of information that flow across the network only use  the numeric IP address.
+
+#### Create a socket for an IP address
+
+- Once our client knows the address and port number of the server, it can create a **client socket**.
+- Client sockets and server sockets are created the same way.
+
+```C
+int s = socket(PF_INET, SOCK_STREAM, 0);
+```
+
+- The difference between client and server code is **what they do with sockets** once they're created.
+- A server will **bind** the socket to a local port, but a client will **connect** the socket to a remote port.
+
+```C
+struct sockaddr_in si;
+memset(&sii, 0, sizeof(si));
+si.sin_family = PF_INET;
+si.sin_addr.s_addr = inet_addr("208.201.239.100");
+si.sin_port = htons(80);
+// The above lines create a socket address for 208.201.239.100 on port 80.
+
+
+// This line connects the socket to the remote port.
+connect(s, (struct sockaddr *)&si, sizeof(si));
+```
+
+- The above code works only for **numeric IP addresses.**
+- To connect a socket to a remote domain name, we'll need a function called `getaddrinfo()`.
+
+#### `getaddrinfo()` gets addresses for domains
+
+- The domain name system (DNS) is a huge address book.
+- It's a way of converting a domain name like `www.oreilly.com` into the kinds of numeric IP addresses that computers need to address the packets of information they send across the network.
+
+#### Create a socket for a domain name
+
+- Most of the time, we'll want our client code to use the DNS system to create sockets.
+- That way, our users won't have to look up the IP addresses themselves.
+- To use DNS, we need to construct our client sockets in a slightly different way:
+
+```C
+#include <netdb.h>
+// We need to include this header for the getaddrinfo() function.
+
+...
+    
+// Pointer to a linked list of addrinfo struct
+struct addrinfo *res;
+// Hints structure to specify criteria for selecting socket addresses
+struct addrinfo hints;
+
+// Initialize the hints struct to zero
+memset(&hints, 0, sizeof(hints));
+
+// Allow IPv4 or IPv6 (PF_UNSPEC means unsepcified)
+hints.ai_family = PF_UNSPEC;
+
+// Specify a stream socket (TCP)
+hints.ai_socktype = SOCK_STREAM;
+
+
+// creates a name resource for port 80 on www.oreilly.com
+// getaddrinfo() expects the port to be a string ("80")
+getaddrinfo("www.oreilly.com", "80", &hints, &res);
+
+// The function getaddrinfo() converts human-readable text strings (hostname and service name) into a dynamically allocated linked list of struct addrinfo structures, suitable for use in subsequent calls to socket() and connect(). 
+// The hints argument specifies criteria for selecting the socket address, and res is a pointer to the resu
+
+```
+
+Here's a breakdown of what each part does:
+
+1. **Header Inclusion:**
+
+   ```C
+   #include <netdb.h>
+   ```
+
+   This header is necessary because it contains the definition for the `getaddrinfo()` function and related structures.
+
+2. **Variable Declarations:**
+
+   ```C
+   struct addrinfo *res;
+   struct addrinfo hints;
+   ```
+
+   - `res`: A pointer to a linked list of `addrinfo` structures. This will store the results returned by `getaddrinfo()`.
+   - `hints`: A structure that specifies criteria for selecting the socket addresses returned in the `res` list.
+
+3. **Initializing the `hints` Structure:**
+
+   ```C
+   memset(&hints, 0, sizeof(hints));
+   ```
+
+   This line sets all the fields of the `hints` structure to zero, ensuring no garbage values are present.
+
+4. **Setting `hints` Criteria:**
+
+   ```C
+   hints.ai_family = PF_UNSPEC;
+   hints.ai_socktype = SOCK_STREAM;
+   ```
+
+   - `hints.ai_family = PF_UNSPEC`: This allows the function to return socket addresses that can be used with either IPv4 or IPv6.
+   - `hints.ai_socktype = SOCK_STREAM`: This specifies that the socket type should be a stream socket (TCP).
+
+5. **Calling `getaddrinfo()`:**
+
+   ```C
+   getaddrinfo("www.oreilly.com", "80", &hints, &res);
+   ```
+
+   This function call translates the hostname (`"www.oreilly.com"`) and the service name (`"80"`, which is the HTTP port) into a linked list of address structures. The `hints` argument provides criteria for the kinds of addresses the caller is interested in, and the `res` argument is set to point to the resulting list of address structures.
+
+   - The hostname (`"www.oreilly.com"`) is the address we want to look up.
+   - The service name (`"80"`) is the port number we want to connect to, specified as a string.
+   - `&hints` is a pointer to the hints structure that provides criteria for selecting the returned addresses.
+   - `&res` is a pointer to the linked list of results.
+
+This setup is typically used in network programming to prepare for creating and connecting sockets using the returned address information.
