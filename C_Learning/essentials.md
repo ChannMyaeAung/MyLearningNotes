@@ -19,7 +19,9 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+### `POSIX`
 
+In C programming, POSIX stands for "Portable Operating System Interface for Unix". It refers to a family of standards specified by the IEEE (Institute of Electrical and Electronics Engineers) that define the API (Application Programming Interface) for software compatible with Unix and Unix-like operating systems. These standards aim to ensure compatibility between different Unix systems, allowing software written for POSIX to be easily portable across various Unix platforms.
 
 ### `(*pointer)` vs `(pointer *)`
 

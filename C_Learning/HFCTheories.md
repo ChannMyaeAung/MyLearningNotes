@@ -6478,7 +6478,34 @@ Here's a breakdown of what each part does:
    memset(&hints, 0, sizeof(hints));
    ```
 
-   This line sets all the fields of the `hints` structure to zero, ensuring no garbage values are present.
+   - This line sets all the fields of the `hints` structure to zero, ensuring no garbage values are present. 
+   - `memset` stands for "memory set". It's a function in C and C++ used to fill a block of memory with a particular value.
+
+   ```C
+   void *memset(void *s, int c, size_t n);
+   
+   // s - pointer to the block of memory to fill.
+   // c - value to be set. The value is passed as int, but the function filles the block of memory using the unsigned char conversion of this value.
+   // n - Number of bytes to be set to the value.
+   // memset returns a pointer to the memory area s.
+   ```
+
+   ```C
+   int main(){
+       char array[10];
+       // Initialize all elements of array to 'A'
+       memset(array, 'A', sizeof(array));
+       return 0;
+   }
+   ```
+
+   ```sh
+   chan@CMA:~/C_Programming/practice
+   $ ./practice
+   AAAAAAAAAA
+   ```
+
+   - In this example, `memset` is used to fill the entire `array` with the character `A`.
 
 4. **Setting `hints` Criteria:**
 
@@ -6489,6 +6516,7 @@ Here's a breakdown of what each part does:
 
    - `hints.ai_family = PF_UNSPEC`: This allows the function to return socket addresses that can be used with either IPv4 or IPv6.
    - `hints.ai_socktype = SOCK_STREAM`: This specifies that the socket type should be a stream socket (TCP).
+   - `ai` stands for "address info".
 
 5. **Calling `getaddrinfo()`:**
 
@@ -6504,3 +6532,32 @@ Here's a breakdown of what each part does:
    - `&res` is a pointer to the linked list of results.
 
 This setup is typically used in network programming to prepare for creating and connecting sockets using the returned address information.
+
+
+
+- The `getaddrinfo()` constructs a new data structure on the **heap** called a naming resource.
+- The naming resource represents a port on a server with a given domain name.
+- Hidden away inside the naming resource is the IP address that the computer will need.
+- Sometimes very large domains can have several IP addresses, but the code here will simply pick one of them.
+- We can then use the naming resource to create a socket.
+
+```C
+int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+```
+
+- Finally we can connect to the remote socket.
+- Because the naming resource was created on the heap, we'll need to tidy it away with a function called `freeaddrinfo()`.
+
+```C
+// This will connect to the remote socket.
+connect(s, res->ai_addr, res->ai_addrlen);
+
+// When we've connected, we can delete the address data with freeaddrinfo().
+freeaddrinfo(res);
+
+// res->ai_addr is the addr of the remote host and port
+// res->ai_addrlen is the size of the address in memory.
+```
+
+- Once we have connected a socket to a remote port, we can read and write to it using the same `recv()` and `send()` functions we used for the server.
+- The exercise is in `HFCExercises.md`.
