@@ -6301,3 +6301,237 @@ Knock!Knock!
 >Who's there?
 
 ```
+
+
+
+#### Chapter 11 - Last Exercise
+
+`functions.c`
+
+```C
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+
+// Error handling function to print an error message and exit
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(0);
+}
+
+// Function tto set up a signal handler for a given signal
+int catch_signal(int sig, void (*handler)(int)){
+    // Declare a sigaction struct to specify the signal handling action
+    struct sigaction action;
+    // Set the handler function for the signal
+    action.sa_handler = handler;
+    // Initialize the signal mask to empty
+    sigemptyset(&action.sa_mask);
+    // No special flags
+    action.sa_flags = 0;
+    // Set the action for the specified signal
+    return sigaction(sig, &action, NULL);
+}
+
+// Function to open a listener socket
+int open_listener_socket(){
+    // Create a socket using the IPv4 protocol family and stream socket type
+    int s = socket(PF_INET, SOCK_STREAM, 0);
+    
+    // Check if socket creation failed.
+    if(s == -1){
+        error("Can't open socket");
+    }
+    // return the socket descriptor
+    return s;
+}
+
+// Function to open a socket and connect to a specified host and port
+int open_socket(char *host, char *port){
+    struct addrinfo *res;
+    struct addrinfo hints;
+    
+    // zero out the hints struct
+    memset(&hints, 0, sizeof(hints));
+    
+    // Specify the address family as unspecified (both IPv4 and IPv6)
+    hints.ai_family = PF_UNSPEC;
+    
+    // Specify the socket type as a stream socket (TCP)
+    hints.ai_socktype = SOCK_STREAM;
+    
+    // Get address information for the specified host and port
+    if(getaddrinfo(host, port, &hints, &res) == -1){
+        error("Can't resolve the address.");
+    }
+    
+    // Create a socket with the obtained address information
+    int d_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    
+    // Check if socket creation was successful
+    if(d_sock == -1){
+        error("Can't open socket");
+    }
+    
+    // Connect the socket to the address obtained
+    int c = connect(d_sock, res->ai_addr, res->ai_addrlen);
+    
+    // Free the address information allocated by getaddrinfo()
+    freeaddrinfo(res);
+    if(c == -1){
+        error("Can't connect to socket");
+    }
+    
+    // Return the connected socket descriptor
+    return d_sock;
+}
+
+// Function to bind a socket to a specified port
+void bind_to_port(int socket, int port){
+    // Create a structure to hold the address
+    struct sockaddr_in name;
+    // Use the IPv4 protocol family
+    name.sin_family = PF_INET;
+    // Convert the port to network byte order
+    name.sin_port = (in_port_t)htons(port);
+    // Bind to any available network interface
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+    // Allow reuse of local addresses
+    // Useful for avoiding "Address already in use" error
+    int reuse = 1;
+    if(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (void *)&reuse, sizeof(int)) == -1){
+        error("Can't set the reuse option on the socket.");
+    }
+    
+    // Bind the socket to the address and port
+    int c = bind(socket, (struct sockaddr *)&name, sizeof(name));
+    if(c == -1){
+        error("Can't bind to socket");
+    }
+}
+
+// Function to send a message through a socket
+int say(int socket, char *s){
+    // Send the message
+    int result = send(socket, s, strlen(s), 0);
+    if(result == -1){
+        fprintf(stderr, "%s: %s\n", "Error talking to the client", strerror(errno));
+    }
+    // Return the result of send
+    return result;
+}
+
+// Function to read a message from a socket
+int read_in(int socket, char *buf, int len){
+    // Initialize pointers and length for receiving data
+    char *s = buf;
+    int slen = len;
+    // Receive data from the socket
+    int c = recv(socket, s, slen, 0);
+    // Loop until we receive a newline character or encounter an error
+    while((c > 0) && (s[c-1] != '\n')){
+        s += c;
+        slen -= c;
+        c = recv(socket, s, slen, 0);
+    }
+    
+    // Check if there was an error receiving data
+    if(c < 0){
+        return c;
+    }else if(c == 0){
+        buf[0] = '\0';
+    }else{
+        s[c-1] = '\0';
+    }
+    
+    // Return the number of bytes read
+    return len - slen;
+}
+
+// Global variable to hold the listener socket descriptor
+int listener_d;
+
+// Function to handle shutdown signals
+void handle_shutdown(){
+    // Check if the listener socket is open
+    if(listener_d){
+        // if so, close the listener socket
+        close(listener_d);
+    }
+    // print a shutdown message
+    fprintf(stderr, "Bye!\n");
+    // exit the program with status 0.
+    exit(0);
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    (void argc); // Explicitly mark argc as unused to avoid compiler warnings
+    
+    // Declare a variable to hold the socket descriptor
+    int d_sock;
+    
+    // Open a socket and connect to the specified host and port
+    d_sock = open_socket("en.wikipedia.org", "80");
+    
+    // Format the GET request string and store it in buf
+    sprintf(buf, "GET /wiki/O'Reilly_Media HTTP/1.1\r\n");
+    
+    // Send the GET request to the server
+    say(d_sock, buf);
+    
+    // Send the Host header to the server
+    say(d_sock, "Host: en.wikipedia.org\r\n");
+    
+    // Buffer to hold the received data
+    char rec[256];
+    
+    // Receive data from the server
+    int bytesRcvd = recv(d_sock, rec, 255, 0);
+    
+    // Loop to receive all data from the server
+    while(bytesRcvd){
+        // Check if receiving data failed
+        if(bytesRcvd == -1){
+            error("Can't read from the server");
+        }
+        
+        // Null-terminate the received data
+        rec[bytesRcvd] = '\0';
+        
+        // Print the received data
+        printf("%s", rec);
+        
+        // Receive more data
+        bytesRcvd = recv(d_sock, rec, 255, 0);
+    }
+    // Close the socket
+    close(d_sock);
+    return 0;
+}
+```
+
+
+
+Code Execution:
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_10/test$ ./test
+HTTP/1.1 301 Moved Permanently
+content-length: 0
+location: https://en.wikipedia.org/wiki/O'Reilly_Media
+server: HAProxy
+x-cache: cp5022 int
+x-cache-status: int-tls
+connection: close
+
+
+```
+
+Since, the page has been permanently moved to another location and http has been changed and upgraded to https, our fetch was successful but we need to use another approach for fetching `https` sites.
