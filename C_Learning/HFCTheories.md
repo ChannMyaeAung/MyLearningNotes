@@ -5989,6 +5989,16 @@ A: Again, it depends. On Linux and the Mac, if the same signal is repeated very 
 
 ### Chapter 11 - Sockets and Networking
 
+#### What is a socket?
+
+- A socket is an endpoint for sending and receiving data across a network.
+- It's a fundamental concept in network programming that provides a way for software to communicate over a network (e.g., Internet or a local network).
+- Sockets allow for establishing a connection between two machines or processes to exchange data.
+- They are used by various protocols (TCP, UDP, etc.) to facilitate communication between applications running on different hosts.
+- In essence, a socket binds an IP address and a port number together to create a unique identifier for the connection, enabling the transmission of data between endpoints.
+
+
+
 #### The Internet knock-knock server
 
 - C is used to write most of the low-level networking code on the Internet.
@@ -6560,4 +6570,5 @@ freeaddrinfo(res);
 ```
 
 - Once we have connected a socket to a remote port, we can read and write to it using the same `recv()` and `send()` functions we used for the server.
+- `recv()` stands for "receive". It is a function used in socket programming to receive data from a socket. This function is commonly used in network applications to read incoming data from remote hosts over a TCP/IP network.
 - The exercise is in `HFCExercises.md`.
