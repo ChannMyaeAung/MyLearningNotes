@@ -6572,3 +6572,159 @@ freeaddrinfo(res);
 - Once we have connected a socket to a remote port, we can read and write to it using the same `recv()` and `send()` functions we used for the server.
 - `recv()` stands for "receive". It is a function used in socket programming to receive data from a socket. This function is commonly used in network applications to read incoming data from remote hosts over a TCP/IP network.
 - The exercise is in `HFCExercises.md`.
+
+
+
+### Questions & Answers
+
+Q: Should I create sockets with IP addresses or domain names?
+
+A: Most of the time, we'll want to use domain names. They're easier to remember and occasionally some servers will change their numeric addresses but keep the same domain names.
+
+
+
+Q: So, do I even need to know how to connect to a numeric address?
+
+A: Yes. If the server we're connecting to is not registered in the domain name system, such as machines on our home network, then we will need to know how to connect by IP.
+
+
+
+Q: Can I use `getaddrinfo()` with a numeric address?
+
+A: Yes, we can. But if we know that the address we are using is a numeric IP, the first version of the client socket code is simpler.
+
+
+
+### Bullet Points - Chapter 11
+
+- A protocol is a structured conversation.
+- Servers connect to local ports.
+- Clients connect to remote ports.
+- Clients and Servers both use sockets to communicate.
+- We write data to a socket with `send()`.
+- We read data from a socket with `recv()`.
+- HTTP is the protocol used on the Web.
+- To fetch HTTPS pages, we need to use a library that supports SSL/TLS because HTTPS is HTTP over TLS (Transport Layer Security). One commonly used library for this in C is `OpenSSL`.
+- Telnet is a simple network client.
+- Servers `BLAB`: bind(), listen(), accept() and begin talking.
+- DNS = Domain name system
+- Use `fork()` to cope with several clients at once.
+- Create sockets with the `socket()` function.
+- `getaddrinfo()` finds addresses by domain.
+
+---
+
+
+
+## Chapter 12 - Threads
+
+- Programs often need to do several things at the same time.
+- `POSIX` threads can make our code more responsive by **spinning off several pieces of code to run in parallel.**
+- Threads are powerful tools, but we don't want them crashing into each other.
+
+### In this chapter, we'll learn
+
+- How to put up **traffic signs** and **lane markers** that will **prevent a code pileup.**
+- By the end, we'll know how to **create POSIX threads** and how to use **synchronization mechanisms** to**protect the integrity of sensitive data.**
+
+
+
+### Tasks are sequential.. or not...
+
+Imagine we are writing something complex like a game in C. The code will need to perform several different tasks:
+
+- It will need to update the graphics on the screen.
+- It will need to read control information from the games controller or keyboard.
+- It will need to calculate the latest locations of the objects that are moving in the game.
+- It might need to communicate with the disk and the network.
+- Not only will our code need to do all of these things, it will need to do them **all at the same time.**
+- That's going to be true for many different programs.
+- Chat programs will need to read text from the network and send data to the network at the same time.
+- Media players will need to stream video to the display as well as watch for input from the user controls.
+
+
+
+### How can our code perform several different tasks at once?
+
+#### ... and processes are not always the answer
+
+- We have already learned how to make the computer do several things at once: with **processes**.
+- In the last chapter, we built a network server that could deal with several clients at once.
+- Each time a new user connected, the server created a new process to handle a new session.
+- That doesn't mean that whenever we want to do several things at once, we should just create a separate process.
+
+Here is why:
+
+1. Processes take time to create.
+   - Some machines take a little while to create new processes.
+   - Not much time but some.
+   - If the extra task we want to perform takes just a few hundredths of a second, creating a process each time won't be very efficient.
+2. Processes can't share data easily
+   - When we create a child process, it automatically has a complete copy of all the data from the parent process.
+   - But it's a copy of the data.
+   - If the child needs to send data back to the parent, then we need something like a pipe to do that for us.
+3. Processes are just plain difficult
+   - We need to create a chunk of code to generate processes and that can make our programs long and messy.
+
+
+
+We need something that starts a separate task quickly, can share all of our current data and won't need a huge amount of code to build.
+
+**We need threads.**
+
+### Simple processes do one thing at a time
+
+Let's say we have a task list with a set of things that we need to do:
+
+- We can't do all of the tasks at the same time, not by ourselves.
+- If we work in a shop alone, we're like a simple process: we do one thing after another, but always one thing at a time.
+- Surely, we can switch between tasks to keep everything going but what if there's a **blocking operation**?
+- What if we're serving someone at the checkout and the phone rings?
+- All of the programs we've written so far had **a single thread of execution**.
+- It's like there's only been one person working inside the program's process.
+
+
+
+### Employ extra staff: use threads
+
+- A **multi-threaded** program is like a shop with several people working in it.
+- If one person is running the checkout, another is filling the shelves, then everybody can work without interruptions.
+- If one person answers the phone, it won't stop the other people in the shop.
+- If we can employ more people, more than one thing can be done at once.
+- In the same way that several people can work in the same shop, we can have several threads living inside the same process.
+- All of the threads will have access to the same piece of heap memory.
+- They will all be able to read and write to the same files and talk on the same network sockets.
+- If one thread changes a global variable, all of the other threads will see the change immediately.
+- That means we can give each thread a separate task and they'll all be performed at the same time.
+- We can run each task inside a separate thread.
+- If one thread has to wait for something, the other  threads can keep running.
+- All of the threads can run inside a single process.
+
+
+
+### How do we create threads?
+
+- There are a few thread libraries, and we are going to use one of the most popular: the **POSIX thread library** or `pthread`.
+
+```C
+void* does_not(void *a){
+    int i = 0;
+    for(i = 0; i < 5; i++){
+        sleep(1);
+        puts("Does not!");
+    }
+    return NULL;
+}
+```
+
+```C
+void* does_too(void *a){
+    int i = 0;
+    for(i = 0; i < 5; i++){
+        sleep(1);
+        puts("Does too!");
+    }
+    return NULL;
+}
+```
+
