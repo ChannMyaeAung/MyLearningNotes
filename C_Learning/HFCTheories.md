@@ -6728,3 +6728,8 @@ void* does_too(void *a){
 }
 ```
 
+- Thread functions need to have a `void*` return type.
+- Nothing useful to return so just use NULL.
+- A void pointer can be used to point to any piece of data in memory and we'll need to make sure that our thread functions have a `void*` return type.
+- We're going to run each of these functions inside its own thread.
+- We'll need to run both of these functions in parallel in separate threads.
