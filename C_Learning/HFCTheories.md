@@ -14,7 +14,7 @@
 
 - Pointers help you do both these things: avoid copies and share data.
 
-
+- In C, the presence of an asterisk (`*`) in a function declaration indicates that the function returns a pointer, while its absence means the function returns a value directly.
 
 Every time you declare a variable, the computer creates space for it somewhere in memory. If you declare a variable inside a function like main(), the computer will store it in a section of memory called the **stack**. If a variable is declared outside any function, it will be stored in the **globals** section of memory.
 
@@ -6733,3 +6733,53 @@ void* does_too(void *a){
 - A void pointer can be used to point to any piece of data in memory and we'll need to make sure that our thread functions have a `void*` return type.
 - We're going to run each of these functions inside its own thread.
 - We'll need to run both of these functions in parallel in separate threads.
+
+
+
+### Create threads with `pthread_create`
+
+```C
+#include <pthread.h>
+
+// This is the header for the pthread library.
+```
+
+- We are going to create two threads and each one needs to have its info stored in a `pthread_t` data structure.
+- Then we can create and run a thread with `pthread_create()`.
+
+```C
+// These records all the information about the thread
+pthread_t t0;
+pthread_t t1;
+
+// This creates the thread
+// does_not and does_too are the names of the function the thread will run.
+// &t0 and &t1 are the addresses of the data structure that will store the thread info.
+if(pthread_create(&t0, NULL, does_not, NULL) == -1){
+    error("Can't create thread t0");
+}
+
+if(pthread_create(&t1, NULL, does_too, NULL) == -1){
+    error("Can't create thread t1");
+}
+```
+
+- That code will run our two functions in separate threads.
+- But we have not quite finished yet. If our program just ran this and then finished, the threads would be killed when the program ended.
+- So we need to wait for our threads to finish.
+
+```C
+// The void pointer returned from each function will be stored here.
+*void result;
+
+// The pthread_join() function waits for a thread to finish
+if(pthread_join(t0, &result) == -1){
+    error("Can't join thread t0");
+}
+if(pthread_join(t1, &result) == -1){
+    error("Can't join thread t1");
+}
+```
+
+- The `pthread_join()` also receives the return value of our thread function and stores it in a void pointer variable.
+- Once both threads have finished, our program can exit smoothly.
