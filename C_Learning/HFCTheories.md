@@ -6733,6 +6733,12 @@ void* does_too(void *a){
 - A void pointer can be used to point to any piece of data in memory and we'll need to make sure that our thread functions have a `void*` return type.
 - We're going to run each of these functions inside its own thread.
 - We'll need to run both of these functions in parallel in separate threads.
+- The `void *a` parameter is a way to pass an argument of any type to the function.
+- In C, `void *` is a pointer to a memory location that has not been given a specific type.
+- This means it can point to a variable of any data type, from a simple integer to a complex structure.
+- This feature is particularly useful in threaded programming with the `pthreads` library, as it allows us to pass any type of data to the thread function.
+- The `void *` argument could be anything such as configuration options, state information, or other data structures.
+- Since the function signature must match what the `pthreads` library expects for thread routines, this parameter is necessary even if it is not used. 
 
 
 

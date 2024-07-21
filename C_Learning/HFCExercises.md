@@ -6941,3 +6941,368 @@ report-to: { "group": "wm_nel", "max_age": 604800, "endpoints": [{ "url": "https
 ...
 ```
 
+---
+
+
+
+## Chapter 12 - threads
+
+### Exercise 1 - Chapter 12
+
+
+
+`functions.c`
+
+```C
+#define _XOPEN_SOURCE 700
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h> // Include the pthread library for threading support.
+#include "headers.h"
+
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(1);
+}
+
+// Define a function that will be executed by a thread
+// This function prints "Does not!" five times, with a 1-second pause between each print
+void *does_not(void *a){
+    // Initialize a loop counter
+    int i = 0;
+    // Loop 5 times
+    for(i = 0; i < 5; i++){
+        // Pause executaion for 1 second
+        sleep(1);
+        // Print "Does not!" to the standard output.
+        puts("Does not!");
+    }
+    // Return NULL since this function does not need to return any value
+    return NULL;
+}
+
+// Define another function that will be executed by a different thread
+// This function prints "Does too!" five times, with a 1-second pause between each print
+void *does_too(*void a){
+    // Initialize a loop counter
+    int i = 0;
+    // Loop 5 times
+    for(i = 0; i < 5; i++){
+        sleep(1);
+        puts("Does too");
+    }
+    return NULL;
+}
+```
+
+
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h> // Include the pthread library for threading support.
+
+int main(){
+    // Declare thread identifiers.
+    pthread_t t0;
+    pthread_t t1;
+    
+    // Create the first thread, running the does_not function.
+    if(pthread_create(&t0, NULL, does_not, NULL) == -1){
+        // If thread creation fails, print an error message and exit.
+        error("Can't create thread t0.");
+    }
+    
+    // Create the second thread, running the does_too function.
+    if(pthread_create(&t1, NULL, does_too, NULL) == -1){
+        error("Can't create thread t1.")
+    }
+    
+    
+    // Declare a pointer to store the return value of the threads 
+    void *result;
+    
+    // Wait for the first thread to finish and check for errors
+    // If thread join fails, print error message and exit
+    if(pthread_join(t0, &result) == -1){
+        error("Can't join thread t0");
+    }
+    
+    // Wait for the second thread to finish and check for errors
+    if(pthread_join(t1, &result) == -1){
+        error("Can't join thread t1.");
+        
+    }
+    return 0;
+}
+```
+
+`Makefile`
+
+```makefile
+CC = clang
+CFLAGS = -Wall -Wextra -g
+LIBS = -lpthread
+OBJDIR = ./obj
+LIBDIR = ./libs
+
+all: main
+
+main: $(OBJDIR)/main.o $(LIBDIR)/libfunctions.a
+	$(CC) $(OBJDIR)/main.o -L$(LIBDIR) -lfunctions -o main $(LIBS)
+
+$(OBJDIR)/main.o: main.c headers.h
+	$(CC) $(CFLAGS) -c main.c -o $(OBJDIR)/main.o
+
+$(OBJDIR)/functions.o: functions.c headers.h 
+	$(CC) $(CFLAGS) -c functions.c -o $(OBJDIR)/functions.o
+
+$(LIBDIR)/libfunctions.a: $(OBJDIR)/functions.o 
+	ar -rcs $(LIBDIR)/libfunctions.a $(OBJDIR)/functions.o
+
+clean: 
+	@echo "Removing everything except the source files..."
+	rm -f *.o $(OBJDIR)/*.o $(LIBDIR)/libfunctions.a main
+```
+
+- In C, the `sleep` function suspends the execution of the current thread for a given number of seconds. 
+- Specifically, `sleep(1)` means the current thread is paused for 1 second. This function is useful for introducing delays or reducing CPU usage in programs where timing is not critical.
+- Running code on two threads means that the program can execute two sets of instructions concurrently, utilizing the CPU's capability to run multiple threads in parallel. 
+- This doesn't necessarily mean running two separate programs, but rather running different parts of the same program simultaneously. 
+- Modern CPUs have multiple cores, each capable of running one or more threads, allowing for true parallel execution. 
+- In the context of our main.c code, it means the `does_not` and `does_too` functions can run at the same time, each on its own thread, potentially on separate CPU cores, improving the program's overall execution efficiency and responsiveness.
+- When we look carefully at our `Makefile`, we need to include `-lpthread` which will link the `pthread` library since we are using the `pthread` library.
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_12/test$ ./main
+Does not!
+Does too!
+Does not!
+Does too!
+Does too!
+Does not!
+Does too!
+Does not!
+Does too!
+Does not!
+chan@CMA:~/C_Programming/HFC/chapter_12/test$ 
+```
+
+- When we run the code, we can see both functions running at the same time.
+
+
+
+Q: If both functions are running at the same time, why don't the letters in the messages get mixed up? Each message is on its own line.
+
+A: That's because of the way the Standard Output works. The text from `puts()` will all get output at once.
+
+
+
+Q: I removed the `sleep()` function, and the output showed all the output from one function and then all the output from the other function. Why is that?
+
+A: Most machines will run the code so quickly that without the `sleep()` call, the first function will finish before the second thread starts running.
+
+
+
+### Beers Magnet - Exercise 2 Chapter 12
+
+`functions.c`
+
+```C
+void error(char *msg) {
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno)); // Print error message and description
+    exit(1); // Exit the program with a status of 1 indicating an error
+}
+
+// Global variable representing the number of beers
+int beers = 2000000;
+
+// Function to be run by each thread
+void *drink_lots(void *a){
+    (void)a; // Cast argument to avoid unused parameter warning
+    int i;
+    // Each thread will decrement the beer count 100,000 times
+    for(i = 0; i < 100000; i++){
+        beers = beers - 1;
+    }
+    // Return NULl as the thread function has to return a void pointer
+    return NULL;
+}
+```
+
+
+
+`headers.h`
+
+```C
+void error(char *msg);
+
+extern int beers;
+
+void *drink_lots(void *a);
+```
+
+
+
+`main.c`
+
+```C
+int main(){
+    // Array to hold thread identifiers for 20 threads
+    pthread_t threads[20];
+    int t;
+    
+    // Print initial number of beers
+    printf("%i bottles of beer on the wall\n%i bottles of beer\n", beers, beers);
+    
+    // Create 20 threads
+    for(t = 0; t < 20; t++){
+        // Create a thread that runs the drink_lots function
+        if(pthread_create(&threads[t], NULL, drink_lots, NULL) == -1){
+            error("Can't create thread");
+        }
+    }
+    
+    // Pointer to store the return value of the threads
+    void *result;
+    //Wait for all 20 threads to finish
+    for(t = 0; t < 20; t++){
+        // Join each thread, ensuring it has completed before moving on
+        if(pthread_join(threads[t], &result) == -1){
+            error("Can't join threads");
+        }
+    }
+    
+    // Print the remaining number of beers
+    printf("There are now %i bottles of beer on the wall\n", beers);
+    return 0;
+}
+```
+
+1. **Global Variable:**
+
+   ```C
+   int beers = 2000000;
+   ```
+
+   - `beers` is a global variable representing the total number of beers.
+
+2. **Thread Function:**
+
+   ```C
+   void *drink_lots(void *a) {
+       (void)a;
+       int i;
+       for (i = 0; i < 100000; i++) {
+           beers = beers - 1;
+       }
+       return NULL;
+   }
+   ```
+
+   - `drink_lots` is the function executed by each thread.
+   - It takes a `void*` argument (not used in this case).
+   - Each thread decrements the `beers` variable 100,000 times.
+   - Returns `NULL` as the thread function must return a `void*`.
+
+3. **Main Function:**
+
+   ```C
+   int main() {
+       pthread_t threads[20];
+       int t;
+       printf("%i bottles of beer on the wall\n%i bottles of beer\n", beers, beers);
+       for (t = 0; t < 20; t++) {
+           if (pthread_create(&threads[t], NULL, drink_lots, NULL) == -1) {
+               error("Can't create thread");
+           }
+       }
+   
+       void *result;
+       for (t = 0; t < 20; t++) {
+           if (pthread_join(threads[t], &result) == -1) {
+               error("Can't join threads");
+           }
+       }
+       printf("There are now %i bottles of beer on the wall\n", beers);
+       return 0;
+   }
+   ```
+
+   - **Thread Array:**
+
+     ```C
+     pthread_t threads[20];
+     ```
+
+     - Declare an array to hold the identifiers for 20 threads.
+
+   - **Print Initial Beers:**
+
+     ```C
+     printf("%i bottles of beer on the wall\n%i bottles of beer\n", beers, beers);
+     ```
+
+     - Print the initial number of beers.
+
+   - **Create Threads:**
+
+     ```C
+     for (t = 0; t < 20; t++) {
+         if (pthread_create(&threads[t], NULL, drink_lots, NULL) == -1) {
+             error("Can't create thread");
+         }
+     }
+     ```
+
+     - Create 20 threads using a loop.
+     - Each thread runs the `drink_lots` function.
+     - Handle errors if thread creation fails.
+
+   - **Join Threads:**
+
+     ```C
+     void *result;
+     for (t = 0; t < 20; t++) {
+         if (pthread_join(threads[t], &result) == -1) {
+             error("Can't join threads");
+         }
+     }
+     ```
+
+     - Use `pthread_join` to wait for each thread to finish.
+     - Handle errors if joining a thread fails.
+
+### Logic
+
+- The main logic is to create 20 threads that each decrement a shared global variable (`beers`) 100,000 times.
+- By using threads, the program simulates concurrent operations on the shared resource.
+- After all threads complete, the program prints the final value of `beers`.
+
+
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/HFC/chapter_12/test$ ./main
+2000000 bottles of beer on the wall
+2000000 bottles of beer
+There are now 1758496 bottles of beer on the wall
+chan@CMA:~/C_Programming/HFC/chapter_12/test$ ./main
+2000000 bottles of beer on the wall
+2000000 bottles of beer
+There are now 1710145 bottles of beer on the wall
+chan@CMA:~/C_Programming/HFC/chapter_12/test$ ./main
+2000000 bottles of beer on the wall
+2000000 bottles of beer
+There are now 1736959 bottles of beer on the wall
+```
+
