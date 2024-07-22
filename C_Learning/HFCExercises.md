@@ -7306,3 +7306,160 @@ chan@CMA:~/C_Programming/HFC/chapter_12/test$ ./main
 There are now 1736959 bottles of beer on the wall
 ```
 
+- We can see the the result is quite unpredictable.
+- Why doesn't the `beers` variable get set to zero when  all the threads have run?
+
+
+
+### The code is not thread-safe
+
+- The great thing about threads is that lots of different tasks can run at the same time and have access to the same data.
+- The downside is that all those different threads have access to the same data.
+- The threads in the second program are all reading and changing a shared piece of memory: the `beers` variable.
+- To understand what's going on, let's see what happens if two threads try to reduce the value of `beers` using this line of code:
+
+```C
+beers = beers - 1;
+```
+
+![Screenshot from 2024-07-22 22-14-54](/home/chan/Pictures/Screenshots/Screenshot from 2024-07-22 22-14-54.png)
+
+- Even though both of the threads were trying to reduce the value of `beers` by 1, they didn't succeed.
+- Instead of reducing the value by 2, they only decreased it by 1.
+- That's why the `beers` variable didn't get reduced to zero
+- The threads kept getting in the way of each other.
+- The reason why the result was so unpredictable is because the threads didn't always run the line of code at exactly the same time.
+- Sometimes the threads didn't crash into each other, and sometimes they did.
+- Be careful to look out for code that isn't thread-safe. How will we know? 
+- If two threads read and write to the same variable, it's not.
+
+
+
+### We need to add traffic signals
+
+- Multithreaded programs can be powerful, but they can also behave in unpredictable ways, unless we put some controls in place.
+- Imagine two cars want to pass down the same narrow stretch of road. 
+- To prevent an accident, we can add traffic signals.
+- Those traffic signals prevent the cars from getting access to a shared resource(the road) at the same time.
+- It's the same thing when we want two or more threads to access a shared data resource.
+- We need to add traffic signals so that no two threads can read the data and write it back at the same time.
+
+![Screenshot from 2024-07-22 22-23-00](/home/chan/Pictures/Screenshots/Screenshot from 2024-07-22 22-23-00.png)
+
+- The traffic signals that prevent threads from crashing into each other are called `mutexes`, and they are one of the simplest ways of making our code thread-safe.
+- `Mutexes` are sometimes just called locks.
+- MUT-EX = Mutually Exclusive.
+
+
+
+### Use a `mutex` as a traffic signal
+
+- To protect a section of code, we will need to create a mutex lock like this:
+
+```C
+pthread_mutex_t a_lock = PTHREAD_MUTEX_INITIALIZER;
+```
+
+- The `mutex` needs to be visible to all of the threads that might crash into each other, so that means we'll probably want to create it as a global variable.
+- `PTHREAD_MUTEX_INITIALIZER` is actually a macro.
+- When the compiler sees that, it will insert all of the code our program needs to create the `mutex` lock properly.
+
+
+
+1. `Red means stop`.
+
+   - At the beginning of our sensitive code section, we need to place our first traffic signal.
+   - The `pthread_mutex_lock()` will let only **one thread** get past.
+   - All the other threads will have to wait when they get to it.
+
+   ```C
+   // Only one thread at a time will get past this.
+   pthread_mutex_lock(&a_lock);
+   /* Sensitive code starts here...*/
+   ```
+
+2. `Green means go.`
+
+   - When the thread gets to the end of the sensitive code, it makes a call to `pthread_mutex_unlock()`.
+   - That sets the traffic signal back to green and another thread is allowed onto the sensitive code.
+
+   ```C
+   /* End of sensitive Code */
+   pthread_mutex_unlock(&a_lock);
+   ```
+
+   - Now that we know how to create locks in our code, we have a lot of control over exactly how our threads will work.
+
+
+
+### Passing Long Values to Thread Functions 
+
+- Thread functions can accept a single void pointer parameter and return a single void pointer value.
+- Quite often, we'll want to pass and return integer values to a thread.
+- One trick is to use `long` values.
+- `long`s can be stored in void pointers because they are the same size.
+
+`functions.c`
+
+```C
+// A thread function can accept a single void pointer parameter
+void *do_stuff(void *param){
+    // Convert parameter to long to get thread number
+    long thread_no = (long)param;
+    // Print the thread number
+    printf("Thread number %ld\n", thread_no);
+    // Cast it back to a void pointer when it is returned.
+    // Return thread number + 1 as the thread's return value
+    return (void*)(thread_no + 1);
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    // array to hold thread identifiers
+    pthread_t threads[20];
+    // Loop variable and thread argument
+    long t;
+    
+    // Create 3 threads
+    for(t = 0; t < 3; t++){
+        // Create a thread and check for errors
+        // (void*)t - Convert the long t value to a void pointer
+        if(pthread_create(&threads[t], NULL, do_stuff, (void*)t) == -1){
+            error("");
+        }
+    }
+    
+    // Pointer to hold the return value of the threads
+    void *result;
+    // Join 3 threads
+    
+    for(t = 0; t < 3; t++){
+        if(pthreads_join(threads[t], &result) == -1){
+            error("");
+        }
+        // Print the return value of the thread
+        // Convert the return value to a long before using it.
+        printf("Thread %ld returned %ld\n", t, (long)result);
+    }
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Thread number 0
+Thread number 1
+Thread number 2
+Thread 0 returned 1
+Thread 1 returned 2
+Thread 2 returned 3
+
+```
+
+- Each thread receives its thread number.
+- Each thread returns its thread number + 1.

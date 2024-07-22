@@ -6789,3 +6789,21 @@ if(pthread_join(t1, &result) == -1){
 
 - The `pthread_join()` also receives the return value of our thread function and stores it in a void pointer variable.
 - Once both threads have finished, our program can exit smoothly.
+
+
+
+### `pthread_create()` and `pthread_join()`
+
+The [`pthread_create`](vscode-file://vscode-app/usr/share/code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) and `pthread_join` functions are used in POSIX threads programming (pthreads) for creating and joining threads, respectively. Here are their parameters:
+
+#### `pthread_create`
+
+- **thread**: A pointer to `pthread_t` that is an opaque, unique identifier for the newly created thread.
+- **attr**: A pointer to `pthread_attr_t` that specifies the attributes for the thread. If this parameter is `NULL`, the thread is created with default attributes.
+- **start_routine**: The function to be executed by the thread. This pointer points to a function that takes a single `void *` argument and returns a `void *`.
+- **arg**: A pointer to the argument that will be passed to the `start_routine`. This can be `NULL` if no argument is needed.
+
+#### `pthread_join`
+
+- **thread**: The `pthread_t` identifier of the thread to join. This is the same identifier that was obtained when the thread was created with `pthread_create`.
+- **retval**: A pointer to a location where the exit status of the joined thread will be stored. This can be a pointer to a `void *` variable. If it is `NULL`, the exit status is not stored.
