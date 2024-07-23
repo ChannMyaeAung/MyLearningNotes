@@ -7428,7 +7428,7 @@ int main(){
         // Create a thread and check for errors
         // (void*)t - Convert the long t value to a void pointer
         if(pthread_create(&threads[t], NULL, do_stuff, (void*)t) == -1){
-            error("");
+            error("Cannot create threads");
         }
     }
     
@@ -7438,7 +7438,7 @@ int main(){
     
     for(t = 0; t < 3; t++){
         if(pthreads_join(threads[t], &result) == -1){
-            error("");
+            error("Cannot join threads");
         }
         // Print the return value of the thread
         // Convert the return value to a long before using it.
@@ -7463,3 +7463,185 @@ Thread 2 returned 3
 
 - Each thread receives its thread number.
 - Each thread returns its thread number + 1.
+
+
+
+### Long Exercise - Chapter 12
+
+- There's no simple way to decide where to put the locks in our code.
+- Where we put them will change the way the code performs.
+- Here are two versions of `drink_lots()` function that lock the code in different ways.
+
+`Version A`
+
+```C
+pthread_mutex_t beers_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *drink_lots(void *a){
+    int i;
+    pthread_mutex_lock(&beers_lock);
+    for(i = 0; i < 100000; i++){
+        beers = beers - 1;
+    }
+    pthread_mutex_unlock(&beers_lock);
+    printf("beers = %i\n", beers);
+    return NULL;
+}
+```
+
+- **Granularity**: Fine-grained locking.
+- **Concurrency**: Higher concurrency, as the lock is held for a very short duration—just enough to decrement the `beers` variable. This allows other threads to acquire the lock between iterations of the loop.
+- **Performance**: Potentially lower performance due to the overhead of acquiring and releasing the lock 100,000 times per thread. This can lead to significant contention and overhead if many threads are trying to lock and unlock in rapid succession.
+- **Safety**: Safer in terms of data consistency. Each decrement operation is protected, ensuring that no two threads can modify `beers` simultaneously, which prevents race conditions.
+
+`Version B`
+
+```C
+pthread_mutex_t beers_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *drink_lots(void *a){
+    int i;
+    for(i = 0; i < 100000; i++){
+        pthread_mutex_lock(&beers_lock);
+        beers = beers - 1;
+        pthread_mutex_unlock(&beers_lock);
+    }
+    printf("beers = %i\n", beers);
+    return NULL;
+}
+```
+
+- **Granularity**: Coarse-grained locking.
+- **Concurrency**: Lower concurrency, as the lock is held for the duration of the entire loop, preventing other threads from accessing `beers` until the loop completes.
+- **Performance**: Potentially higher performance due to reduced lock contention. The lock is acquired and released only once per thread, reducing the overhead associated with locking mechanisms.
+- **Safety**: Still safe in terms of data consistency for the entire operation of decrementing `beers` 100,000 times, but it could lead to longer wait times for other threads, as they must wait for the current thread to finish the entire loop before getting a chance to execute.
+
+Granularity, in the context of locking mechanisms like `mutexes` in multithreaded programming, refers to the scope and duration a lock covers during its acquisition. It's a measure of the size of the locked resource or the amount of code protected by the lock. Granularity can be broadly categorized into two types:
+
+1. **Fine-Grained Locking**:
+   - Locks are used to protect a small amount of data or a very specific part of the code.
+   - This approach allows for higher concurrency, as it minimizes the time a lock is held and reduces the chances of contention among threads.
+   - However, it can lead to higher overhead due to the frequent locking and unlocking operations.
+2. **Coarse-Grained Locking**:
+   - Locks are used to protect a large set of data or larger sections of code.
+   - This approach simplifies the design and reduces the overhead of acquiring and releasing locks.
+   - However, it can significantly reduce concurrency, as threads may be blocked for longer periods while waiting for access to the locked resource.
+
+Choosing the right level of granularity is crucial for balancing performance and concurrency in multithreaded applications. Fine-grained locking is preferred for high-concurrency applications where performance is critical, while coarse-grained locking might be suitable for applications where simplicity and lower overhead are more important than maximizing concurrency.
+
+`main.c`
+
+```C
+int main(){
+    pthread_t threads[20];
+    int t;
+    printf("%d bottles of beers on the wall\n%d bottles of beers\n", beers, beers);
+    for(t = 0; t < 20; t++){
+        if(pthread_create(&threads[t], NULL, drink_lots, NULL) == -1){
+            error("Can't create threads");
+        }
+    }
+    
+    void *result;
+    for(t = 0; t < 20; t++){
+        if(pthread_join(threads[t], &result) == -1){
+            error("Can't join threads");
+        }
+    }
+    
+    printf("%d bottles of beers on the wall\n%d bottles of beers\n", beers, beers);
+    return 0;
+}
+```
+
+
+
+`Code Execution (Version A)`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+2000000 bottles of beer on the wall
+2000000 bottles of beer
+beers: 1900000
+beers: 1800000
+beers: 1700000
+beers: 1600000
+beers: 1500000
+beers: 1400000
+beers: 1300000
+beers: 1200000
+beers: 1100000
+beers: 1000000
+beers: 900000
+beers: 800000
+beers: 700000
+beers: 600000
+beers: 500000
+beers: 400000
+beers: 300000
+beers: 200000
+beers: 100000
+beers: 0
+0 bottles of beer on the wall
+0 bottles of beer
+
+```
+
+`Code Execution (Version B)`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+2000000 bottles of beer on the wall
+2000000 bottles of beer
+beers: 93835
+beers: 93728
+beers: 88356
+beers: 83394
+beers: 75964
+beers: 67523
+beers: 55832
+beers: 39614
+beers: 27938
+beers: 27074
+beers: 9064
+beers: 8584
+beers: 8140
+beers: 7523
+beers: 6289
+beers: 3813
+beers: 1965
+beers: 1301
+beers: 357
+beers: 0
+0 bottles of beer on the wall
+0 bottles of beer
+
+```
+
+- As we can see both pieces of code use a `mutex` to protect the `beers` variable.
+- Each displays the value of `beers` before they exit.
+- Because they are locking the code in different places, they generate different output on the screen.
+- In summary, locking inside the loop offers better safety for each individual operation at the cost of performance due to frequent locking and unlocking. 
+- Locking outside the loop improves performance by reducing lock contention but decreases concurrency, as threads have to wait longer for their turn to execute the loop.
+
+
+
+### Locking Outside the Loop vs Inside The loop
+
+The discrepancy in the starting value of `beers` when locking inside the loop, specifically starting from `93835` instead of decrementing in a predictable manner from `2000000`, can be attributed to the behavior of concurrent threads and the overhead of locking and unlocking in each iteration. Here's a breakdown to explain this phenomenon:
+
+### Locking Outside the Loop
+
+When the lock is placed outside the loop, the entire decrement operation (from `2000000` to `0`) is protected by a single lock for each thread. This means that once a thread acquires the lock, it will decrement `beers` by `100000` (assuming each thread is supposed to decrement `beers` by `1` a total of `100000` times) without any interruption from other threads. This results in a predictable, linear decrement of `beers` because threads execute their loops in complete isolation from each other, leading to the expected output where `beers` is decremented in large, consistent chunks.
+
+### Locking Inside the Loop
+
+When the lock is placed inside the loop, each decrement operation is individually protected. This means that after a thread decrements `beers` by `1`, it releases the lock, allowing another thread to acquire the lock and perform its decrement operation. This leads to a few key consequences:
+
+1. **Concurrency Overhead**: The frequent locking and unlocking in each iteration introduce significant overhead, slowing down the decrement operations.
+2. **Thread Scheduling and Preemption**: The operating system's scheduler determines which thread runs at any given time. Threads can be preempted (temporarily paused) to allow other threads to run. This scheduling is not deterministic from the perspective of your application, leading to non-linear decrements in `beers`.
+3. **Contention**: With many threads contending for the same lock, some threads may acquire the lock more frequently than others, especially if they are preempted less often or scheduled more favorably. This can lead to an uneven rate of decrement across threads.
+
+The starting value of `93835` suggests that by the time the program printed the first value of `beers`, multiple threads had already decremented it from `2000000` in a highly non-linear and unpredictable manner due to the reasons mentioned above. The specific starting value you see is a result of the complex interplay between thread scheduling, the overhead of locking and unlocking, and the specific behavior of your system's scheduler and CPU.
+
+This unpredictability and the overhead associated with fine-grained locking inside the loop highlight the trade-offs between concurrency, performance, and the granularity of locking in multithreaded applications.

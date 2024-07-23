@@ -6807,3 +6807,41 @@ The [`pthread_create`](vscode-file://vscode-app/usr/share/code/resources/app/out
 
 - **thread**: The `pthread_t` identifier of the thread to join. This is the same identifier that was obtained when the thread was created with `pthread_create`.
 - **retval**: A pointer to a location where the exit status of the joined thread will be stored. This can be a pointer to a `void *` variable. If it is `NULL`, the exit status is not stored.
+
+
+
+### Chapter 12 - Q & A
+
+Q: Does my machine have to have multiple processors to support threads?
+
+A: No. Most machines have processors with multiple cores, which means that their CPUs contain mini-processors that can do several things at once. But even if our code is running on a single core/single processor, we will still be able to run threads.
+
+
+
+Q: How?
+
+A: The OS will switch rapidly between the threads and make it appear that it is running several things at once.
+
+
+
+Q: Will threads make my programs faster?
+
+A: Not necessarily. While threads can help us use more of the processors and cores on our machines, we need to be careful about the amount of locking our code needs to do. If our threads are locked too often, our code may run as slowly as single-threaded code.
+
+
+
+Q: How can I design my thread code to be fast?
+
+A: Try to reduce the amount of data that threads need to access. If threads don't access a lot of shared data, they won't need to lock each other out so often and will be much more efficient.
+
+
+
+Q: Are threads faster than separate processes?
+
+A: They usually are, simply because it takes a little more time to create processes than it does to create extra threads.
+
+
+
+Q: I've heard that mutexes can lead to "deadlocks". What are they?
+
+A: Say we have two threads, and they both wan to get mutexes A and B. If the first thread already has A, and the second thread already has B, then the threads will be deadlocked. This is because the first thread can't get mutex B and the second thread can't get mutex A. They both come to a standstill.

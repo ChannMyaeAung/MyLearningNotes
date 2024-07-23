@@ -1,5 +1,9 @@
 ## C Programming Essentials
 
+- C is a language behind the Internet and almost every operating system
+- C is a language that's used to write all almost all the other languages.
+- C is a language that can write for almost every processor in existence, from watches and phones to places and satellites.
+
 When we run `make` or when we run `clang`, four different things are happening under the hood.
 
 - preprocessing
