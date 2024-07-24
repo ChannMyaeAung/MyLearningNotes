@@ -6844,4 +6844,208 @@ A: They usually are, simply because it takes a little more time to create proces
 
 Q: I've heard that mutexes can lead to "deadlocks". What are they?
 
-A: Say we have two threads, and they both wan to get mutexes A and B. If the first thread already has A, and the second thread already has B, then the threads will be deadlocked. This is because the first thread can't get mutex B and the second thread can't get mutex A. They both come to a standstill.
+A: Say we have two threads, and they both want to get mutexes A and B. If the first thread already has A, and the second thread already has B, then the threads will be deadlocked. This is because the first thread can't get mutex B and the second thread can't get mutex A. They both come to a standstill.
+
+
+
+### Chapter 12 - Bullet Points
+
+- Simple processes do one thing at a time.
+- Threads allow a process to do more than one thing at the same time.
+- `pthread_create()` creates a thread to run a function.
+- `pthread_join()` will wait for a thread to finish.
+- `Mutexes` are locks that protect shared data.
+- `POSIX threads (pthread)` is a threading library.
+- Threads share the same global variables.
+- `pthread_mutex_lock()` creates a mutex on code.
+- `pthread_mutex_unlock()` releases the `mutex`. 
+- Threads are "lightweight processes".
+- If two threads read and update the same variable, our code will be unpredictable.
+
+
+
+## Extra Materials
+
+### Increments and decrements
+
+```C
+// ++i = Increase i by 1, then return the new value.
+
+// i++ = Increase i by 1, then return the old value.
+
+// --i = Decrease i by 1, then return the new value.
+
+// i-- = Decrease i by 1, then return the old value.
+
+
+```
+
+- Each of these expression will change the value of `i`.
+- The position of the `++` and `--` say whether or not to return the original of `i` or its new value. 
+
+```C
+int i = 3;
+int j = i++; // After this line, j == 3 and i == 4;
+
+```
+
+- But instead of `i++` if we use `++i`, then j == 4 and i == 4;
+
+```C
+int main()
+{
+    // Example of i++
+    int i = 10;
+    printf("Original value of i: %d\n", i);
+    printf("Using i++: %d\n", i++);
+    printf("Value of i after i++: %d\n\n", i);
+
+    // Resetting i to 10
+    i = 10;
+
+    // Example of i--
+    printf("Original value of i: %d\n", i);
+    printf("Using i--: %d\n", i--);
+    printf("Value of i after i--: %d\n\n", i);
+
+    // Resetting i to 10
+    i = 10;
+
+    // Example of ++i
+    printf("Original value of i: %d\n", i);
+    printf("Using ++i: %d\n", ++i);
+    printf("Value of i after ++i: %d\n\n", i);
+
+    // Resetting i to 10
+    i = 10;
+
+    // Example of --i
+    printf("Original value of i: %d\n", i);
+    printf("Using --i: %d\n", --i);
+    printf("Value of i after --i: %d\n\n", i);
+
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Original value of i: 10
+Using i++: 10
+Value of i after i++: 11
+
+Original value of i: 10
+Using i--: 10
+Value of i after i--: 9
+
+Original value of i: 10
+Using ++i: 11
+Value of i after ++i: 11
+
+Original value of i: 10
+Using --i: 9
+Value of i after --i: 9
+
+```
+
+- As we can see when we print the values of  `i++` and `i--` , we print the original value.
+- On the other hand, when we print the value of `++i` and `--i`, we can see the it returns the new value.
+
+
+
+### Preprocessor directives
+
+- We use a preprocessor directive every time we compile a program that includes a header file:
+
+```C
+#include <stdio.h>
+```
+
+- The preprocessor scans through our C source file and generates a modified version that will be compiled.
+- In the case of the `#include` directive, the preprocessing inserts the contents of the `stdio.h` file. 
+- Directives always appear at the start of a line, and they always begin with the hash (#) character.
+- The next common directive after `#include` is `#define`.
+
+```C
+#define DAYS_OF_THE_WEEK 7
+...
+printf("There are %d days of the week\n, DAYS_OF_THE_WEEK");
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+There are 7 days of the week
+
+```
+
+- The `#define` directive creates a **macro**.
+- The preprocessor will scan through the C source and replace the macro name with the macro's value.
+- Macros aren't variables because they can never change at runtime.
+- Macros are placed before the program even compiles.
+- We can even create macros that work a little like functions.
+
+```C
+#define ADD_ONE(x) ((x) + 1)
+...
+printf("The answer is %d\n", ADD_ONE(3));
+```
+
+- `x` is a parameter to the macro
+- Be careful to use parentheses with macros.
+- The preprocessor will replace `ADD_ONE(3)` with ((3) + 1) before the program is compiled.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+The answer is 4
+
+```
+
+
+
+### Conditions
+
+- We can also use the preprocessor for **conditional compilation**.
+- We can make it switch parts of the source code on or off.
+
+```C
+#ifdef SPANISH
+char *greeting = "Hola";
+#else
+char *greeting = "Hello";
+#endif
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Hello
+
+```
+
+- This code will be compiled differently if there is (or isn't) a macro called `SPANISH` defined.
+
+```C
+#define SPANISH
+#ifdef SPANISH
+char *greeting = "Hola";
+#else
+char *greeting = "Hello";
+#endif
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+int main(){
+    printf("%s\n", greeting);
+    return 0;
+}
+```
+
+- But if we have defined SPANISH, then the result will be:
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Hola!
+```
+
