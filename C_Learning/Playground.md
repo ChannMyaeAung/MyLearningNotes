@@ -224,6 +224,8 @@ int main(){
 
 ---
 
+## Small C Projects
+
 
 
 ### Calculator
@@ -281,7 +283,7 @@ Result: 0.80
 
 
 
-#### Circle Circumference
+### Circle Circumference
 
 ```c
 #include <stdio.h>
@@ -306,6 +308,8 @@ int main(){
 ```
 
 ---
+
+
 
 ### Number Guessing Game
 
@@ -396,6 +400,8 @@ Sorry, you've exceeded the maximum number of attempts. The number was 5.
 
 ---
 
+
+
 ### Quiz App
 
 ```C
@@ -483,7 +489,7 @@ You scored 1 out of 3.
 
 
 
-#### Two in one program
+### Two in one program
 
 `main.c`
 
@@ -582,11 +588,7 @@ Correct!
 You scored 3 out of 3.
 ```
 
-
-
----
-
-#### Hypotenuse
+### Hypotenuse
 
 ```c
 #include <stdio.h>
@@ -613,11 +615,7 @@ int main(){
 
 
 
----
-
-
-
-#### Temperature conversion
+### Temperature conversion
 
 ```c
 #include <stdio.h>
@@ -651,11 +649,7 @@ int main(void)[
 
 
 
----
-
-
-
-#### Calculator
+### Calculator
 
 ```c
 #include <stdio.h>
@@ -714,11 +708,9 @@ int main(void){
 }
 ```
 
----
 
 
-
-#### String Length
+### String Length
 
 ```C
 #include <stdio.h>
@@ -738,4 +730,147 @@ int main(void){
 ```
 
 ---
+
+### Rock, Paper, Scissors
+
+`functions.c`
+
+```C
+void print_menu()
+{
+    printf("Rock, Paper, Scissors Game\n");
+    printf("1. Rock\n");
+    printf("2. Paper\n");
+    printf("3; Scissors\n");
+    printf("Enter your choice (1-3):");
+}
+int get_user_choice()
+{
+    // Get the input from the user and read it
+    int choice;
+    scanf("%d", &choice);
+
+    // If the choice is less than 1 or greater than 3, keep prompting the user until they enter a valid choice
+    while (choice < 1 || choice > 3)
+    {
+        printf("Invalid choice. Please enter a number between 1 and 3.\n");
+        scanf("%d", &choice);
+    }
+    return choice;
+}
+// Function to get the computer's choice
+int get_computer_choice()
+{
+    // Randomize the choice from 1 to 3
+    return (rand() % 3) + 1;
+}
+void determine_winner(int user_choice, int computer_choice)
+{
+    const char *choices[] = {"Rock", "Paper", "Scissors"};
+
+    printf("You chose %s.\n", choices[user_choice - 1]);
+    printf("The computer chose %s.\n", choices[computer_choice - 1]);
+
+    if (user_choice == computer_choice)
+    {
+        printf("It's a tie!\n");
+    }
+    else if ((user_choice == 1 && computer_choice == 3) || (user_choice == 2 && computer_choice == 1) || (user_choice == 3 && computer_choice == 2))
+    {
+        printf("You win!\n");
+    }
+    else
+    {
+        printf("You lose!\n");
+    }
+}
+```
+
+`practice.h`
+
+```C
+// Functions.c
+void print_menu();
+int get_user_choice();
+int get_computer_choice();
+void determine_winner(int user_choice, int computer_choice);
+// Functions_2.c
+```
+
+
+
+`main.c`
+
+```C
+int main()
+{
+    int user_choice;
+    int computer_choice;
+    char play_again;
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    // Keep playing until the user press any key other than 'y' or 'Y'
+    do
+    {
+        // Print the menu and get the user's choice
+        print_menu();
+        user_choice = get_user_choice();
+
+        // Get the computer's choice
+        computer_choice = get_computer_choice();
+
+        // Determine the winner
+        determine_winner(user_choice, computer_choice);
+
+        // Ask if the user wants to play again
+        printf("Do you want to play again? (y/n): ");
+        scanf(" %c", &play_again);
+    } while (play_again == 'y' || play_again == 'Y');
+
+    // Print a message to thank the user for playing
+    printf("Thanks for playing!\n");
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Rock, Paper, Scissors Game
+1. Rock
+2. Paper
+3; Scissors
+Enter your choice (1-3):0
+Invalid choice. Please enter a number between 1 and 3.
+1
+You chose Rock.
+The computer chose Scissors.
+You win!
+Do you want to play again? (y/n): y
+Rock, Paper, Scissors Game
+1. Rock
+2. Paper
+3; Scissors
+Enter your choice (1-3):2
+You chose Paper.
+The computer chose Scissors.
+You lose!
+Do you want to play again? (y/n): y
+Rock, Paper, Scissors Game
+1. Rock
+2. Paper
+3; Scissors
+Enter your choice (1-3):2
+You chose Paper.
+The computer chose Paper.
+It's a tie!
+Do you want to play again? (y/n): n
+Thanks for playing!
+chan@CMA:~/C_Programming/practice$ 
+
+
+```
 

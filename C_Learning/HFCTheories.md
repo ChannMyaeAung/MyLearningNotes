@@ -7049,3 +7049,65 @@ chan@CMA:~/C_Programming/practice$ ./practice
 Hola!
 ```
 
+### The static keyword
+
+Imagine we want to create a function that works like a counter.
+
+```C
+int count = 0;
+int counter(){
+    return ++count;
+}
+```
+
+- The problem with this code is that it uses a global variable called `count`.
+- Any other function can change the value of `count` because it's in the global scope.
+- If we start to write large programs, we need to be careful that we don't have too many global variables because they can lead to buggy code.
+- Fortunately, C lets us create a global variable that is available only inside the local scope of a function:
+
+```C
+int counter(){
+    static int count = 0;
+    return ++count;
+}
+```
+
+```C
+int main()
+{
+    printf("%d\n", counter());
+    printf("%d\n", counter());
+    return 0;
+}
+```
+
+
+
+- `count` is still a global variable, but it can only be accessed inside this function.
+- The `static` keyword means this variable will keep its value between calls to `counter()`.
+- The `static` keyword will store the variable inside the global area of memory, but the compiler will throw an error if some other function tries to access the `count` variable.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+1
+2
+
+```
+
+### static can also make things private
+
+- We can use the `static` keyword outside of functions.
+- `static` in this case means "only code in this `.c` file can use this".
+
+```C
+// We can only use this variable only inside the current source file.
+static int days = 365;
+
+// We can tell this function only from inside this source file
+static void update_account(int x){
+    ...
+}
+```
+
+- The `static` keyword **controls the scope** of something. 
+- It will prevent our data and functions from being accessed in ways that they weren't designed to be.
