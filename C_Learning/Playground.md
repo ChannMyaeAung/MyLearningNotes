@@ -874,3 +874,167 @@ chan@CMA:~/C_Programming/practice$
 
 ```
 
+
+
+### 2D Arrays in C
+
+- An array, where each element is an entire array
+- Useful if we need a matrix, grid, or table of data
+
+`main.c`
+
+```C
+int main(){
+    int numbers[2][3] = {{1,2,3}, {4,5,6}};
+    
+    // Setting each value in a 2D array
+    // Same as above
+    numbers[0][0] = 1;
+    numbers[0][1] = 2;
+    numbers[0][2] = 3;
+    numbers[1][0] = 4;
+    numbers[1][1] = 5;
+    numbers[1][2] = 6;
+    
+    for(int i = 0; i < 2; i++){
+        for(int j = 0; j < 3; j++){
+            printf("%d", numbers[i][j]);
+        }
+        // New line for each row
+        printf("\n");
+    }
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+1 2 3 
+4 5 6 
+```
+
+
+
+#### Making our 2D array demonstration code a bit more flexible
+
+`main.c`
+
+```C
+int main()
+{
+    int numbers[2][3];
+
+    // Calculate the number of rows in the array
+    int rows = sizeof(numbers) / sizeof(numbers[0]);
+    
+  	// Cal;culate the number of columns in the array
+    int columns = sizeof(numbers[0]) / sizeof(numbers[0][0]);
+
+    printf("rows: %d\n", rows);
+    printf("columns: %d\n", columns);
+
+    numbers[0][0] = 1;
+    numbers[0][1] = 2;
+    numbers[0][2] = 3;
+    numbers[1][0] = 4;
+    numbers[1][1] = 5;
+    numbers[1][2] = 6;
+	
+    // Nested for loop to iterate over the 2D array
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < columns; j++)
+        {
+            // Print each element of the array
+            printf("%d ", numbers[i][j]);
+        }
+        // print a newline for each row
+        printf("\n");
+    }
+    return 0;
+}
+```
+
+- The way nested for loops work is that according to the above example, if i = 0, we are going to calculate `j` `columns` times (in this case 3 times);
+- So it's going to be like this:
+
+```
+// i = 0 , j = 0
+// i = 0, j = 1
+// i = 0, j = 2
+
+// i = 1, j = 0
+// i = 1, j = 1
+// i = 1, j = 2
+```
+
+#### Code Explanation
+
+```C 
+int numbers[2][3];
+```
+
+
+
+- This declares a 2D array named `numbers` with 2 rows and 3 columns.
+
+```C
+int rows = sizeof(numbers) / sizeof(numbers[0]);
+```
+
+- `sizeof(numbers)` gives the total size in bytes of the entire 2D array.
+- `sizeof(numbers[0])` gives the size in bytes of the first row of the array.
+- Dividing the total size of the array by the size of one row gives the number of rows.
+
+```C
+int columns = sizeof(numbers[0]) / sizeof(numbers[0][0]);
+```
+
+- `sizeof(numbers[0])` gives the size in bytes of the first row of the array.
+- `sizeof(numbers[0][0])` gives the size in bytes of the first element of the first row.
+- Dividing the size of one row by the size of one element gives the number of columns.
+
+### Detailed Breakdown
+
+1. **Calculating Rows:**
+   - `sizeof(numbers)` returns the total size of the array. For a 2x3 array of `int` (assuming `int` is 4 bytes), this would be `2 * 3 * 4 = 24` bytes.
+   - `sizeof(numbers[0])` returns the size of the first row. For a row with 3 `int` elements, this would be `3 * 4 = 12` bytes.
+   - Dividing these values gives `24 / 12 = 2`, which is the number of rows.
+2. **Calculating Columns:**
+   - `sizeof(numbers[0])` returns the size of the first row, which is `12` bytes.
+   - `sizeof(numbers[0][0])` returns the size of a single `int` element, which is `4` bytes.
+   - Dividing these values gives `12 / 4 = 3`, which is the number of columns.
+
+### Summary
+
+- The number of rows is calculated by dividing the total size of the array by the size of one row.
+- The number of columns is calculated by dividing the size of one row by the size of one element.
+
+This method is useful because it dynamically calculates the dimensions of the array, making the code more flexible and less error-prone.
+
+
+
+### Tic-Tac-Toe
+
+`main.c`
+
+```C
+```
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`Code Execution:`
+
+```sh
+```
+
