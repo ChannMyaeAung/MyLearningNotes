@@ -1021,20 +1021,418 @@ This method is useful because it dynamically calculates the dimensions of the ar
 `main.c`
 
 ```C
+
+int main(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
+
+    char winner = ' '; // Variable to store the winner ('X', 'O', or ' ' for no winner).
+    char response;     // Variable to store the player's response to play again.
+
+    do
+    {
+        winner = ' ';   // Reset the winner for a new game
+        response = ' '; // Reset the response for a new game
+        // reset the game board
+        resetBoard();
+        // continue until there's a winner or no free spaces left.
+        while (winner == ' ' && checkFreeSpaces() != 0)
+        {
+            // Display the current state of the game board.
+            printBoard();
+
+            // Execute the player's move.
+            playerMove();
+            // Check if the player has won.
+            winner = checkWinner();
+            if (winner != ' ' || checkFreeSpaces() == 0)
+            {
+                break; // Exit the loop if there's a winner or no free spaces.
+            }
+
+            // Execute the computer's move.
+            computerMove();
+            // Check if the computer has won.
+            winner = checkWinner();
+            if (winner != ' ' || checkFreeSpaces() == 0)
+            {
+                // Exit the loop if there's a winner or no free spaces.
+                break;
+            }
+        }
+
+        // Display the final state of the game board.
+        printBoard();
+        // Announce the winner of the game.
+        printWinner(winner);
+
+        // Prompt the player to play again.
+        printf("\nWould you like to play again? (Y/N): \n");
+
+        // Read the player's response.
+        scanf(" %c", &response);
+        // Convert the response to uppercase
+        response = toupper(response);
+    } while (response == 'Y'); // Continue if the player wants to play again.
+
+    return 0;
+}
 ```
 
 `practice.h`
 
 ```C
+void error(char *msg);
+
+void resetBoard();
+void printBoard();
+int checkFreeSpaces();
+
+void playerMove();
+
+void computerMove();
+
+char checkWinner();
+
+void printWinner(char winner);
+
 ```
 
 `functions.c`
 
 ```C
+// The game board, a 3x3 grid for Tic-Tac-Toe
+char board[3][3];
+// Constant representing the player's marker
+const char PLAYER = 'X';
+// Constant representing the computer's marker.
+const char COMPUTER = 'O';
+
+void error(char *msg)
+{
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(EXIT_FAILURE);
+}
+
+void resetBoard()
+{
+    // Initialize the game board by setting all positions to empty (' ').
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            board[i][j] = ' ';
+        }
+    };
+}
+void printBoard()
+{
+    // Print the current state of the game board in a formatted manner.
+    printf(" %c | %c | %c ", board[0][0], board[0][1], board[0][2]);
+    printf("\n---|---|---\n");
+    printf(" %c | %c | %c ", board[1][0], board[1][1], board[1][2]);
+    printf("\n---|---|---\n");
+    printf(" %c | %c | %c ", board[2][0], board[2][1], board[2][2]);
+    printf("\n---|---|---\n");
+    printf("\n");
+}
+int checkFreeSpaces()
+{
+    // Count and return the number of empty spaces left on the board.
+    int freeSpaces = 9;
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (board[i][j] != ' ')
+            {
+                freeSpaces--;
+            }
+        }
+    }
+    return freeSpaces;
+}
+
+void playerMove()
+{
+    int x;
+    int y;
+
+    // Prompt the player to enter the row and column for their move.
+    do
+    {
+        printf("Enter row #(1-3): ");
+        scanf("%d", &x);
+        x--;
+
+        printf("Enter column #(1-3): ");
+        scanf("%d", &y);
+        y--;
+
+        if (board[x][y] != ' ')
+        {
+            printf("Invalid move\n");
+        }
+        else
+        {
+            board[x][y] = PLAYER;
+            break;
+        }
+    } while (board[x][y] != ' ');
+}
+
+void computerMove()
+{
+    // Create a seed based on current time
+    srand(time(0));
+
+    int x;
+    int y;
+
+    // Check if there are any free spaces left.
+    if (checkFreeSpaces() > 0)
+    {
+        do
+        {
+            // Generate random coordinates for the computer's move.
+            x = rand() % 3;
+            y = rand() % 3;
+        } while (board[x][y] != ' ');
+
+        board[x][y] = COMPUTER;
+    }
+    else
+    {
+        // If no free spaces, declare a tie.
+        printWinner(' ');
+    }
+}
+
+char checkWinner()
+{
+    // check rows
+    for (int i = 0; i < 3; i++)
+    {
+        if (board[i][0] == board[i][1] && board[i][0] == board[i][2] && board[i][0] != ' ')
+        {
+            return board[i][0];
+        }
+    }
+
+    // check columns
+    for (int i = 0; i < 3; i++)
+    {
+        if (board[0][i] == board[1][i] && board[0][i] == board[2][i] && board[0][i] != ' ')
+        {
+            return board[0][i];
+        }
+    }
+
+    // check diagonals
+    if (board[0][0] == board[1][1] && board[0][0] == board[2][2] && board[0][0] != ' ')
+    {
+        return board[0][0];
+    }
+    if (board[0][2] == board[1][1] && board[0][2] == board[2][0] && board[0][2] != ' ')
+    {
+        return board[0][2];
+    }
+
+    return ' ';
+}
+
+void printWinner(char winner)
+{
+    if (winner == PLAYER)
+    {
+        printf("YOU WIN!\n");
+    }
+    else if (winner == COMPUTER)
+    {
+        printf("YOU LOSE!");
+    }
+    else
+    {
+        printf("IT'S A TIE!");
+    }
+}
+
 ```
 
 `Code Execution:`
 
+`computer wins`
+
 ```sh
+   |   |   
+---|---|---
+   |   |   
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 3
+   |   | X 
+---|---|---
+   |   |   
+---|---|---
+ O |   |   
+---|---|---
+
+Enter row #(1-3): 2
+Enter column #(1-3): 3
+   |   | X 
+---|---|---
+ O |   | X 
+---|---|---
+ O |   |   
+---|---|---
+
+Enter row #(1-3): 2
+Enter column #(1-3): 1
+Invalid move
+Enter row #(1-3): 2
+Enter column #(1-3): 2
+   |   | X 
+---|---|---
+ O | X | X 
+---|---|---
+ O |   | O 
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 2
+   | X | X 
+---|---|---
+ O | X | X 
+---|---|---
+ O | O | O 
+---|---|---
+
+YOU LOSE!
+Would you like to play again? (Y/N): 
+N
+chan@CMA:~/C_Programming/test$ 
+
+```
+
+`player wins`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+   |   |   
+---|---|---
+   |   |   
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 3
+   |   | X 
+---|---|---
+   |   |   
+---|---|---
+   |   | O 
+---|---|---
+
+Enter row #(1-3): 2
+Enter column #(1-3): 1
+ O |   | X 
+---|---|---
+ X |   |   
+---|---|---
+   |   | O 
+---|---|---
+
+Enter row #(1-3): 3
+Enter column #(1-3): 1
+ O | O | X 
+---|---|---
+ X |   |   
+---|---|---
+ X |   | O 
+---|---|---
+
+Enter row #(1-3): 2
+Enter column #(1-3): 2
+ O | O | X 
+---|---|---
+ X | X |   
+---|---|---
+ X |   | O 
+---|---|---
+
+YOU WIN!
+
+Would you like to play again? (Y/N): 
+Y
+
+```
+
+`draw`
+
+```sh
+  |   |   
+---|---|---
+   |   |   
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 2
+Enter column #(1-3): 3
+   |   |   
+---|---|---
+ O |   | X 
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 1
+ X |   |   
+---|---|---
+ O | O | X 
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 2
+ X | X | O 
+---|---|---
+ O | O | X 
+---|---|---
+   |   |   
+---|---|---
+
+Enter row #(1-3): 3
+Enter column #(1-3): 3
+ X | X | O 
+---|---|---
+ O | O | X 
+---|---|---
+   | O | X 
+---|---|---
+
+Enter row #(1-3): 1
+Enter column #(1-3): 2
+Invalid move
+Enter row #(1-3): 3
+Enter column #(1-3): 1
+ X | X | O 
+---|---|---
+ O | O | X 
+---|---|---
+ X | O | X 
+---|---|---
+
+IT'S A TIE!
+Would you like to play again? (Y/N): 
+Y
+
 ```
 
