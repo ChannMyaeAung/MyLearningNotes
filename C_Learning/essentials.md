@@ -1,7 +1,7 @@
 ## C Programming Essentials
 
 - C is a language behind the Internet and almost every operating system
-- C is a language that's used to write all almost all the other languages.
+- C is a language that's used to write almost all the other languages.
 - C is a language that can write for almost every processor in existence, from watches and phones to places and satellites.
 
 When we run `make` or when we run `clang`, four different things are happening under the hood.
@@ -10,6 +10,22 @@ When we run `make` or when we run `clang`, four different things are happening u
 - compiling
 - assembling
 - linking
+
+Speaking of compiling, some of the most widely used and modern C compilers include:
+
+1. **GCC (GNU Compiler Collection)**:
+   - Highly portable and widely used.
+   - Supports various standards including C99, C11, and C18.
+   - Available on most Unix-like systems, including Linux and macOS.
+2. **Clang**:
+   - Part of the LLVM project.
+   - Known for its fast compilation times and excellent diagnostics.
+   - Supports modern C standards and is highly portable.
+   - Often used as the default compiler on macOS.
+3. **MSVC (Microsoft Visual C++)**:
+   - The primary compiler for Windows development.
+   - Integrated with Visual Studio.
+   - Supports modern C standards and provides excellent integration with Windows-specific features.
 
 In C, the conventions for return values are as follows:
 
