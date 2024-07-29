@@ -1436,3 +1436,105 @@ Y
 
 ```
 
+---
+
+### Leap Year Program
+
+A leap year (in the Gregorian calendar) occurs:
+
+- In every year that is evenly divisible by 4.
+- Unless the year is evenly divisible by 100, in which case it's only a leap year if the year is also evenly divisible by 400.
+
+Some examples:
+
+- 1997 was not a leap year as it's not divisible by 4.
+- 1900 was not a leap year as it's not divisible by 400.
+- 2000 was a leap year!
+
+
+
+1. **A year is a leap year if it is divisible by 4**:
+   - This is the basic rule for determining leap years.
+2. **However, if the year is also divisible by 100, it is not a leap year**:
+   - This is an exception to the rule above.
+3. **But if the year is divisible by 400, it is a leap year**:
+   - This is an exception to the exception.
+
+Using the concepts above, we're going to develop a program that determines whether a given year is a leap year of not.
+
+`functions.c`
+
+```C
+#include <stdbool.h>
+bool leap_year(int year)
+{
+    if (year % 4 == 0)
+    {
+        if (year % 100 == 0)
+        {
+            if (year % 400 == 0)
+            {
+                return true; // leap year
+            }
+            else
+            {
+                return false; // not leap year
+            }
+        }
+        else
+        {
+            return true; // leap year
+        }
+    }
+    else
+    {
+        return false; // not leap year
+    }
+}
+```
+
+`practice.h`
+
+```C
+#include <stdbool.h>
+
+bool leap_year(int year);
+```
+
+`main.c`
+
+```C
+int main()
+{
+    int year;
+    printf("Enter a year: ");
+    scanf("%d", &year);
+
+    if (leap_year(year))
+    {
+        printf("%d is a leap year.\n", year);
+    }
+    else
+    {
+        printf("%d is not a leap year.\n", year);
+    }
+    return EXIT_SUCCESS;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a year: 1997
+1997 is not a leap year.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a year: 2000
+2000 is a leap year.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a year: 1900
+1900 is not a leap year.
+chan@CMA:~/C_Programming/practice$ 
+
+```
+

@@ -127,7 +127,26 @@ void skip(char *msg){ // holds the address of the string
     puts(msg + 6); 
     // adds 6 to the memory address stored in msg
 }
+
 ```
+
+The memory layout looks like this:
+
+| 0    | 1    | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 11   | 12   | 13   |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| D    | o    | n    | '    | t    |      | c    | a    | l    | l    |      | m    | e    | \0   |
+
+- When we call `skip(msg_from_amy)`, the `msg` pointer points to the start of the string.
+
+  - ```
+    msg -> "Don't call me"
+    ```
+
+- The expression `msg + 6` moves the pointer 6 positions forward:
+
+  - ```
+    msg + 6 -> "call me"
+    ```
 
 ---
 
@@ -164,7 +183,7 @@ int main(){
     
     // Remove the newline character if it exists
     if(search_for[strlen(search_for) - 1] == '\n'){
-        search_for[strlen(search_for) - 1] == '\0';
+        search_for[strlen(search_for) - 1] = '\0';
     }
     
     find_track(search_for);
