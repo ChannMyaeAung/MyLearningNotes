@@ -111,3 +111,71 @@ element 4 is 3e+25, 	its square is 9e+50
 - Since the value `0.00007` squared is `0.00007 * 0.00007 = 0.0000000049`, we can see that the result is `4.9e-09` which is equivalent to `4.9 * 10^(-9)`.
 - Similarly, `3e+25` stands for `3 * 10^(25)`, and its square value `9e+50` stands for `9 * 10^(50)`.
 - We can see a pattern here. The value `e` will be equal to 10 to the power of its value after. For example, e-05 means 10 to the power of minus 5 since it is -05 and e+25 is 10 to the power of 25 since it is +25.
+
+
+
+### Conditional Execution
+
+```C
+if(i > 25){
+    j = i - 25;
+}
+```
+
+- In this example, `i > 25` is called the **controlling expression**.
+- the part in `{...}` is called the **dependent block**.
+
+
+
+- The value 0 represents logical false.
+- Any value different from 0 represents logical true.
+
+- We can rewrite:
+
+```C
+if(i != 0){
+    ...
+}
+```
+
+as:
+
+```C
+if(i){
+    ...
+}
+```
+
+- The type `bool` specified in `stdbool.h` is what we should be using if we want to store truth values.
+- Its values are `false` and `true`.
+- Technically, `false` is just another name for 0 and `true` for 1.
+- We can avoid redundancy by rewriting something like:
+
+```C
+bool b = ...;
+if((b != false) == true){
+    ...
+}
+```
+
+as
+
+```C
+bool b = ...;
+if(b){
+    
+}
+```
+
+
+
+```C
+for(;;){
+    double prod = a * x;
+    if(fabs(1.0 - prod) < eps){
+        break;
+    }
+    x *= (2.0 - prod);
+}
+```
+
