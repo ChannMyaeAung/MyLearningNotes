@@ -175,7 +175,79 @@ for(;;){
     if(fabs(1.0 - prod) < eps){
         break;
     }
-    x *= (2.0 - prod);
+    x *= (2.0 - prod); // Heron approximation
 }
 ```
 
+- `for(;;)` is equivalent to `while(true)`.
+- In this example, we use a standard macro `fabs`, which comes with the `tgmath.` header. 
+- It calculates the absolute value of a `double`.
+
+
+
+### `Strtod` function
+
+In C, the `strtod` function is used to convert a string to a double-precision floating-point number (`double`). It is part of the standard library and is declared in the `<stdlib.h>` header file.
+
+#### Function Prototype
+
+```C
+double strtod(const char *nptr, char **endptr);
+```
+
+#### Parameters
+
+- `nptr`: A pointer to the null-terminated string to be converted.
+- `endptr`: A pointer to a pointer to character. This parameter is optional and can be `NULL`. If it is not `NULL`, `strtod` sets `*endptr` to point to the character after the last character used in the conversion.
+
+#### Return Value
+
+- The function returns the converted value as a `double`.
+- If no valid conversion could be performed, it returns `0.0`.
+- If the value is out of range for a `double`, it returns `HUGE_VAL`, `-HUGE_VAL`, or `0.0` and sets `errno` to `ERANGE`.
+
+#### Example Usage
+
+```C
+#include <stdio.h>
+
+#include <stdlib.h>
+
+int main() {
+
+  const char *str = "123.45abc";
+
+  char *endptr;
+
+  double value;
+
+  value = strtod(str, &endptr);
+
+  printf("Converted value: %f\n", value);
+
+  printf("Remaining string: %s\n", endptr);
+
+  return 0;
+
+}
+```
+
+#### Explanation
+
+- The string `"123.45abc"` is converted to the double value `123.45`.
+- `endptr` points to the remaining part of the string `"abc"` after the numeric conversion.
+
+This function is useful for parsing strings that contain numeric values, especially when dealing with user input or reading data from files.
+
+
+
+### Expressing Computations
+
+- The type `size_t` represents values in the range `[0, SIZE_MAX]`.
+- The value of `SIZE_MAX` is quite large. Depending on the platform, it is one of 
+  - 2<sup>16</sup> - 1 = 65535
+  - 2<sup>32</sup> - 1 = 4294967295
+  - 2<sup>64</sup> - 1 = 18446744073709551615
+- The concept of "numbers that cannot be negative" to which we referred for `size_t` corresponds to what C calls **unsigned integer types**.
+- Symbols and combinations like + and != are called **operators**, and the things to which they are apply to are called **operands**.
+- So, in something like a + b, + is the **operator** and a and b are its **operands**.

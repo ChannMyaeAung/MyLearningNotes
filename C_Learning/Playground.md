@@ -1538,3 +1538,207 @@ chan@CMA:~/C_Programming/practice$
 
 ```
 
+---
+
+### Sum of Squares or Square of sum?
+
+Find the difference between the square of the sum and the sum of the squares of the first N natural numbers.
+
+The square of the sum of the first ten natural numbers is (1 + 2 + ... + 10)² = 55² = 3025.
+
+The sum of the squares of the first ten natural numbers is 1² + 2² + ... + 10² = 385.
+
+Hence the difference between the square of the sum of the first ten natural numbers and the sum of the squares of the first ten natural numbers is 3025 - 385 = 2640.
+
+#### Traditional approach (for loop)
+
+`functions.c`
+
+```C
+unsigned int sum_of_squares(unsigned int number){
+    unsigned int result = 0;
+    for(unsigned int i = 1; i <= number; i++){
+        result += i * i;
+    }
+    return result;
+}
+// This algorithm iterates from 1 to number, summing the squares of each integer. The time complexity is O(n).
+
+
+unsigned int square_of_sum(unsigned int number){
+    unsigned int sum = 0;
+    for(unsigned int i = 1; i <= number; i++){
+        sum += i;
+    }
+    return sum * sum;
+}
+// THis algorithm iterates from 1 to number, summing the integers and then squaring the result. The time complexity is O(n).
+
+unsigned int difference_of_squares(unsigned int number){
+    return square_of_sum(number) - sum_of_squares(number);
+}
+
+// This algorithm simply calls the previous two functions and subtracts their results. The time complexity is O(n) due to the calls to square_of_sum and sum_of_square.
+```
+
+`practice.h`
+
+```C
+#ifndef PRACTICE_H
+#define PRACTICE_H
+// Functions.c
+
+unsigned int sum_of_squares(unsigned int number);
+unsigned int square_of_sum(unsigned int number);
+unsigned int difference_of_squares(unsigned int number);
+// Functions_2.c
+#endif // PRACTICE_H
+```
+
+The `#ifndef`, `#define`, and `#endif` directives are used to prevent multiple inclusions of the same header file, which can cause errors and increase compilation time. This is known as an "include guard."
+
+Here's a step-by-step explanation:
+
+1. **`#ifndef PRACTICE_H`**: This checks if `PRACTICE_H` has not been defined yet. If it hasn't, the code between `#ifndef` and `#endif` will be included.
+2. **`#define PRACTICE_H`**: This defines `PRACTICE_H`, so the next time this header file is included, the `#ifndef PRACTICE_H` check will fail, preventing the contents of the header file from being included again.
+3. **`#endif`**: This ends the conditional inclusion started by `#ifndef`.
+
+This mechanism ensures that the contents of the header file are included only once, even if the header file is included multiple times in different source files or within the same source file.
+
+Here is the `practice.h`file with the include guard:
+
+```C
+\#ifndef PRACTICE_H
+
+\#define PRACTICE_H
+
+void error(char *msg);
+
+unsigned int sum_of_squares(unsigned int number);
+
+unsigned int square_of_sum(unsigned int number);
+
+unsigned int difference_of_squares(unsigned int number);
+
+\#endif // PRACTICE_H
+```
+
+Without these include guards, if `practice.h` were included multiple times, the compiler would see multiple definitions of the same functions and variables, leading to errors.
+
+`practice.c`(main file)
+
+```C
+int main(){
+    int n;
+    printf("Enter a term: ");
+    scanf("%d", &n);
+    printf("Sum of squares: %u\n", sum_of_squares(n));
+    printf("Square of sum: %u\n", difference_of_squares(n));
+    printf("Diffs of squares: %u\n", difference_of_squares(n));
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ make all
+clang -std=c18 -Wall -Wextra -g  -c practice.c -o ./obj/practice.o 
+clang -std=c18 -Wall -Wextra -g  -c functions.c -o ./obj/functions.o 
+clang -std=c18 -Wall -Wextra -g  -c functions_2.c -o ./obj/functions_2.o
+ar -rcs ./libs/libfunctions.a ./obj/functions.o ./obj/functions_2.o
+clang -std=c18 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a term: 10
+Sum of squares: 385
+Square of sum: 3025
+Diffs of squares: 2640
+
+```
+
+
+
+#### Best approach (O(1))
+
+For large values of `n`, these algorithms can be optimized using mathematical formulas:
+
+`functions.c`
+
+```C
+// S = n(n+1)(2n+1) / 6
+unsigned int sum_of_squares(unsigned int number){
+    return (number * (number + 1) * (2 * number + 1)) / 6;
+}
+
+// S = n(n+1) / 2
+unsigned int square_of_sum(unsigned int number){
+    unsigned int sum = (number * (number + 1)) / 2;
+    return sum * sum;
+}
+
+unsigned int difference_of_squares(unsigned int number){
+    return square_of_sum(number) - sum_of_squares(number);
+}
+```
+
+##### 1. Sum of Squares
+
+```C
+unsigned int sum_of_squares(unsigned int number)
+{
+    return (number * (number + 1) * (2 * number + 1)) / 6;
+}
+```
+
+**Formula**: S = n(n+1)(2n+1) / 6
+
+**Explanation**:
+
+- This formula comes from the sum of squares of the first `n` natural numbers.
+- It can be derived using methods from calculus or algebraic manipulation.
+- For example, for n=3:
+  - S<sub>1</sub>= 1<sup>2</sup>+2<sup>2</sup>+3<sup>2</sup> = 1 + 4 + 9 = 14
+  - Using the formula:
+  - S<sub>1</sub> = 3 * 4 * 7 / 6 = 84 / 6 = 14
+
+##### 2. Square of the Sum
+
+```C
+unsigned int square_of_sum(unsigned int number)
+{
+    unsigned int sum = (number * (number + 1)) / 2;
+    return sum * sum;
+}
+```
+
+**Formula**: S = n(n+1) / 2
+
+**Explanation**:
+
+- This formula calculates the sum of the first `n` natural numbers and then squares the result.
+- For example, for n=3:
+  - S<sub>2</sub> = 1 + 2 + 3 = 6
+  - (S<sub>2</sub>)<sup>2</sup> = 6<sup>2</sup> = 36
+  - Using the formula:
+  - (3 * 4 / 2)<sup>2</sup> = (6)<sup>2</sup> = 36
+
+These formulas are efficient for large values of `n` as they avoid the need for iteration, reducing the time complexity from O(n) to O(1).
+
+
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ make all
+clang -std=c18 -Wall -Wextra -g  -c functions.c -o ./obj/functions.o 
+ar -rcs ./libs/libfunctions.a ./obj/functions.o ./obj/functions_2.o
+clang -std=c18 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a term: 10
+Sum of squares: 385
+Square of sum: 3025
+Diffs of squares: 2640
+chan@CMA:~/C_Programming/practice$ 
+
+```
+
