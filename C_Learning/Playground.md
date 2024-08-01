@@ -1742,3 +1742,228 @@ chan@CMA:~/C_Programming/practice$
 
 ```
 
+---
+
+### Factorial 
+
+The factorial of a non-negative integer ( n ) is the product of all positive integers less than or equal to ( n ). 
+
+By definition, the factorial of 0 is 1.
+
+For example, if the number is 4, then the factorial of 4 will be calculated in a way:
+
+4 = 4 * 3 * 2 * 1
+
+#### Iterative approach
+
+`functions.c`
+
+```C
+int factorial_iterative(int n){
+    int result = 1;
+    for(int i = 1; i <= n; i++){
+        result *= i;
+    }
+    return result;
+}
+```
+
+`practice.c`(main file)
+
+```C
+int main()
+{
+    int terms;
+    printf("Enter the number of terms: ");
+    scanf("%d", &terms);
+    printf("Factorial of %d (iterative) is %d\n", terms, factorial_iterative(terms));
+    return 0;
+}
+```
+
+`Code Execution`
+
+```
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the number of terms: 4
+Factorial of 4 (iterative) is 24
+
+```
+
+
+
+#### Recursive approach
+
+`functions.c`
+
+```C
+int factorial_recursive(int n){
+    if(n == 0 || n == 1){
+        return 1;
+    }else{
+        return n * factorial_recursive(n - 1);
+    }
+}
+```
+
+`practice.c`(main file)
+
+```C
+int main(){
+    int terms;
+    printf("Enter the number of terms: ");
+    scanf("%d", &terms);
+    printf("Factorial of %d (recursive) is %d\n", terms, factorial_recursive(terms));
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ make all
+clang -std=c18 -Wall -Wextra -g  -c practice.c -o ./obj/practice.o 
+clang -std=c18 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the number of terms: 4
+Factorial of 4 (recursive) is 24
+
+```
+
+---
+
+### Number of grains of wheat on a chessboard
+
+#### Instructions
+
+Calculate the number of grains of wheat on a chessboard given that the number on each square doubles.
+
+There once was a wise servant who saved the life of a prince. The king promised to pay whatever the servant could dream up. Knowing that the king loved chess, the servant told the king he would like to have grains of wheat. One grain on the first square of a chess board, with **the number of grains doubling on each successive square**.
+
+There are 64 squares on a chessboard (where square 1 has one grain, square 2 has two grains, and so on).
+
+Write code that shows:
+
+- how many grains were on a given square, and
+- the total number of grains on the chessboard
+
+
+
+#### Solutions
+
+Let's consider the number of grains on each square according to the question:
+
+Square 1: 1
+
+Square 2: 2
+
+Square 3: 4
+
+Square 4: 8
+
+Square 5: 16
+
+...
+
+Square 64: 9223372036854775807
+
+#### Maths Formula Approach
+
+`functions.c`
+
+```C
+uint64_t grains_on_square(int square)
+{
+    return (uint64_t)pow(2, square - 1);
+}
+
+uint64_t total_grains_on_chessboard()
+{
+    uint64_t total_grains = 0;
+    for (int i = 1; i <= 64; i++)
+    {
+        total_grains += grains_on_square(i);
+    }
+    return total_grains;
+}
+```
+
+`practice.c` (main file)
+
+```C
+int main()
+{
+    int square = 10; // Example square number
+    printf("Grains on square %d: %lu\n", square, grains_on_square(square));
+    printf("Total grains on chessboard: %lu\n", total_grains_on_chessboard());
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Grains on square 10: 512
+Total grains on chessboard: 18446744073709551615
+
+```
+
+
+
+#### Bitwise Operation Approach
+
+`functions.c`
+
+```C
+uint64_t grains_on_square(int square)
+{
+    return (uint64_t)1 << (square - 1);
+}
+
+uint64_t total_grains_on_chessboard()
+{
+    // 3 different approach same results
+    // ((uint64_t)1 << 64) - 1 would overflow, hence 2^64 - 1 is achieved by -1
+    return ((uint64_t)1 << 63) - 1 + ((uint64_t)1 << 63);
+    // Or 
+    return ~(uint64_t)0;
+    // Or
+    uint64_t total_grains = 0;
+    for (int i = 1; i <= 64; i++) {
+        total_grains += grains_on_square(i);
+    }
+    return total_grains;
+}
+
+```
+
+- Uses `bitwise left shift` to calculate the number of grains on a specific square.
+- It is efficient because left-shifting a 1 by `(square - 1)` bits directly computes 2<sup>(square - 1)</sup>.
+- `total_grains_on_chessboard()`: Uses the property of bit-wise operations to calculate 2<sup>64</sup> - 1 directly, which is correct for calculating the sum of grains on all 64 squares.
+- `((uint64_t)1 << 63) - 1` : In C, the behavior of shifting a value by an amount equal to or greater than the width of the type is undefined. For a 64-bit integer, shifting by 64 or more bits is not allowed and will result in undefined behavior. That's why we cannot use `((uint64_t)1 << 64)`.
+  - `((uint64_t)1 << 63)` shifts the number 1 left by 63 bits, resulting in 2<sup>63</sup>.
+  - Shifting by 64 bits or more is undefined because it exceeds the bit width of the type.
+
+`practice.c` (main file)
+
+```C
+int main()
+{
+    int square = 10; // Example square number
+    printf("Grains on square %d: %lu\n", square, grains_on_square(square));
+    printf("Total grains on chessboard: %lu\n", total_grains_on_chessboard());
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Grains on square 10: 512
+Total grains on chessboard: 18446744073709551615
+
+
+```
+
