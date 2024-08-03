@@ -1888,6 +1888,12 @@ uint64_t total_grains_on_chessboard()
 }
 ```
 
+- `uint64_t` is a data type defined in the C standard library header `<stdint.h>`.
+- It represents an unsigned 64-bit integer.
+- This type is guaranteed to be 64 bits wide on all platforms, providing a consistent way to handle large integer values across different systems.
+- **Unsigned**: It can only represent non-negative numbers (0 and positive integers)
+- **64-bit**: It can represent values from 0 to 2<sup>64</sup>-1, which is 0 to 18,446,744,073,709,551,615.
+
 `practice.c` (main file)
 
 ```C
@@ -1964,6 +1970,290 @@ chan@CMA:~/C_Programming/practice$ ./practice
 Grains on square 10: 512
 Total grains on chessboard: 18446744073709551615
 
+
+```
+
+---
+
+
+
+### Compute Pay Program
+
+#### Instruction
+
+Write a program for your pay computation in which regular hours, up to 40 hours, are paid at the regular hourly rate. Any hours worked beyond 40 are paid at a rate of 1.5 times the regular hourly rate. 
+
+Example Output
+
+```sh
+EnterHours: 45
+EnterRate: 10
+Result
+Pay: 475.0
+```
+
+
+
+`functions.c`
+
+```C
+float compute_pay(float hours, float rate)
+{
+    float regular_pay = hours * rate;
+    float overtime_hours = hours - 40;
+    float overtime_pay = (40 * rate) + (1.5 * rate * (overtime_hours));
+
+    if (hours > 40)
+    {
+        return overtime_pay;
+    }
+    else
+    {
+        return regular_pay;
+    }
+}
+```
+
+`practice.c` (main)
+
+```C
+int main()
+{
+    float hours;
+    float rate;
+    float pay;
+    printf("Enter Hours: ");
+    scanf("%f", &hours);
+
+    printf("Enter Rate: ");
+    scanf("%f", &rate);
+
+    pay = compute_pay(hours, rate);
+
+    printf("Pay: %.1f\n", pay);
+    return 0;
+}
+```
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter Hours: 45
+Enter Rate: 10
+Pay: 475.0
+
+```
+
+---
+
+### Filter Even numbers from a list
+
+#### Instructions
+
+Write a function that takes a list of numbers and returns a new list containing only the even numbers from the original list.
+
+#### Solution
+
+- **`filter_even_numbers` function**:
+  - Takes an input array `arr`, its size `size`, and a pointer to `result_size` to store the size of the result array.
+  - Allocates memory for the result array using `malloc`.
+  - Iterates through the input array and adds even numbers to the result array.
+  - Updates the `result_size` with the number of even numbers found.
+  - Optionally reallocates memory to fit the exact number of even numbers using `realloc`.
+  - Returns the result array.
+- **`main` function**:
+  - Defines the original array and its size.
+  - Calls `filter_even_numbers` to get the array of even numbers and its size.
+  - Prints the result array.
+  - Frees the allocated memory for the result array.
+
+`functions.c`
+
+```C
+
+int *filter_even_numbers(int *arr, int size, int *result_size)
+{
+    // Allocate memory for the result array (maximum possible size is the same as input array)
+    int *result = (int *)malloc(size * sizeof(int));
+
+    if (result == NULL)
+    {
+        // Handle memory allocation failure
+        *result_size = 0;
+        return NULL;
+    }
+
+    // Initialize index for the result array
+    int result_index = 0;
+    for (int i = 0; i < size; i++)
+    {
+        if (arr[i] % 2 == 0)
+        {
+            result[result_index++] = arr[i];
+        }
+    }
+
+    // Update the result size with the number of even numbers found
+    *result_size = result_index;
+
+    // Reallocate memory to fit the exact number of even numbers
+    result = (int *)realloc(result, result_index * sizeof(int));
+    if (result == NULL & result_index > 0)
+    {
+        // Handle memory reallocation failure
+        *result_size = 0;
+        return NULL;
+    }
+    return result;
+}
+```
+
+`practice.c`(Main)
+
+```C
+int main()
+{
+    int original_arr[] = {1, 3, 5, 2, 4, 8, 10};
+    int size = sizeof(original_arr) / sizeof(original_arr[0]);
+
+    // variable to store the size of the result array
+    int result_size;
+    
+    // call the function to filter even numbers from the array
+    int *result = filter_even_numbers(original_arr, size, &result_size);
+
+    // Check if the result array is not NULL (memory allocation was successful)
+    if (result != NULL)
+    {
+        // Print the result array
+        for (int i = 0; i < result_size; i++)
+        {
+            printf("%d ", result[i]);
+        }
+        printf("\n");
+
+        // Free the allocated memory
+        free(result);
+    }
+    else
+    {
+        printf("Memory allocation failed.\n");
+    }
+    return 0;
+}
+```
+
+Let's break down the connection between `result_size` and how it's used when passing it as an argument to the `filter_even_numbers` function in `main.c`.
+
+#### `filter_even_numbers` Function
+
+In the function `filter_even_numbers`, we have the following signature:
+
+```
+c
+Copy code
+int *filter_even_numbers(int *arr, int size, int *result_size);
+```
+
+- `arr`: Pointer to the input array.
+- `size`: Size of the input array.
+- `result_size`: Pointer to an integer where the size of the result array (number of even numbers) will be stored.
+
+Within this function, `result_size` is used to store the number of even numbers found in the input array. This variable is modified inside the function to reflect the count of even numbers. Since it's a pointer, the changes made inside the function will be reflected in the variable passed from the caller (i.e., in `main.c`).
+
+#### `main.c` Usage
+
+In `main.c`, `result_size` is declared as an `int` variable:
+
+```C
+int result_size;
+```
+
+This variable is then passed to the `filter_even_numbers` function by its address:
+
+```C
+int *result = filter_even_numbers(original_arr, size, &result_size);
+```
+
+Here, `&result_size` passes the address of `result_size` to the function, allowing `filter_even_numbers` to modify its value.
+
+#### Detailed Steps and Connection
+
+1. **Variable Declaration in `main.c`**:
+
+   ```C
+   int result_size;
+   ```
+
+   - `result_size` is declared to store the size of the array of even numbers.
+
+2. **Passing `result_size` to `filter_even_numbers`**:
+
+   ```C
+   int *result = filter_even_numbers(original_arr, size, &result_size);
+   ```
+
+   - The address of `result_size` is passed to `filter_even_numbers`.
+
+3. **Inside `filter_even_numbers`**:
+
+   ```C
+   int *filter_even_numbers(int *arr, int size, int *result_size)
+   {
+       // Various operations...
+       
+       // Update the result size with the number of even numbers found
+       *result_size = result_index;
+   
+       // Reallocate memory to fit the exact number of even numbers
+       result = (int *)realloc(result, result_index * sizeof(int));
+   
+       // Various operations...
+   }
+   ```
+
+   - The function updates `*result_size` to the number of even numbers found (`result_index`).
+   - This change is made directly to the memory location of `result_size` in `main.c` because `result_size` is passed by reference.
+
+4. **Back in `main.c`**:
+
+   ```C
+   if (result != NULL)
+   {
+       // Print the result array
+       for (int i = 0; i < result_size; i++)
+       {
+           printf("%d ", result[i]);
+       }
+       printf("\n");
+   
+       // Free the allocated memory
+       free(result);
+   }
+   ```
+
+   - After the function call, `result_size` in `main.c` contains the number of even numbers found.
+   - This value is used in the loop to print the elements of the result array.
+
+#### Summary
+
+- `result_size` is declared in `main.c` to store the size of the filtered array.
+- The address of `result_size` is passed to `filter_even_numbers`.
+- `filter_even_numbers` updates the value at the address of `result_size` with the count of even numbers.
+- This updated value is then used in `main.c` to iterate over and print the result array.
+
+By passing the address of `result_size`, changes made within `filter_even_numbers` are reflected in the original variable in `main.c`, enabling the main function to know how many even numbers were found and stored in the result array.
+
+`Code Execution`
+
+```sh
+chan@CMA:~/C_Programming/practice$ make all
+clang -std=c18 -Wall -Wextra -g  -c functions.c -o ./obj/functions.o 
+ar -rcs ./libs/libfunctions.a ./obj/functions.o ./obj/functions_2.o
+clang -std=c18 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
+chan@CMA:~/C_Programming/practice$ ./practice
+2 4 8 10 
 
 ```
 
