@@ -2109,6 +2109,22 @@ int *filter_even_numbers(int *arr, int size, int *result_size)
 }
 ```
 
+- **`malloc(size * sizeof(int))`**: Allocates a block of memory large enough to hold `size`integers. The `sizeof(int)` ensures that the correct amount of memory is allocated based on the size of the `int` type on the system.
+
+- **`(int *)`**: Casts the `void *` returned by `malloc` to an `int *`, which is a pointer to an integer. This cast is necessary because `malloc` returns a generic pointer (`void *`), and you need to specify that this memory will be used to store integers.
+
+- The `realloc` function in C is  used to resize a previously allocated block of memory. It takes two parameters:
+
+  1. **Pointer to the previously allocated memory block**: This is the memory block that we want to resize.
+  2. **New size in bytes**: This is the new size for the memory block.
+
+- ```C
+  void *realloc(void *ptr, size_t size);
+  ```
+
+  - `ptr`: A pointer to the memory block previously allocated with `malloc`, `calloc`, or `realloc`. If `ptr` is NULL, `realloc` behaves like `malloc`.
+  - `size`: The new size for the memory block in bytes. If `size` is zero and `ptr` is not `NULL`, the memory block is freed.
+
 `practice.c`(Main)
 
 ```C
@@ -2129,7 +2145,14 @@ int main()
         // Print the result array
         for (int i = 0; i < result_size; i++)
         {
-            printf("%d ", result[i]);
+            if(i == result_size - 1){
+                // If it is the last element
+                // put a new line character
+                printf("%d\n", result[i]);
+            }else{
+                // if not, put a comma
+                printf("%d, ", result[i]);
+            }
         }
         printf("\n");
 
@@ -2150,9 +2173,7 @@ Let's break down the connection between `result_size` and how it's used when pas
 
 In the function `filter_even_numbers`, we have the following signature:
 
-```
-c
-Copy code
+```C
 int *filter_even_numbers(int *arr, int size, int *result_size);
 ```
 
@@ -2248,12 +2269,12 @@ By passing the address of `result_size`, changes made within `filter_even_number
 `Code Execution`
 
 ```sh
-chan@CMA:~/C_Programming/practice$ make all
-clang -std=c18 -Wall -Wextra -g  -c functions.c -o ./obj/functions.o 
-ar -rcs ./libs/libfunctions.a ./obj/functions.o ./obj/functions_2.o
+chan@CMA:~/C_Programming/practice$ ./practice
+2, 4, 8, 10, chan@CMA:~/C_Programming/practice$ make all
+clang -std=c18 -Wall -Wextra -g  -c practice.c -o ./obj/practice.o 
 clang -std=c18 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
 chan@CMA:~/C_Programming/practice$ ./practice
-2 4 8 10 
+2, 4, 8, 10
 
 ```
 

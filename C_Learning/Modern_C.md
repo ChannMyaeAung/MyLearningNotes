@@ -1,18 +1,32 @@
 # Modern C
 
 - C is an imperative programming language.
+
 - C is a compiled programming language.
   - The name of the compiler and its command-line arguments depend a lot on the `platform` on which we will be running our program
   - There is a simple reason for this: the target binary code is **platform dependent**: that is, its form and details depend on the computer on which we want to run it.
   - A PC has different needs than a phone, and our refrigerator doesn't speak the same language as our set-top box.
   - That's one of the reasons for C to exist.
   - C provides a level of abstraction for all the different machine-specific languages usually referred to as **assembler**.
+  
+  ---
+  
+  
+
+### size_t
+
+`size_t` is an unsigned data type defined in the C standard library. It is used to represent the size of objects in bytes and is the type returned by the `sizeof` operator. The exact type of `size_t` can vary between different platforms, but it is typically defined as an unsigned integer type that is capable of representing the size of the largest possible object.
+
+**Key Points**
+
+- **Unsigned**: `size_t` is always non-negative.
+- **Platform-dependent**: The actual type of `size_t` can vary depending on the platform and compiler, but it is usually an alias for `unsigned int` or `unsigned long`.
+
+
 
 ### First Example of a C program
 
 ##### `main.c`
-
-
 
 ```C
 #include <stdio.h>
@@ -251,3 +265,75 @@ This function is useful for parsing strings that contain numeric values, especia
 - The concept of "numbers that cannot be negative" to which we referred for `size_t` corresponds to what C calls **unsigned integer types**.
 - Symbols and combinations like + and != are called **operators**, and the things to which they are apply to are called **operands**.
 - So, in something like a + b, + is the **operator** and a and b are its **operands**.
+
+#### The result of unsigned / and % is always smaller than the operands thus Unsigned / and % can't overflow.
+
+##### Theory:
+
+1. Division (`/`): For any unsigned integers `a` and `b` where `b > 0`, the result of `a / b` is always less than or equal to `a`.
+2. Modulus (`%`): For any unsigned integers `a` and `b` where `b > 0`, the result of `a % b` is always less than `b`.
+
+`practice.c`
+
+```C
+int main()
+{
+    uint64_t a = 100;
+    uint64_t b = 7;
+
+    uint64_t div_result = a / b;
+    uint64_t mod_result = a % b;
+
+    printf("a = %lu, b = %lu\n", a, b);
+    printf("a / b = %lu\n", div_result);
+    printf("a %% b = %lu\n", mod_result);
+
+    // Check the theory
+    if (div_result <= a)
+    {
+        printf("The result of a / b is always less than or equal to a.\n");
+    }
+    else
+    {
+        printf("The result of a / b is greater than a (unexpected).\n");
+    }
+
+    if (mod_result < b)
+    {
+        printf("The result of a %% b is always less than b.\n");
+    }
+    else
+    {
+        printf("The result of a %% b is greater than or equal to b (unexpected).\n");
+    }
+
+    return 0;
+}
+```
+
+`Code Execution`:
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+a = 100, b = 7
+a / b = 14
+a % b = 2
+The result of a / b is always less than or equal to a.
+The result of a % b is always less than b.
+```
+
+- This output confirms that the results of the division and modulus operations for unsigned integers are always within the expected bounds, demonstrating that these operations cannot overflow.
+
+#### Comparison operators return the value `false` or `true`
+
+- `false` and `true` are nothing more than fancy names for `0` and `1`, respectively.
+- So, they can be used in arithmetic or for array indexing.
+- In the following code, `c` will always be `1` and `d` will be `1` if `a` and `b` are equal and `0` otherwise:
+
+```C
+size_t c = (a < b) + (a == b) + (a > b);
+size_t d = (a <= b) + (a >= b) - 1;
+```
+
+
+
