@@ -2278,3 +2278,20 @@ chan@CMA:~/C_Programming/practice$ ./practice
 
 ```
 
+### Color Code Program
+
+`functions.c`
+
+```C
+```
+
+`practice.c` (main)
+
+```C
+```
+
+`Code Execution`
+
+```sh
+```
+
