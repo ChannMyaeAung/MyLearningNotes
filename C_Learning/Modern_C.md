@@ -337,3 +337,73 @@ size_t d = (a <= b) + (a >= b) - 1;
 
 
 
+### & and && vs | and ||
+
+In C, `&` and `&&` as well as `|` and `||` serve different purposes:
+
+#### `&` vs `&&`
+
+- **`&` (Bitwise AND)**: This operator performs a bitwise AND operation on two integers. Each bit in the result is set to `1` if the corresponding bits of both operands are `1`, otherwise it is set to `0`.
+
+  ```C
+  int a = 5; // 0101 in binary
+  
+  int b = 3; // 0011 in binary
+  
+  int result = a & b; // result is 1 (0001 in binary)
+  ```
+
+  
+
+- **`&&` (Logical AND)**: This operator performs a logical AND operation. It evaluates to `true` (non-zero) if both operands are true (non-zero), otherwise it evaluates to `false` (zero). It also short-circuits, meaning if the first operand is false, the second operand is not evaluated.
+
+  ```C
+  int a = 5;
+  
+  int b = 3;
+  
+  if (a && b) {
+  
+    // This block will execute because both a and b are non-zero
+  
+  }
+  ```
+
+  
+
+#### `|` vs `||`
+
+- **`|` (Bitwise OR)**: This operator performs a bitwise OR operation on two integers. Each bit in the result is set to `1` if at least one of the corresponding bits of the operands is `1`.
+
+  ```C
+  int a = 5; // 0101 in binary
+  
+  int b = 3; // 0011 in binary
+  
+  int result = a | b; // result is 7 (0111 in binary)
+  ```
+
+  
+
+- **`||` (Logical OR)**: This operator performs a logical OR operation. It evaluates to `true` (non-zero) if at least one of the operands is true (non-zero), otherwise it evaluates to `false` (zero). It also short-circuits, meaning if the first operand is true, the second operand is not evaluated.
+
+  ```C
+  int a = 5;
+  
+  int b = 0;
+  
+  if (a || b) {
+  
+    // This block will execute because a is non-zero
+  
+  }
+  ```
+
+  
+
+#### Summary
+
+- **`&`**: Bitwise AND
+- **`&&`**: Logical AND (short-circuits)
+- **`|`**: Bitwise OR
+- **`||`**: Logical OR (short-circuits)
