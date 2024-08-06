@@ -2283,15 +2283,56 @@ chan@CMA:~/C_Programming/practice$ ./practice
 `functions.c`
 
 ```C
+const char *color_names[] = {
+    "BLACK", "BROWN", "RED", "ORANGE", "YELLOW",
+    "GREEN", "BLUE", "VIOLET", "GREY", "WHITE"};
+
+// Function to get the numerical value of a color
+int color_code(const char *color)
+{
+    for (int i = 0; i < 10; i++)
+    {
+        if (strcasecmp(color_names[i], color) == 0)
+        {
+            return i;
+        }
+    }
+    return -1; // Return -1 if color is not found
+}
 ```
 
 `practice.c` (main)
 
 ```C
+int main()
+{
+    char input[10];
+    printf("Enter the color: ");
+    scanf("%9s", input); // %9s to avoid buffer overflow
+    int code = color_code(input);
+    if (code != -1)
+    {
+        printf("The color code for %s is %d.\n", input, code);
+    }
+    else
+    {
+        printf("Color not found.\n");
+    }
+    return 0;
+}
 ```
 
 `Code Execution`
 
 ```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the color: white
+The color code for white is 9.
+chan@CMA:~/C_Programming/test$ ./final
+Enter the color: black
+The color code for black is 0.
+chan@CMA:~/C_Programming/test$ ./final
+Enter the color: grey
+The color code for grey is 8.
 ```
 
