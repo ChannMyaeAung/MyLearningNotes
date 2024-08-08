@@ -407,3 +407,208 @@ In C, `&` and `&&` as well as `|` and `||` serve different purposes:
 - **`&&`**: Logical AND (short-circuits)
 - **`|`**: Bitwise OR
 - **`||`**: Logical OR (short-circuits)
+
+
+
+- The state of the program execution is determined by:
+  - The executable
+  - The current point of execution
+  - The data
+  - Outside intervention, such as IO from the user
+
+### Bitwise Operators
+
+Special operators used in bit level programming.
+
+- &  = AND
+- | = OR
+- ^ = XOR
+- <<  left shift
+- `>>` Right shift
+
+```C
+int x = 6; //  00000110 in binary
+int y = 12; // 00001100 in binary
+int z = 0;   
+z = x & y; //  00000100 in binary           
+printf("AND = %d\n",z)
+```
+
+| 0    | 0    | 0    | 0    | 0    | 1    | 1    | 0    |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| 0    | 0    | 0    | 0    | 1    | 1    | 0    | 0    |
+| 0    | 0    | 0    | 0    | 0    | 1    | 0    | 0    |
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+AND = 4
+```
+
+Since we have learned `AND` and `OR`, we will skip to the XOR.
+
+`XOR`
+
+The XOR operation compares each bit of its operands and returns `1` if the bits are different, and `0` if they are the same.
+
+```C
+#include <stdio.h>
+
+int main()
+{
+    int x = 6;  // 6  = 00000110
+    int y = 12; // 12 = 00001100
+    int z = 0;  //      00001010
+
+    z = x ^ y;
+    printf("XOR = %d\n", z);
+    return 0;
+}
+```
+
+| 0    | 0    | 0    | 0    | 0    | 1    | 1    | 0    |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| 0    | 0    | 0    | 0    | 1    | 1    | 0    | 0    |
+| 0    | 0    | 0    | 0    | 1    | 0    | 1    | 0    |
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+XOR = 10
+```
+
+
+
+`<<` Left shift
+
+It shifts the bits of its left-hand operand to the left by the number of positions specified by its right-hand operand. Each left shift operation effectively **multiplies** the number by 2.
+
+#### Syntax 
+
+```
+result = value << number_of_positions;
+```
+
+
+
+```C
+int main()
+{
+    int x = 6;  // 6  = 00000110
+    int y = 12; // 12 = 00001100
+    int z = 0;  //      
+
+    z = x << 1;
+    printf("Left Shift = %d\n", z);
+    return 0;
+}
+```
+
+6 = 0000 0110, 6 << 1;
+
+**Shifting the above value (`6`) one spot to the left, and then adding zero at the end.**
+
+0000 1100, it became 12.
+
+| 0                | 0    | 0    | 0    | 0    | 1    | 1    | 0                   |
+| ---------------- | ---- | ---- | ---- | ---- | ---- | ---- | ------------------- |
+| shift this value |      |      |      |      |      |      | add zero at the end |
+| 0                | 0    | 0    | 0    | 1    | 1    | 0    | 0                   |
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Left Shift = 12
+```
+
+- We can shift twice,  means we are just moving one more space to the left.
+
+Shifting the value (`6`) one more spot to the left, and then adding zero at the end.
+
+12 = 0000 1100, 6 << 2;
+
+0001 1000, it became 24.
+
+```C
+int main()
+{
+    int x = 6;  // 6 = 00000110
+    int y = 12; // 12= 00001100
+    int z = 0;  //  4 =00000100
+
+    z = x << 2;
+    printf("Left Shift = %d\n", z);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Left Shift = 24
+```
+
+
+
+`>>` Right shift
+
+It shifts the bits of its left-hand operand to the right by the number of positions specified by its right-hand operand. Each left shift operation effectively **divides** the number by 2.
+
+```C
+int main()
+{
+    int x = 6;  // 6 = 00000110
+    int y = 12; // 12= 00001100
+    int z = 0;  //  4 =00000100
+
+    z = x >> 1;
+    printf("Right Shift = %d\n", z);
+    return 0;
+}
+```
+
+6 = 0000 0110
+
+**Shifting the above value (`6`) one spot to the right, and then adding zero at the beginning.**
+
+0000 0011, it became 3.
+
+| 0                         | 0    | 0    | 0    | 0    | 1    | 1    | 0                |
+| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---------------- |
+| add zero at the beginning |      |      |      |      |      |      | shift this value |
+| 0                         | 0    | 0    | 0    | 0    | 0    | 1    | 1                |
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Right Shift = 3
+```
+
+
+
+If we shift right again, 
+
+```C
+z = x >> 2;
+```
+
+0000 0011,
+
+we will shift these bits one more spot to the right, and then truncate the value at the end.
+
+0000 0001, it became 1
+
+| 0                                                            | 0    | 0    | 0    | 0    | 0    | 1    | 1                           |
+| ------------------------------------------------------------ | ---- | ---- | ---- | ---- | ---- | ---- | --------------------------- |
+| add one more zero at the beginning since we are right shifting two times. |      |      |      |      |      |      | shift this value (truncate) |
+| 0 (this is extra zero added)                                 | 0    | 0    | 0    | 0    | 0    | 0    | 1                           |
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Right Shift = 1
+```
+
+
+
+### Types
+
+A type is an additional property that C associates with values. E.g, `size_t`, `double`, `bool`
+
+- All values have a type that is statically determined.
+- Possible operations on a value are determined by its type.
+- A value's type determines the results of all operations.
