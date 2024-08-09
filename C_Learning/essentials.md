@@ -751,3 +751,76 @@ In this example:
 
 - When comparing the first 5 characters, `strncasecmp` considers the strings equal because "Hello" and "hello" match in a case-insensitive manner.
 - When comparing the first 10 characters, `strncasecmp` finds a difference beyond the 5th character ("W" vs "E"), so it determines the strings are not equal.
+
+---
+
+### `Struct`
+
+In C, a struct (short for "structure") is a user-defined data type that allows us to **group variables of different types under a single name**. This is particularly useful for organizing complex data and creating more readable and maintainable code.
+
+#### Purpose of `struct`in C
+
+**Grouping Related Data:** Structures allow us to group related variables (of different types) together. For example, we can group a person's name, age, and address into a single structure.
+**Data Organization:** Structures help in organizing data in a logical and coherent manner, making the code easier to understand and maintain.
+**Complex Data Types:** Structures enable the creation of complex data types that can represent real-world entities more accurately.
+**Memory Management:** Structures provide a way to manage memory more efficiently by allocating memory for related data in a contiguous block.
+
+#### Example
+
+Consider an example where we need to store information about a person, including their name, age, and address. Using a structure, we can group these related pieces of information together.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+// Define a struct to represent a person
+struct Person{
+    char name[50];
+    int age;
+    char address[100];
+};
+
+int main(){
+    // Declare and initialize a variable of type struct Person;
+    struct Person person1;
+    
+    // Assign values to the members of the structure
+    strcpy(person1.name, "John Doe");
+    person1.age = 30;
+    strcpy(person.address, "123 Main St, Anytown, USA");
+    
+    // Print the values of the struct members
+    printf("Name: %s\n", person1.name);
+    printf("Age: %d\n", person1.age);
+    printf("Address %s\n", person1.address);
+    
+    return 0;
+}
+```
+
+#### Explanation
+
+**Define the Structure:** The struct Person is defined with three members: name, age, and address.
+**Declare a Variable:** A variable person1 of type struct Person is declared.
+**Assign Values:** Values are assigned to the members of the structure using the dot operator (.).
+**Access and Print Values:** The values of the structure members are accessed and printed using the dot operator.
+
+#### Output
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Name: John Doe
+Age: 30
+Address: 123 Main St, Anytown, USA
+```
+
+#### Key Points
+
+- **Dot Operator**: The dot operator (`.`) is used to access members of a structure.
+- **Memory Allocation**: Memory for the structure is allocated in a contiguous block, with each member occupying a portion of that block.
+- **Nested Structures**: Structures can be nested within other structures to represent more complex data.
+
+Using structures in C helps in creating more organized and manageable code, especially when dealing with complex data types.
+
+---
+
