@@ -2370,15 +2370,61 @@ Resulting in 9 steps. So for input n = 12, the return value would be 9.
 `functions.c`
 
 ```C
+void error(char *msg){
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(EXIT_FAILURE);
+}
+
+int steps(int start){
+    if(start <= 0){
+        error("Input must be a positive integer").
+    }
+    int count = 0;
+    while(start != 1){
+        // Print the current value
+        printf("%d\n", start);
+        if(start % 2 == 0){
+            start /= 2;
+        }else{
+            start = 3 * start + 1;
+        }
+    }
+    // print the final value
+    printf("%d\n", start);
+    return count;
+}
 ```
 
 `practice.c` (main)
 
 ```C
+int main(){
+    int n;
+    printf("Enter a number: ");
+    scanf("%d", &n);
+    printf("According to Collatz Conjecture, \n");
+    printf("The number of steps for %d to reach 1 is %d\n", n, steps(n));
+    return 0;
+}
 ```
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter a number: 12
+According to Collatz Conjecture, 
+12
+6
+3
+10
+5
+16
+8
+4
+2
+1
+The number of steps for 12 to reach 1 is 9
+
 ```
 

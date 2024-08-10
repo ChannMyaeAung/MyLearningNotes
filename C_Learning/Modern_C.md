@@ -746,7 +746,7 @@ chan@CMA:~/C_Programming/test$ ./final
    1. Type Punning with Pointers:
 
       ```C
-      float b - 5.0;
+      float b = 5.0;
       int *p = (int *)&b;
       ```
 
@@ -772,4 +772,28 @@ chan@CMA:~/C_Programming/test$ ./final
 
 Type punning can lead to undefined behavior if not used carefully, especially when dealing with strict aliasing rules in C. It is important to ensure that the memory layout of the types involved is compatible and that the operation is supported by the compiler and platform.
 
-7. 
+
+
+### Basic Types
+
+| Class          | Class       | Systematic Name      | Other name          | Rank |
+| -------------- | ----------- | -------------------- | ------------------- | ---- |
+|                |             | Bool                 | bool                | 0    |
+|                |             | unsigned char        |                     | 1    |
+| Integers       | Signed      | unsigned short       |                     | 2    |
+|                |             | unsigned int         | unsigned            | 3    |
+|                |             | unsigned long        |                     | 4    |
+|                |             | unsigned long long   |                     | 5    |
+|                | [Un] signed | char                 |                     | 1    |
+|                |             | signed char          |                     | 1    |
+|                | Signed      | signed short         | short               | 2    |
+|                |             | signed int           | signed or int       | 3    |
+|                |             | signed long          | long                | 4    |
+|                |             | signed long long     | long long           | 5    |
+|                |             | float                |                     |      |
+|                |             | double               |                     |      |
+| Floating point |             | long double          |                     |      |
+|                |             | float _Complex       | float complex       |      |
+|                |             | double _Complex      | double complex      |      |
+|                |             | long double _Complex | long double complex |      |
+
