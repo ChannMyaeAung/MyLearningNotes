@@ -110,6 +110,12 @@ In summary, `(*pointer)` is for dereferencing to access the value stored at the 
 
 The `while(1)` loop in C is an infinite loop. It continuously executes the block of code inside the loop without stopping, because the condition `1` (which represents a non-zero value, and thus `true` in C) never changes. To exit from such a loop, you typically need to use a break statement, return statement, or any other form of interrupt (like a signal handler in the case of a Unix-like system) that can alter the flow of control out of the loop.
 
+- `while (true)` and `while (1)` are functionally equivalent in C. Both create an infinite loop that will continue to execute until a `break` statement or some other form of loop termination is encountered.
+- **`while (true)`**: This is more readable and explicitly indicates that the loop is intended to run indefinitely. However, `true` is not a keyword in C; it is typically defined as `#define true 1` in `stdbool.h`.
+- **`while (1)`**: This is a common idiom in C for creating an infinite loop. It is concise and directly uses the integer value `1`, which is always true in a `boolean` context.
+- **Readability**: `while (true)` is generally more readable and self-explanatory.
+- **Compatibility**: `while (1)` is universally understood and does not require including `stdbool.h`.
+
 ```C
 while(1){
     printf("This will print indefinitely.\n");
@@ -127,6 +133,10 @@ while(1){
 }
 printf("Exited the loop.\n");
 ```
+
+Both are valid and commonly used in C programming. The choice between them often comes down to personal or team preference.
+
+---
 
 
 

@@ -776,17 +776,20 @@ Type punning can lead to undefined behavior if not used carefully, especially wh
 
 ### Basic Types
 
+- All basic values in  C are numbers, but there are different kinds of numbers.
+- As a principal, distinction, we have two different classes of numbers, each with two subclasses: **unsigned integers**, **signed integers**, **real floating-point numbers**, and **complex floating point numbers**.
+
 | Class          | Class       | Systematic Name      | Other name          | Rank |
 | -------------- | ----------- | -------------------- | ------------------- | ---- |
-|                |             | Bool                 | bool                | 0    |
-|                |             | unsigned char        |                     | 1    |
-| Integers       | Signed      | unsigned short       |                     | 2    |
+|                |             | **Bool**             | **bool**            | 0    |
+|                |             | **unsigned char**    |                     | 1    |
+| Integers       | Signed      | **unsigned short**   |                     | 2    |
 |                |             | unsigned int         | unsigned            | 3    |
 |                |             | unsigned long        |                     | 4    |
 |                |             | unsigned long long   |                     | 5    |
-|                | [Un] signed | char                 |                     | 1    |
-|                |             | signed char          |                     | 1    |
-|                | Signed      | signed short         | short               | 2    |
+|                | [Un] signed | **char**             |                     | 1    |
+|                |             | **signed char**      |                     | 1    |
+|                | Signed      | **signed short**     | **short**           | 2    |
 |                |             | signed int           | signed or int       | 3    |
 |                |             | signed long          | long                | 4    |
 |                |             | signed long long     | long long           | 5    |
@@ -797,3 +800,85 @@ Type punning can lead to undefined behavior if not used carefully, especially wh
 |                |             | double _Complex      | double complex      |      |
 |                |             | long double _Complex | long double complex |      |
 
+- Types in bold don't allow for arithmetic, they are promoted before doing arithmetic. (Bool(bool), unsigned char, unsigned short, char, signed char, signed short (short)).
+- Type `char` is special since it can be unsigned or signed, depending on the platform.
+- As we can see from the table, there are six types that we can't use directly for arithmetic, the so-called **narrow types** because they have a smaller range or size compared to other types. 
+- They are promoted to one of the wider types before they are considered in an arithmetic expression. This promotion is part of the type conversion rules in C, often referred to as "integer promotion" and "usual arithmetic conversions".
+- Nowadays, on any realistic platform, this promotion will be a **signed int** of the same value as the narrow type, regardless of whether the narrow type was signed.
+- Before arithmetic, narrow integer types are promoted to **signed int**.
+
+#### Promotion Rules
+
+1. **Integer Promotion**:
+   - All narrow integer types (`char`, `signed char`, `unsigned char`, `short`, `signed short`, `unsigned short`) are promoted to `int` if they can fit within the range of an `int`.
+   - If they cannot fit within the range of an `int`, they are promoted to `unsigned int`.
+2. **Usual Arithmetic Conversions**:
+   - After integer promotion, if the operands are of different types, further conversions are applied to bring both operands to a common type.
+   - For example, if one operand is `int` and the other is `float`, the `int` is converted to `float`.
+
+#### Example
+
+```C
+int main(){
+    char a = 5;
+    short b = 10;
+    int result = a + b;
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+In this example:
+
+- `a` is of type `char`.
+- `b` is of type `short`.
+
+Before performing the addition `a + b`:
+
+- `a` is promoted to `int`.
+- `b` is promoted to `int`.
+
+The addition is then performed using the `int` type, and the result is stored in `result`, which is also of type `int`.
+
+#### Output
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Result: 15
+```
+
+
+
+#### Unpromoted Types
+
+The 12 remaining, unpromoted, types split nicely into the four classes.
+
+"Unpromoted" types refer to those types that do not undergo promotion (such as integer promotion) when used in expressions. They can be used in their native form without being promoted to a larger type like `int`.
+
+The remaining 12 types that are referred to as "unpromoted" in the context are:
+
+1. **Floating-Point Types**:
+   - **`float`**: A single-precision floating-point type.
+   - **`double`**: A double-precision floating-point type.
+   - **`long double`**: An extended-precision floating-point type.
+2. **Complex Types** (from the C99 standard):
+   - **`float complex`**: A complex number type based on `float`.
+   - **`double complex`**: A complex number type based on `double`.
+   - **`long double complex`**: A complex number type based on `long double`.
+3. **Unsigned Integer Types**:
+   - **`unsigned int`**: An unsigned integer type, typically the same size as `int`.
+   - **`unsigned long`**: An unsigned long integer type, typically larger than `unsigned int`.
+   - **`unsigned long long`**: An unsigned long long integer type, typically larger than `unsigned long`.
+4. **Signed Integer Types**:
+   - **`int`**: A standard integer type.
+   - **`long`**: A long integer type, typically larger than `int`.
+   - **`long long`**: A long long integer type, typically larger than `long`.
+
+As we can see, each of the four classes of base types has three distinct unpromoted types.
+
+#### Summary
+
+- **Narrow types** (`char`, `signed char`, `unsigned char`, `short`, `signed short`, `unsigned short`) are promoted to `int` or `unsigned int` before being used in arithmetic expressions.
+- This promotion ensures that arithmetic operations are performed using types that can handle a wider range of values, reducing the risk of overflow and other issues.
+- **Unpromoted types** are those that do not undergo such promotion and retain their native type.
+- The "four classes" divide these unpromoted types into categories: floating-point, complex, unsigned integers, and signed integers. Each class contains exactly three types, providing a structured classification of these types in C.

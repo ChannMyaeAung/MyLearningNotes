@@ -8,7 +8,7 @@ Here's the prototype for `strcspn`:
 size_t strcspn(const char *str1, const char *str2);
 ```
 
-### Detailed Explanation
+#### Detailed Explanation
 
 - **Parameters:**
   - `const char *str1`: A pointer to the null-terminated string to be scanned.
@@ -16,7 +16,7 @@ size_t strcspn(const char *str1, const char *str2);
 - **Return Value:**
   - The function returns the number of characters in the initial segment of `str1` which are not in `str2`. If `str1` does not contain any character from `str2`, the function returns the length of `str1`.
 
-### Example
+#### Example
 
 ```C
 #include <stdio.h>
@@ -34,7 +34,7 @@ int main() {
 }
 ```
 
-### Explanation of the Example
+#### Explanation of the Example
 
 - `str1` is `"hello, world"`.
 - `str2` is `"o,"`.
@@ -49,7 +49,7 @@ So, the output of this program will be:
 The length of the initial segment of str1 not containing any character from str2 is: 4
 ```
 
-### Use Cases
+#### Use Cases
 
 - **Parsing strings**: When you need to find the length of a segment in a string that does not include certain delimiter characters.
 - **Validation**: Checking for the presence of any invalid characters in an input string up to a certain point.
@@ -107,7 +107,7 @@ In this code, the `strcspn` function is used to remove the newline character (`'
 
 Here is a more detailed breakdown of the steps in context:
 
-### Detailed Steps:
+#### Detailed Steps:
 
 1. **User Input**:
    - Assume the user types "John Doe" and presses Enter.
@@ -119,7 +119,7 @@ Here is a more detailed breakdown of the steps in context:
    - `name[8] = '\0';` changes the newline character to a null terminator.
    - Now `name` contains `"John Doe"` without the newline character.
 
-### Summary:
+#### Summary:
 
 In this code, `strcspn` is used to determine the position of the newline character that `fgets` adds at the end of the input. By replacing this newline with a null terminator, the code ensures that the `name` string is correctly terminated, allowing accurate calculation of its length and proper handling of the string in subsequent operations.
 
@@ -485,6 +485,132 @@ Enter your answer: 3
 Correct!
 You scored 1 out of 3.
 
+```
+
+#### Better Approach
+
+`functions.c`
+
+```C
+int getValidAnswer(int answer)
+{
+    while (true)
+    {
+        printf("Enter your answer: ");
+        scanf("%d", &answer);
+        if (answer >= 1 && answer <= 4)
+        {
+            break;
+        }
+        printf("Please enter a number between 1 and 4.\n");
+    }
+    return answer;
+}
+
+int quizApp()
+{
+    int score = 0;
+    int answer = 0;
+
+    printf("Welcome to the Quiz App!\n");
+    printf("Answer the following questions!\n");
+
+    // Question 1
+    printf("\na. What is the capital of France?\n");
+    printf("1. Berlin\n2. Paris\n3. Madrid\n4. Rome\n");
+    answer = getValidAnswer(answer);
+    if (answer == 2)
+    {
+        score++;
+        printf("Correct!\n");
+    }
+    else
+    {
+        printf("Incorrect. The correct answer is 2. Paris.\n");
+    }
+
+    // Question 2
+    printf("\nb. What is largest planet in our solar system?\n");
+    printf("1. Earth\n2. Mars\n3. Jupitar\n4. Saturn\n");
+    answer = getValidAnswer(answer);
+    if (answer == 3)
+    {
+        score++;
+        printf("Correct!\n");
+    }
+    else
+    {
+        printf("Incorrect. The correct answer is 2. Paris.\n");
+    }
+
+    // Question 3
+    printf("\nc. Who wrote 'TO Kill a Mockingbird'?\n");
+    printf("1. Harper Lee\n2. Mark Twain\n3. J.K. Rowling\n4. Ernest Hemingway\n");
+    answer = getValidAnswer(answer);
+    if (answer == 1)
+    {
+        score++;
+        printf("Correct!");
+    }
+    else
+    {
+        printf("Incorrect. The correct answer is 1. Harper Lee.\n");
+    }
+
+    while (answer <= 0 || answer > 4)
+    {
+        printf("Please enter a number between 1 and 4: ");
+        scanf("%d", &answer);
+    }
+
+    return score;
+}
+```
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    printf("You score %d out of 3.\n", quizApp());
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Welcome to the Quiz App!
+Answer the following questions!
+
+a. What is the capital of France?
+1. Berlin
+2. Paris
+3. Madrid
+4. Rome
+Enter your answer: -1
+Please enter a number between 1 and 4.
+Enter your answer: 0
+Please enter a number between 1 and 4.
+Enter your answer: 2
+Correct!
+
+b. What is largest planet in our solar system?
+1. Earth
+2. Mars
+3. Jupitar
+4. Saturn
+Enter your answer: 2
+Incorrect. The correct answer is 2. Paris.
+
+c. Who wrote 'TO Kill a Mockingbird'?
+1. Harper Lee
+2. Mark Twain
+3. J.K. Rowling
+4. Ernest Hemingway
+Enter your answer: 1
+Correct!You score 2 out of 3.
 ```
 
 
