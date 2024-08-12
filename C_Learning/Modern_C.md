@@ -876,6 +876,20 @@ The remaining 12 types that are referred to as "unpromoted" in the context are:
 
 As we can see, each of the four classes of base types has three distinct unpromoted types.
 
+```
+signed char < short < int < long < long long
+```
+
+```
+bool < unsigned char < unsigned short < unsigned < unsigned long < unsigned long long 
+```
+
+- For any arithmetic or comparison, the narrow unsigned types are promoted to `signed int` and not to `unsigned int`, as this diagram might suggest.
+- The comparison of the ranges of `signed` and `unsigned` types is more difficult.
+- An unsigned type can never include the negative values of a signed type.
+
+
+
 #### Summary
 
 - **Narrow types** (`char`, `signed char`, `unsigned char`, `short`, `signed short`, `unsigned short`) are promoted to `int` or `unsigned int` before being used in arithmetic expressions.

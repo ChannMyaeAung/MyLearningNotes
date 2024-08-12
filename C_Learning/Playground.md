@@ -2497,13 +2497,13 @@ Resulting in 9 steps. So for input n = 12, the return value would be 9.
 
 ```C
 void error(char *msg){
-    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    fprintf(stderr, "%s", msg);
     exit(EXIT_FAILURE);
 }
 
 int steps(int start){
     if(start <= 0){
-        error("Input must be a positive integer").
+        error("value cannot be less than or equal to 0.\n");
     }
     int count = 0;
     while(start != 1){
@@ -2511,8 +2511,10 @@ int steps(int start){
         printf("%d\n", start);
         if(start % 2 == 0){
             start /= 2;
+            count++;
         }else{
             start = 3 * start + 1;
+            count++;
         }
     }
     // print the final value
@@ -2537,7 +2539,11 @@ int main(){
 `Output`
 
 ```sh
-chan@CMA:~/C_Programming/test$ ./final
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: -1
+According to Collatz Conjecture, 
+value cannot be less than or equal to 0.
+chan@CMA:~/C_Programming/practice$ ./practice
 Enter a number: 12
 According to Collatz Conjecture, 
 12
@@ -2551,6 +2557,159 @@ According to Collatz Conjecture,
 2
 1
 The number of steps for 12 to reach 1 is 9
+chan@CMA:~/C_Programming/practice$ 
 
+```
+
+---
+
+### Queen Attack Program
+
+#### Instructions
+Given the position of two queens on a chess board, indicate whether or not they are positioned so that they can attack each other.
+
+In the game of chess, a queen can attack pieces which are on the same row, column, or diagonal.
+
+A chessboard can be represented by an 8 by 8 array.
+
+So if you are told the white queen is at c5 (zero-indexed at column 2, row 3) and the black queen at f2 (zero-indexed at column 5, row 6), then you know that the set-up is like so:
+
+ ```
+   a b c d e f g h
+ 8 _ _ _ _ _ _ _ _ 8
+ 7 _ _ _ _ _ _ _ _ 7
+ 6 _ _ _ _ _ _ _ _ 6
+ 5 _ _ W _ _ _ _ _ 5
+ 4 _ _ _ _ _ _ _ _ 4
+ 3 _ _ _ _ _ _ _ _ 3
+ 2 _ _ _ _ _ B _ _ 2
+ 1 _ _ _ _ _ _ _ _ 1
+   a b c d e f g h
+ ```
+
+You are also able to answer whether the queens can attack each other. In this case, that answer would be yes, they can, because both pieces share a diagonal.
+
+#### Solution
+
+To determine if two queens can attack each other on a chessboard, we need to check if they share the same row, column, or diagonal.
+
+##### Step-by-Step Breakdown:
+
+1. **Same Row:** The queens are on the same row if their row indices are equal.
+2. **Same Column:** The queens are on the same column if their column indices are equal.
+3. **Same Diagonal:** The queens are on the same diagonal if the absolute difference between their row indices equals the absolute difference between their column indices.
+
+##### Detailed Breakdown on Diagonals
+
+- In chess, a queen can attack another piece if they are on the same diagonal. 
+- To determine if two queens are on the same diagonal, we need to check if the absolute difference between their row indices is equal to the absolute difference between their column indices.
+
+###### Explanation:
+**Diagonal Movement:** A queen moves diagonally by changing both its row and column by the same amount. For example, moving from (row 3, column 2) to (row 6, column 5) involves changing the row by 3 and the column by 3.
+**Absolute Difference:** The absolute difference ensures that we are considering the magnitude of the change, regardless of direction (positive or negative).
+
+###### Mathematical Justification:
+
+If two positions (r1, c1) and (r2, c2) are on the same diagonal, then the difference in rows `|r1 - r2|` must be equal to the difference in columns `|c1 - c2|`.
+###### Example:
+
+Consider two queens at positions `(3, 2)`and `(6, 5)`:
+
+- Row difference: `|3 - 6| = 3`
+- Column difference: `|2 - 5| = 3`
+- Since both differences are equal, the queens are on the same diagonal.
+
+##### Code Implementation
+
+`practice.h`
+
+```C
+typedef enum{
+    CAN_NOT_ATTACK,
+    CAN_ATTACK,
+    INVALID_POSITION
+} attack_status_t;
+
+typedef struct{
+    uint8_t row;
+    uint8_t column;
+}position_t;
+
+attack_status_t can_attack(position_t queen_1, position_t queen_2);
+```
+
+
+
+`functions.c`
+
+```C
+attack_status_t can_attack(position_t queen_1, position_t queen_2){
+    // Invalid position check: If any row or column is out of bounds (>= 8)
+    if (queen_1.row >= 8 || queen_1.column >= 8 || queen_2.row >= 8 || queen_2.column >= 8)
+    {
+        return INVALID_POSITION;
+    }
+
+    // Same position check
+    if (queen_1.row == queen_2.row && queen_1.column == queen_2.column)
+    {
+        return INVALID_POSITION;
+    }
+
+    // Check if they can attack each other:
+    // 1. Same row
+    if (queen_1.row == queen_2.row)
+    {
+        return CAN_ATTACK;
+    }
+
+    // 2. Same column
+    if (queen_1.column == queen_2.column)
+    {
+        return CAN_ATTACK;
+    }
+
+    // 3. Same diagonal
+    if (abs(queen_1.row - queen_2.row) == abs(queen_1.column - queen_2.column))
+    {
+        return CAN_ATTACK;
+    }
+
+    // If none of the conditions are met, they cannot attack each other
+    return CAN_NOT_ATTACK;
+}
+```
+
+`practice.c (Main file)`
+
+```C
+int main()
+{
+    position_t white_queen = {3, 2}; // c5
+    position_t black_queen = {6, 5}; // f2
+
+    attack_status_t result = can_attack(white_queen, black_queen);
+
+    if (result == CAN_ATTACK)
+    {
+        printf("The queens can attack each other.\n");
+    }
+    else if (result == CAN_NOT_ATTACK)
+    {
+        printf("The queens cannot attack each other.\n");
+    }
+    else
+    {
+        printf("Invalid position.\n");
+    }
+    return 0;
+}
+```
+
+`Output`
+
+```C
+chan@CMA:~/C_Programming/practice$ ./practice
+The queens can attack each other.
 ```
 

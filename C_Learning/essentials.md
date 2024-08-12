@@ -834,3 +834,50 @@ Using structures in C helps in creating more organized and manageable code, espe
 
 ---
 
+### `uint8_t, uint16_t, uint32_t, uint64_t`
+
+The types `uint8_t`, `uint16_t`, `uint32_t`, and `uint64_t` are fixed-width integer types defined in the `<stdint.h>` header in C. They specify unsigned integer types with exact widths, which makes them useful for ensuring consistent behavior across different platforms.
+
+#### Differences:
+
+1. **Width**:
+   - `uint8_t`: 8 bits (1 byte)
+   - `uint16_t`: 16 bits (2 bytes)
+   - `uint32_t`: 32 bits (4 bytes)
+   - `uint64_t`: 64 bits (8 bytes)
+2. **Range**:
+   - `uint8_t`: 0 to 255
+   - `uint16_t`: 0 to 65,535
+   - `uint32_t`: 0 to 4,294,967,295
+   - `uint64_t`: 0 to 18,446,744,073,709,551,615
+
+#### Usage:
+
+- **`uint8_t`**: Often used for small data, such as bytes or small counters.
+- **`uint16_t`**: Used for larger counters or small arrays.
+- **`uint32_t`**: Commonly used for larger counters, array indices, or data that requires more than 16 bits but less than 32 bits.
+- **`uint64_t`**: Used for very large numbers, such as file sizes, timestamps, or other data requiring a large range.
+
+#### Example:
+
+```C
+#include <stdint.h>
+#include <stdio.h>
+
+int main() {
+    uint8_t small_number = 255;
+    uint16_t medium_number = 65535;
+    uint32_t large_number = 4294967295;
+    uint64_t very_large_number = 18446744073709551615U;
+
+    printf("uint8_t: %u\n", small_number);
+    printf("uint16_t: %u\n", medium_number);
+    printf("uint32_t: %u\n", large_number);
+    printf("uint64_t: %llu\n", very_large_number);
+
+    return 0;
+}
+```
+
+---
+
