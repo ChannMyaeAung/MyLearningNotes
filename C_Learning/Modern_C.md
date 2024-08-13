@@ -887,6 +887,117 @@ bool < unsigned char < unsigned short < unsigned < unsigned long < unsigned long
 - For any arithmetic or comparison, the narrow unsigned types are promoted to `signed int` and not to `unsigned int`, as this diagram might suggest.
 - The comparison of the ranges of `signed` and `unsigned` types is more difficult.
 - An unsigned type can never include the negative values of a signed type.
+- Use `size_t` for sizes, cardinalities, or ordinal numbers.
+- Unsigned types are the most convenient types, since they are the only types that have an arithmetic that is defined consistently with mathematical properties: the modulo operation.
+- They can't raise signals on overflow and can be optimized best.
+- Use `unsigned` for small quantities that can't be negative.
+- If our program really needs values that may be both positive and negative but don't have fractions, use a signed type.
+  - Use `signed` for small quantities that bear a sign.
+- Use `ptrdiff_t` for large differences that bear a sign.
+- If we want to do fractional computation with a value such as 0.5 or 3.77189E+89, use floating-point types.
+- Use `double` for floating-point calculations.
+- Use `double complex` for complex calculations.
+- The C standard defines a lot of other types, among them other arithmetic types that model special use cases.
+
+| Type        | Header   | Context of definition     | Meaning                                    |
+| ----------- | -------- | ------------------------- | ------------------------------------------ |
+| `size_t`    | stddef.h |                           | type for "sizes" and cardinalities         |
+| `ptrdiff_t` | stddef.h |                           | type for size differences                  |
+| `uintmax_t` | stdint.h |                           | maximum width unsigned, preprocessor       |
+| `intmax_t`  | stdint.h |                           | maximum width signed integer, preprocessor |
+| `time_t`    | time.h   | time(0), difftime(t1, t0) | calendar time in seconds since epoch       |
+| `clock_t`   | time.h   | clock()                   | processor time                             |
+
+- The two types `time_t` and `clock_t` are used to handle times.
+- They are semantic types because the precision of the time computation can be different from platform to platform.
+- The way to have a time in seconds that can be used in arithmetic is the function `difftime`: it computes the difference of two timestamps.
+- `clock_t` values present the platform's model of processor clock cycles, so the unit of time is usually much less than a second.
+- `CLOCKS_PER_SEC` can be used to convert such values to seconds.
+
+#### Code Example:
+
+##### `ptrdiff_t`
+
+`ptrdiff_t` is a signed integer type used to represent the difference between two pointers.
+
+```C
+#include <stdio.h>
+#include <stddef.h>
+
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int *ptr1 = &arr[1]; // Points to 20
+    int *ptr2 = &arr[4]; // Points to 50
+
+    ptrdiff_t diff = ptr2 - ptr1; // Difference in elements
+
+    printf("Difference between pointers: %td\n", diff); // Output: 3
+
+    return 0;
+}
+```
+
+##### `uintmax_t` and `intmax_t`
+
+`uintmax_t` and `intmax_t` are the largest unsigned and signed integer types, respectively.
+
+```C
+#include <stdio.h>
+#include <stdint.h>
+
+int main() {
+    uintmax_t max_unsigned = UINTMAX_MAX;
+    intmax_t max_signed = INTMAX_MAX;
+    intmax_t min_signed = INTMAX_MIN;
+
+    printf("Maximum unsigned integer: %ju\n", max_unsigned);
+    printf("Maximum signed integer: %jd\n", max_signed);
+    printf("Minimum signed integer: %jd\n", min_signed);
+
+    return 0;
+}
+```
+
+##### `time_t`
+
+time_t is used to represent calendar time.
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    time_t current_time;
+    time(&current_time);
+
+    printf("Current time: %s", ctime(&current_time));
+
+    return 0;
+}
+```
+
+#### `clock_t` and `CLOCKS_PER_SEC`
+
+`clock_t` is used to represent processor time, and `CLOCKS_PER_SEC` is the number of clock ticks per second.
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    clock_t start = clock();
+
+    // Simulate some work with a sleep
+    for (volatile int i = 0; i < 100000000; ++i);
+
+    clock_t end = clock();
+    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    printf("CPU time used: %f seconds\n", cpu_time_used);
+
+    return 0;
+}
+```
 
 
 
@@ -896,3 +1007,8 @@ bool < unsigned char < unsigned short < unsigned < unsigned long < unsigned long
 - This promotion ensures that arithmetic operations are performed using types that can handle a wider range of values, reducing the risk of overflow and other issues.
 - **Unpromoted types** are those that do not undergo such promotion and retain their native type.
 - The "four classes" divide these unpromoted types into categories: floating-point, complex, unsigned integers, and signed integers. Each class contains exactly three types, providing a structured classification of these types in C.
+
+
+
+
+
