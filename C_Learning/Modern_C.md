@@ -958,6 +958,14 @@ int main() {
 }
 ```
 
+```sh
+Maximum unsigned integer: 18446744073709551615
+Maximum signed integer: 9223372036854775807
+Minimum signed integer: -9223372036854775808
+```
+
+
+
 ##### `time_t`
 
 time_t is used to represent calendar time.
@@ -976,6 +984,15 @@ int main() {
 }
 ```
 
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Current time: Wed Aug 14 22:36:14 2024
+```
+
+- **`time_t current_time;`**: Declares a variable `current_time`of type `time_t` to store the current calendar time.
+- **`time(&current_time)`**: Calls the `time` function to get the current calendar time and stores it in `current_time`.
+- **`printf("Current time: %s", ctime(&current_time));`**: Converts the `current_time` to a human-readable string using `ctime` and prints it. `ctime` returns a string representing the local time based on the `current_time`.
+
 #### `clock_t` and `CLOCKS_PER_SEC`
 
 `clock_t` is used to represent processor time, and `CLOCKS_PER_SEC` is the number of clock ticks per second.
@@ -988,18 +1005,33 @@ int main() {
     clock_t start = clock();
 
     // Simulate some work with a sleep
-    for (volatile int i = 0; i < 100000000; ++i);
+    volatile int sum = 0;
+    for (volatile int i = 0; i < 100000000; ++i){
+        sum += i;
+    }
 
     clock_t end = clock();
     double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     printf("CPU time used: %f seconds\n", cpu_time_used);
+    
+    printf("Sum: %d\n", sum);
 
     return 0;
 }
 ```
 
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+CPU time used: 0.000599 seconds
+Sum: 1783293664
 
+```
+
+- **`clock_t start = clock();`**: This line records the current processor time at the start of the program.
+- **Simulated Work**: The `for` loop with a volatile integer simulates some work by running a loop 1,000,000 times. The `volatile` keyword prevents the compiler from optimizing away the loop.
+- **`clock_t end = clock();`**: This line records the processor time at the end of the simulated work.
+- `double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC`: This line calculates the CPU time used by subtracting the start time from the end time and dividing by CLOCKS_PER_SEC to convert the clock ticks to seconds.
 
 #### Summary
 
@@ -1010,5 +1042,9 @@ int main() {
 
 
 
+### Specifying Values
 
+Numerical constants (literals) can be specified in several ways:
+
+1. **Decimal integer constant**: The most natural choice for most of us.
 

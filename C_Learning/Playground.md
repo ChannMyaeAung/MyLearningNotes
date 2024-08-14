@@ -2713,3 +2713,193 @@ chan@CMA:~/C_Programming/practice$ ./practice
 The queens can attack each other.
 ```
 
+###### Better solution (Includes user interaction)
+
+`functions.c`
+
+```C
+void print_board(position_t queen_1, position_t queen_2)
+{
+    printf("  a b c d e f g h\n");
+    for (int row = 7; row >= 0; row--)
+    {
+        printf("%d ", row + 1);
+        for (int col = 0; col < 8; col++)
+        {
+            if (queen_1.row == row && queen_1.column == col)
+            {
+                printf("W "); // White Queen
+            }
+            else if (queen_2.row == row && queen_2.column == col)
+            {
+                printf("B "); // Black Queen
+            }
+            else
+            {
+                printf("_ ");
+            }
+        }
+        printf("%d\n", row + 1);
+    }
+    printf("  a b c d e f g h\n");
+}
+
+attack_status_t can_attack(position_t queen_1, position_t queen_2)
+{
+    // Invalid position check: If any row or column is out of bounds (>= 8)
+    if (queen_1.row >= 8 || queen_1.column >= 8 || queen_2.row >= 8 || queen_2.column >= 8)
+    {
+        return INVALID_POSITION;
+    }
+
+    // Same position check
+    if (queen_1.row == queen_2.row && queen_1.column == queen_2.column)
+    {
+        return INVALID_POSITION;
+    }
+
+    // Check if they can attack each other:
+    // 1. Same row
+    if (queen_1.row == queen_2.row)
+    {
+        return CAN_ATTACK;
+    }
+
+    // 2. Same column
+    if (queen_1.column == queen_2.column)
+    {
+        return CAN_ATTACK;
+    }
+
+    // 3. Same diagonal
+    if (abs(queen_1.row - queen_2.row) == abs(queen_1.column - queen_2.column))
+    {
+        return CAN_ATTACK;
+    }
+
+    // If none of the conditions are met, they cannot attack each other
+    return CAN_NOT_ATTACK;
+}
+```
+
+
+
+`practice.c`(Main)
+
+```C
+int main()
+{
+    position_t white_queen, black_queen;
+    char column;
+    int row;
+
+    // Get the position of the White Queen
+    printf("Enter the position of the White Queen (e.g., c5): ");
+    scanf(" %c%d", &column, &row);
+    white_queen.column = column - 'a';
+    white_queen.row = row - 1;
+
+    // Get the position of the Black Queen
+    printf("Enter the position of the Black Queen (e.g., f2): ");
+    scanf(" %c%d", &column, &row);
+    black_queen.column = column - 'a';
+    black_queen.row = row - 1;
+
+    // Display the board with the queens
+    print_board(white_queen, black_queen);
+
+    // Determine if the queens can attack each other
+    attack_status_t result = can_attack(white_queen, black_queen);
+
+    if (result == CAN_ATTACK)
+    {
+        printf("The queens can attack each other.\n");
+    }
+    else if (result == CAN_NOT_ATTACK)
+    {
+        printf("The queens cannot attack each other.\n");
+    }
+    else
+    {
+        printf("Invalid position.\n");
+    }
+
+    return 0;
+}
+
+```
+
+**Explanation:**
+
+**Conversion Logic**
+
+- The column is converted using `column - 'a'`, which should correctly map 'a' to 0, 'b' to 1, ..., 'h' to 7.
+- The row is converted using `row - 1`, which should correctly map 1 to 0, 2 to 1, ..., 8 to 7.
+
+1. **Variable Declarations**: Declares variables for the positions of the white and black queens (`white_queen`, `black_queen`), and temporary variables for reading input (`column`, `row`).
+2. **Get White Queen Position**:
+   - Prompts the user to enter the position of the white queen.
+   - Reads the input using `scanf` and converts the column from a character to an integer index (`column - 'a'`) and the row to a zero-based index (`row - 1`).
+3. **Get Black Queen Position**:
+   - Prompts the user to enter the position of the black queen.
+   - Reads the input and converts it similarly to the white queen's position.
+4. **Print the Board**: Calls `print_board` to display the current positions of the queens on the board.
+5. **Check Attack Possibility**:
+   - Calls `can_attack` to determine if the queens can attack each other.
+   - Prints the result based on the return value of `can_attack`:
+     - `CAN_ATTACK`: Prints that the queens can attack each other.
+     - `CAN_NOT_ATTACK`: Prints that the queens cannot attack each other.
+     - `INVALID_POSITION`: Prints that the position is invalid.
+6. **Return**: Returns 0 to indicate successful execution.
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the position of the White Queen (e.g., c5): c5
+Enter the position of the Black Queen (e.g., f2): f2
+  a b c d e f g h
+8 _ _ _ _ _ _ _ _ 8
+7 _ _ _ _ _ _ _ _ 7
+6 _ _ _ _ _ _ _ _ 6
+5 _ _ W _ _ _ _ _ 5
+4 _ _ _ _ _ _ _ _ 4
+3 _ _ _ _ _ _ _ _ 3
+2 _ _ _ _ _ B _ _ 2
+1 _ _ _ _ _ _ _ _ 1
+  a b c d e f g h
+The queens can attack each other.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the position of the White Queen (e.g., c5): c3
+Enter the position of the Black Queen (e.g., f2): f5
+  a b c d e f g h
+8 _ _ _ _ _ _ _ _ 8
+7 _ _ _ _ _ _ _ _ 7
+6 _ _ _ _ _ _ _ _ 6
+5 _ _ _ _ _ B _ _ 5
+4 _ _ _ _ _ _ _ _ 4
+3 _ _ W _ _ _ _ _ 3
+2 _ _ _ _ _ _ _ _ 2
+1 _ _ _ _ _ _ _ _ 1
+  a b c d e f g h
+The queens cannot attack each other.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the position of the White Queen (e.g., c5): c14
+Enter the position of the Black Queen (e.g., f2): f45
+  a b c d e f g h
+8 _ _ _ _ _ _ _ _ 8
+7 _ _ _ _ _ _ _ _ 7
+6 _ _ _ _ _ _ _ _ 6
+5 _ _ _ _ _ _ _ _ 5
+4 _ _ _ _ _ _ _ _ 4
+3 _ _ _ _ _ _ _ _ 3
+2 _ _ _ _ _ _ _ _ 2
+1 _ _ _ _ _ _ _ _ 1
+  a b c d e f g h
+Invalid position.
+chan@CMA:~/C_Programming/practice$ 
+
+```
+
