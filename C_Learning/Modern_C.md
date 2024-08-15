@@ -1046,5 +1046,54 @@ Sum: 1783293664
 
 Numerical constants (literals) can be specified in several ways:
 
-1. **Decimal integer constant**: The most natural choice for most of us.
+1. **Decimal integer constant**: The most natural choice for most of us. (e.g 123).
+1. **Octal integer constant**: This is specified by a sequence of digits, the first being 0 and the following between 0 and 7. For example, 077 has the value of 63. This type of specification merely has historical value and is rarely used nowadays. Only one octal literal is commonly used: 0 itself.
+1. **Hexadecimal integer constant**: E.g 0xFFFF
+1. **Decimal floating-point constant**: Quite familiar as the version that has a decimal point. But there is also the "scientific" notation with an exponent. In the general form, `mEe` is interpreted as m . 10<sup>e</sup>.
+1. **Hexadecimal floating-point constants**: Usually used to describe floating-point values in a form that makes it easy to specify values that have exact representations. The general form 0XhPe is interpreted as h . 2<sup>e</sup>. Here, h is specified as a hexadecimal fraction. The exponent e is still specified as a decimal number.
+1. **Integer character constant**: These are characters put between ' apostrophes, such as `'a'` or `'?'`. These have values that are only implicitly fixed by the C standard. For example, `'a'` corresponds to the integer code for the character `a` of the Latin alphabet. Among character constants, the `\` character has a special meaning. E.g `'\n'` for the newline character.
+1. **String literals**: They specify text, such as that needed for the `printf` and `puts` functions. Again, the `\` character is special, as with character constants.
+
+All but the last are numerical constants: they specify numbers.
+
+- Numerical constants in C are fixed values that do not change during the execution of a program.
+
+- String literals are an exception and can be used to specify text that is known at compile time. 
+
+
+
+#### Consecutive String Literals are Concatenated
+
+In C, if we place two or more string literals next to each other, the compiler automatically concatenates them into a single string. This can be useful for breaking long strings across multiple lines for better readability.
+
+##### Example:
+
+```C
+#include <stdio.h>
+
+int main() {
+    // Two string literals are concatenated into one
+    char *str = "Hello, "
+                "world!";
+    printf("%s\n", str); // Output: Hello, world!
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hello, world!
+```
+
+
+
+#### Decimal integer constants are signed
+
+#### A decimal integer constant has the first of the three signed types that fits it.
+
+#### The same value can have different types.
+
+
 
