@@ -1091,9 +1091,161 @@ Hello, world!
 
 #### Decimal integer constants are signed
 
+- In C, when we write a decimal integer constant (e.g, 123, 456), it is treated as a signed integer by default. 
+- This means it can represent both positive and negative values.
+
 #### A decimal integer constant has the first of the three signed types that fits it.
+
+1. **Three Signed Types:**
+   - The three signed types in C are:
+     1. `int`
+     2. `long int`
+     3. `long long int`
+2. **First Type that Fits:**
+   - When we write a decimal integer constant, the compiler determines its type based on its value. It chooses the first type from the list above that can represent the value without overflow.
+   - For example:
+     - If we write `123`, it fits within the range of `int`, so it is treated as an `int`.
+     - If we write a larger number like `2147483648` (which exceeds the range of `int`but fits within `long int`), it is treated as a `long int`.
+     - If we write an even larger number that exceeds the range of both `int` and `long int` but fits within `long long int`, it is treated as a `long long int`.
 
 #### The same value can have different types.
 
+- In C, the same value can indeed be interpreted as different types depending on the context. For example, the value `65` can be interpreted as an integer, or as the character `'A'` in ASCII.
 
 
+
+#### Different Literals Can Have the Same Value
+
+- For example, the integer literals `10`. `0xA`, and `012` all represent the same value, which is `10` in decimal.
+
+```C
+int main()
+{
+        int decimal = 10;
+        int hexadecimal = 0xA;
+        int octal = 012;
+
+        printf("Decimal: %d\n", decimal);
+        printf("Hexadecimal: %d\n", hexadecimal);
+        printf("Octal: %d\n", octal);
+        return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Decimal: 10
+Hexadecimal: 10
+Octal: 10
+```
+
+
+
+#### The Effective Value of a Decimal Floating-Point Constant May Be Different from its Literal Value
+
+- Floating-point constants in C may not be represented exactly due to the limitations of binary floating-point representation.
+- For example, the literal `0.1` cannot be represented exactly in binary floating-point, so the effective value stored in the variable may be slightly different from `0.1`.
+
+
+
+### Complex Constants
+
+- Complex types are not necessarily supported by all C platforms. (Can be checked by `__STDC_NO_COMPLEX__`).
+- To have full support of complex types, the header `complex.h` should be included.
+- C provides no literals to specify constants of a complex type.
+- It only has several macros that may ease the manipulation of these types.
+- The first possibility to specify complex values is the macro `CMPLX`, which comprises two floating-point values, the real and imaginary parts, in one complex value.
+- For example, `CMPLX(0.5, 0.5)` is a `double complex` value with the real and imaginary part of one-half.
+- Analogously, there are `CMPLXF` for `float complex` and `CMPLXL` for `long double complex`.
+- Another, more convenient, possibility is provided by the macro`I` represents a constant value of type `float complex` such that `I * I` has the value -1.
+- `I` is reserved for the imaginary unit.
+
+
+
+### Implicit conversions
+
+#### Unary Operators in C
+
+- In C, unary operators are operators that operate on a single operand.
+- The unary `-` and `+` operators are used to indicate the sign of a number. 
+- When applied to an operand, they result in the type of the promoted operand.
+
+1. **Unary `-` (Negation)**:
+   - This operator negates the value of its operand.
+   - Example: `-x` where `x` is an operand.
+2. **Unary `+` (Identity)**:
+   - This operator returns the value of its operand without any change.
+   - Example: `+x` where `x` is an operand.
+
+#### Type Promotion
+
+- When unary `-` or `+` is applied to an operand, the operand undergoes type promotion. 
+
+- Type promotion is the process of converting a variable to a larger data type to ensure that operations are performed correctly.
+
+#### Example
+
+```C
+#include <stdio.h>
+
+int main() {
+    char c = 'A'; // ASCII value 65
+    int i = 10;
+    float f = 3.14;
+
+    // Unary - and + with type promotion
+    int neg_c = -c; // char promoted to int, then negated
+    int pos_c = +c; // char promoted to int, remains the same
+
+    int neg_i = -i; // int remains int, then negated
+    int pos_i = +i; // int remains int, remains the same
+
+    float neg_f = -f; // float remains float, then negated
+    float pos_f = +f; // float remains float, remains the same
+
+    printf("neg_c: %d, pos_c: %d\n", neg_c, pos_c);
+    printf("neg_i: %d, pos_i: %d\n", neg_i, pos_i);
+    printf("neg_f: %.2f, pos_f: %.2f\n", neg_f, pos_f);
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+neg_c: -65, pos_c: 65
+neg_i: -10, pos_i: 10
+neg_f: -3.14, pos_f: 3.14
+```
+
+#### Explanation
+
+1. **Unary `-` and `+` with `char`**:
+   - `c` is a `char` with the value `'A'` (ASCII 65).
+   - `-c` promotes `c` to `int`and then negates it, resulting in `-65`.
+   - `+c` promotes `c` to `int` and keeps it the same, resulting in `65`.
+2. **Unary `-` and `+` with `int`**:
+   - `i` is an `int` with the value `10`.
+   - `-i` negates `i`, resulting in `-10`.
+   - `+i` keeps `i` the same, resulting in `10`.
+3. **Unary `-` and `+` with `float`**:
+   - `f` is a `float` with the value `3.14`.
+   - `-f` negates `f`, resulting in `-3.14`.
+   - `+f` keeps `f` the same, resulting in `3.14`.
+
+
+
+This example demonstrates how unary `-` and `+` operators work and how type promotion affects their operands.
+
+
+
+The type of an operand has an influence on the type of an operator expression such as `-1` or `-1U`: whereas the first is a **signed int**, the second is an **unsigned int**.
+
+- The latter might be particularly surprising because an **unsigned int** has no negative values and so the value of `-1U` is a large positive integer.
+- As we have discussed above, Unary `-` and `+` have the type of their promoted argument.
+- So, these operators are examples where the type usually does not change.
+- In case where they do change, we have to rely on C's strategy to do implicit conversions: that is, to move a value with a specific type to one that has another, desired type.

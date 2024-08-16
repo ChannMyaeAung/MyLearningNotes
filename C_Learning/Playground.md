@@ -2833,6 +2833,11 @@ int main()
 
 **Conversion Logic**
 
+- Why `column - 'a'` and `row - 1`]?
+
+- **`column - 'a'`**: This converts the column character (e.g., 'a', 'b', 'c', etc.) to a zero-based index. For example, 'a' becomes 0, 'b' becomes 1, and so on. This is necessary because array indices in C are zero-based.
+- **`row - 1`**: This converts the row number (which is 1-based as entered by the user) to a zero-based index. For example, row 1 becomes 0, row 2 becomes 1, and so on. This is also necessary for zero-based array indexing.
+
 - The column is converted using `column - 'a'`, which should correctly map 'a' to 0, 'b' to 1, ..., 'h' to 7.
 - The row is converted using `row - 1`, which should correctly map 1 to 0, 2 to 1, ..., 8 to 7.
 
