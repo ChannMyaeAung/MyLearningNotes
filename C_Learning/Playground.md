@@ -2927,9 +2927,6 @@ In our particular instance of the game, the target rewards 4 different amounts o
 
 - If the dart lands in the inner circle of the target, player earns 10 points.
 
-  
-
-  
 
 The outer circle has a radius of 10 units (this is equivalent to the total radius for the entire target), the middle circle a radius of 5 units, and the inner circle a radius of 1. Of course, they are all centered at the same point — that is, the circles are concentric defined by the coordinates (0, 0).
 
@@ -2942,20 +2939,83 @@ Write a function that given a point in the target (defined by its Cartesian coor
 `practice.h`
 
 ```C
+int dart_score(double x, double y);
 ```
 
 `functions.c`
 
 ```C
+int dart_score(double x, double y)
+{
+    // Calculate the distance from the center of the dartboard (0, 0)
+    double distance = sqrt(pow(x, 2) + pow(y, 2));
+
+    // Determine the score based on the distance
+    if (distance > 10.0)
+    {
+        return 0; // Outside the target
+    }
+    else if (distance > 5.0)
+    {
+        return 1; // Outer circle
+    }
+    else if (distance > 1.0)
+    {
+        return 5; // Middle circle
+    }
+    else
+    {
+        return 10; // Inner circle
+    }
+}
 ```
 
 `practice.c` (main)
 
 ```C
+int main()
+{
+    double x;
+    double y;
+    printf("Enter the x coordinate: ");
+    scanf("%lf", &x);
+    printf("Enter the y coordinate: ");
+    scanf("%lf", &y);
+
+    double score = dart_score(x, y);
+    printf("Your score is %.1lf\n", score);
+    return 0;
+}
+
 ```
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 2
+Enter the y coordinate: 2
+Your score is 5.0
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 5
+Enter the y coordinate: 6
+Your score is 1.0
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 0
+Enter the y coordinate: 1
+Your score is 10.0
 ```
 
+**Explanation**
+
+- The function `dart_score` takes two `double` parameters, `x` and `y`, which represent the coordinates of where the dart lands on the board.
+- It first calculates the distance from the origin `(0, 0)` using the Pythagorean theorem: `distance = sqrt(x * x + y * y)`.
+- The function then checks the distance to determine which circle the dart landed in and returns the corresponding score:
+  - If the distance is greater than 10, the dart is outside the target, so the function returns `0`.
+  - If the distance is greater than 5 but less than or equal to 10, the dart is in the outer circle, and the function returns `1`.
+  - If the distance is greater than 1 but less than or equal to 5, the dart is in the middle circle, and the function returns `5`.
+  - If the distance is less than or equal to 1, the dart is in the inner circle, and the function returns `10`.
+
+**Illustration**
+
+![img](https://lh7-rt.googleusercontent.com/docsz/AD_4nXdDlzZTuApTOYuD13MaYw1iTH1Ce35buFnBJJ8o5oIga8cXaiT-vuVRSRd2ZSrepki-k-uRFXLOv1kGqiPmFkYa5iNCtfLLTZF9cdoFQwepZWk1tzW2QXmDA8Fix1zW35itjVxxj66q_3MirvNtUsDEEcw?key=X0QCPkupdQGzHXrrQEfXhw)

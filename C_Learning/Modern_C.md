@@ -1166,6 +1166,85 @@ Octal: 10
 
 ### Implicit conversions
 
+Implicit conversion, also known as type coercion, is a feature in C where the compiler automatically converts one data type to another without explicit instruction from the programmer. This usually happens when different data types are used in expressions or function calls, and the compiler needs to ensure that the operations are performed correctly.
+
+1. **Arithmetic Operations**:
+
+- When performing arithmetic operations between different data types, the compiler converts the operands to a common type.
+- For example, if you add an `int` and a `float`, the `int` is implicitly converted to a `float`.
+
+```C
+int a = 5;
+float b = 3.2;
+float result = a + b; // 'a' is implicitly converted to float
+```
+
+2. **Assignment**:
+
+- When assigning a value of one type to a variable of another type, the value is implicitly converted to the type of the variable.
+
+```C
+double d = 3; // '3' is implicitly converted to double
+```
+
+3. **Function Calls**:
+
+- When passing arguments to a function, if the argument types do not match the parameter types, implicit conversion may occur.
+
+```C
+void func(double x){
+    // ...
+}
+
+int y = 10;
+func(y); //'y' is implicitly converted to double
+```
+
+**Type Promotion**
+
+Type promotion is a specific kind of implicit conversion where smaller integer types (like `char` and `short`) are promoted to a larger integer type (like `int` or `unsigned int`) when used in expressions.
+
+#### Potential Issues with Implicit Conversion
+
+1. **Loss of Precision**:
+
+   - Converting from a larger type to a smaller type can result in loss of data.
+
+   ```C
+   double d = 3.14159;
+   int i = d; 
+   
+   // 'd' is implicitly converted to int, resulting in loss of precision
+   ```
+
+2. **Unexpected Behavior:**
+
+   - Implicit conversions can sometimes lead to unexpected results, especially when dealing with signed and unsigned types.
+
+   ```C
+   unsigned int u = 10;
+   int i = -1;
+   
+   if(i < u){
+       printf("i is less than u\n");
+       // This may not behave as expected due to implicit conversion.
+   }
+   ```
+
+   
+
+#### Best Practices
+
+- Be aware of the types you are working with and the potential for implicit conversions.
+- Use explicit casting when necessary to make your intentions clear and avoid unexpected behavior.
+
+```C
+double d = 3.14159;
+int i = (int)d; // Explicitly cast 'd' to int
+```
+
+
+
 #### Unary Operators in C
 
 - In C, unary operators are operators that operate on a single operand.
@@ -1249,3 +1328,30 @@ The type of an operand has an influence on the type of an operator expression su
 - As we have discussed above, Unary `-` and `+` have the type of their promoted argument.
 - So, these operators are examples where the type usually does not change.
 - In case where they do change, we have to rely on C's strategy to do implicit conversions: that is, to move a value with a specific type to one that has another, desired type.
+
+
+
+Consider the following examples, under the assumption that -2147483648 and 2147483648 are the minimal and maximal values of a **signed int**, respectively
+
+|                                  |                                   |
+| -------------------------------- | --------------------------------- |
+| `double a = 1;`                  | Harmless; value fits type         |
+| `signed short b = -1;`           | Harmless; value fits type         |
+| `signed int c = 0x80000000;`     | Dangerous; value too big for type |
+| `signed int d = -0x80000000;`    | Dangerous; value too big for type |
+| `signed int e = -2147483648;`    | Harmless; value fits type         |
+| `unsigned short g = 0x80000000;` | Loses information; has value 0    |
+
+- The initializations of `a` and `b` are harmesss. The respective values are well in the range of the desired types, so the C compiler can convert them silently.
+- The next two conversions for `c` and `d` are problematic.
+- `0x80000000` is of type **unsigned int** and does not fit into a **signed int**.
+- So, `c` receives a value that is implementation-defined, and we have to know what our platform has decided to do in such cases.
+- It could just reuse the bit pattern of the value on the right or terminate the program.
+- For the case of `d` , the situation is even more compilcated: `0x80000000` has the value 2147483648, and we might expect that `-0x80000000` is just -2147483648. But since effectively `-0x80000000` is again 2147483648, the same problem arises as for `c`.
+- `e` is harmless, because we used a negated decimal literal -2147483648, which has type **signed long** and whose value effectively is -2147483648. 
+- Since this value fits into a **signed int**, the conversion can be done with no problem.
+- `g` is ambiguous in its consequences. A value that is too large for an unsigned type is converted according to the modulus.
+- Here in particular, if we assume that the maximum value for **unsigned short** is 2<sup>16</sup> - 1, the resulting value is 0. 
+- Whether or not such a "narrowing" conversion is the desired outcome is often difficult to tell.
+- Avoid narrowing conversions.
+- Don't use narrow types in arithmetic.

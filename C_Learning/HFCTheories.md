@@ -5906,6 +5906,27 @@ int main() {
 
 ### Alternative with `strtol()`
 
+#### Syntax
+
+```C
+long int strtol(const char *str, char **endptr, int base);
+```
+
+#### Parameters
+
+1. **`str`**:
+   - A pointer to the null-terminated string to be converted.
+2. **`endptr`**:
+   - A pointer to a pointer to a character. This parameter is used to store the address of the first invalid character after the number. If you do not need this information, you can pass `NULL`.
+3. **`base`**:
+   - An integer representing the base of the number in the string. It can be any value from 2 to 36, or 0. If `base` is 0, the base is determined by the format of the string (e.g., "0x" for hexadecimal, "0" for octal, and decimal otherwise).
+
+#### Return Value
+
+- The function returns the converted long integer value.
+- If no valid conversion could be performed, it returns `0`.
+- If the value is out of the range of representable values for a long integer, it returns `LONG_MAX` or `LONG_MIN` and sets `errno` to `ERANGE`.
+
 Here's an example of how to use `strtol()` for better error handling:
 
 ```C
@@ -5930,6 +5951,7 @@ int main() {
         printf("No digits were found\n");
     } else if (*endptr != '\0') {
         printf("Further characters after number: %s\n", endptr);
+        printf("Converted number: %ld\n", val);
     } else {
         printf("Converted number: %ld\n", val);  // Output: Converted number: 1234
     }
@@ -5943,6 +5965,23 @@ In this example:
 
 - `strtol()` converts the string to a `long` and provides detailed error checking.
 - `endptr` is used to determine where the conversion stopped, which can help identify invalid characters in the string.
+- The `strtol` function stops converting when it encounters a character that is not a valid digit for the specified base (in this case, base 10). 
+- The `endptr` pointer is set to point to the first character that was not converted.
+- In this code, the string `"1234abc"` is partially converted to the integer `1234`, and `endptr` points to the `"abc"` part of the string. 
+- The condition `*endptr != '\0'` is true because there are additional characters after the number, so the code prints `"Further characters after number: abc"`.
+- `strtol` converts the initial part of the string (`"1234"`) to a long integer (`1234`).
+- `endptr` is set to point to the first character that was not converted (`'a'` in `"abc"`).
+- Since `*endptr` is not `'\0'` (it points to `'a'`), the code prints the remaining part of the string (`"abc"`).
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Further characters after number: abc
+Converted number: 1234
+```
+
+
 
 
 
