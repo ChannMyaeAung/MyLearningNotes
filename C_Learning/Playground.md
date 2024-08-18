@@ -3019,3 +3019,144 @@ Your score is 10.0
 **Illustration**
 
 ![img](https://lh7-rt.googleusercontent.com/docsz/AD_4nXdDlzZTuApTOYuD13MaYw1iTH1Ce35buFnBJJ8o5oIga8cXaiT-vuVRSRd2ZSrepki-k-uRFXLOv1kGqiPmFkYa5iNCtfLLTZF9cdoFQwepZWk1tzW2QXmDA8Fix1zW35itjVxxj66q_3MirvNtUsDEEcw?key=X0QCPkupdQGzHXrrQEfXhw)
+
+#### 2nd Solution (Better Approach)
+
+`practice.h`
+
+```C
+typedef struct
+{
+    float x;
+    float y;
+} coordinate_t;
+
+uint8_t dart_score(coordinate_t position);
+```
+
+`functions.c`
+
+```C
+uint8_t dart_score(coordinate_t position)
+{
+    // Calculate the distance from the target (0, 0)
+    float distance = hypot(position.x, position.y);
+
+    if (distance <= 1.0F)
+    {
+        return 10; // Inner circle
+    }
+    else if (distance <= 5.0F)
+    {
+        return 5; // Middle circle
+    }
+    else if (distance <= 10.0F)
+    {
+        return 1; // Outer circle
+    }
+    else
+    {
+        return 0; // Outside the target
+    }
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    float x;
+    float y;
+    printf("Enter the x coordinate: ");
+    scanf("%f", &x);
+    printf("Enter the y coordinate: ");
+    scanf("%f", &y);
+
+    coordinate_t position = {x, y};
+    uint8_t score = dart_score(position);
+    printf("Your score is %u\n", score);
+    return 0;
+}
+
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 0
+Enter the y coordinate: 1
+Your score is 10
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 3
+Enter the y coordinate: 4
+Your score is 5
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the x coordinate: 6
+Enter the y coordinate: 7
+Your score is 1
+```
+
+In C, the `F` suffix is used to indicate that a literal is of type `float`. Without the `F` suffix, the literal is treated as a `double` by default. Using `float` literals can be important for performance and precision reasons, especially when working with functions or variables that are explicitly of type `float`.
+
+```C
+float distance = 1.0F; // 'distance' is a float
+double distance = 1.0; // 'distance' is a double
+```
+
+In our code, if we are calculating the distance using `float` variables, we should use `float` literals to avoid unnecessary type conversions and to maintain precision.
+
+---
+
+### Resistor Color Duo
+
+#### Instructions
+If you want to build something using a Raspberry Pi, you'll probably use resistors. For this exercise, you need to know two things about them:
+
+Each resistor has a resistance value.
+Resistors are small - so small in fact that if you printed the resistance value on them, it would be hard to read.
+To get around this problem, manufacturers print color-coded bands onto the resistors to denote their resistance values. Each band has a position and a numeric value.
+
+The first 2 bands of a resistor have a simple encoding scheme: each color maps to a single number. For example, if they printed a brown band (value 1) followed by a green band (value 5), it would translate to the number 15.
+
+In this exercise you are going to create a helpful program so that you don't have to remember the values of the bands. The program will take color names as input and output a two digit number, even if the input is more than two colors!
+
+The band colors are encoded as follows:
+
+black: 0
+brown: 1
+red: 2
+orange: 3
+yellow: 4
+green: 5
+blue: 6
+violet: 7
+grey: 8
+white: 9
+From the example above: brown-green should return 15, and brown-green-violet should return 15 too, ignoring the third color.
+
+
+
+#### Solution
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+```C
+```
+
+`Output`
+
+```sh
+```
+
