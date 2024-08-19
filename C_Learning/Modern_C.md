@@ -1387,4 +1387,238 @@ Consider the following examples, under the assumption that -2147483648 and 21474
    int i = (int)d; // Explicitly cast 'd' to 'int'
    ```
 
-   
+
+
+
+#### Avoid operations with operands of different signedness
+
+- In C, integers can be either signed (e.g., `int`, `int8_t`) or unsigned (e.g., `unsigned int`, `uint8_t`).
+- When we perform operations (like addition, subtraction, comparison) between signed and unsigned integers, the signed integer is implicitly converted to an unsigned integer.
+- This can lead to unexpected results, especially if the signed integer is negative, because converting a negative signed integer to an unsigned integer results in a large positive value due to how integers are represented in memory.
+
+```C
+int a = -1;
+unsigned int b = 1;
+
+if (a < b) {
+    // This condition is false because 'a' is converted to an unsigned integer,
+    // resulting in a large positive value.
+}
+```
+
+
+
+#### Use unsigned types whenever you can
+
+- Unsigned types (e.g., `unsigned int`, `uint8_t`) can only represent non-negative values.
+- Using unsigned types can help prevent bugs related to negative values and can make the intent of the code clearer (e.g., a variable that should never be negative).
+- Unsigned types also have a larger positive range compared to their signed counterparts of the same size.
+
+```C
+uint8_t age = 25; 
+// Age should never be negative, so using an unsigned type is appropriate.
+```
+
+
+
+#### Choose your arithmetic types such that implicit conversions are harmless
+
+- Implicit conversions occur when we mix different types in an expression, and the compiler automatically converts one type to another.
+- These conversions can sometimes lead to loss of precision or unexpected behavior.
+- By carefully choosing types that naturally convert to each other without issues, we can avoid these problems.
+
+```C
+uint8_t smallNumber = 100;
+uint16_t largerNumber = 1000;
+
+// Adding these two variables is safe because both are unsigned and the result
+// can be stored in a uint16_t without loss of precision.
+uint16_t result = smallNumber + largerNumber;
+```
+
+#### Arrays with an incomplete type
+
+- In C, an array with an incomplete type is an array whose size is not specified at the time of declaration. 
+- This means that the compiler does not know how much memory to allocate for the array until the size is specified later.
+
+##### Examples of Incomplete Type Arrays
+
+1. **Declaration without Size:**
+
+   - We can declare an array without specifying its size. This is often used in function parameters to indicate that the function will accept an array of any size.
+
+     ```C
+     void processArray(int arr[]);
+     ```
+
+2. **Extern Arrays:**
+
+   - We can declare an array with the `extern` keyword without specifying its size. 
+   - The size must be defined elsewhere in the program.
+
+   ```C
+   extern int numbers[];
+   ```
+
+3. **Flexible Array Members:**
+
+   - In structures(`struct`), we can use flexible array members, which are arrays without a specified size. 
+   - This is useful for creating structures that can hold a variable number of elements.
+
+   ```C
+   typedef struct {
+       int count;
+       int values[];
+   } flexible_array_t;
+   ```
+
+##### Example of Incomplete Type Arrays
+
+```C
+#include <stdio.h>
+
+// Function declaration with an incomplete type array
+void printArray(int arr[], int size);
+
+int main() {
+    // Define the size of the array
+    int size = 5;
+    // Define and initialize the array
+    int numbers[] = {1, 2, 3, 4, 5};
+
+    // Call the function to print the array
+    printArray(numbers, size);
+
+    return 0;
+}
+
+// Function definition
+void printArray(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+12345
+```
+
+
+
+#### Flexible Array Members Example
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct {
+    int count;
+    int values[];
+} flexible_array_t;
+
+int main() {
+    // Allocate memory for the structure and the flexible array
+    int size = 5;
+    flexible_array_t *fa = malloc(sizeof(flexible_array_t) + size * sizeof(int));
+    fa->count = size;
+
+    // Initialize the flexible array
+    for (int i = 0; i < size; i++) {
+        fa->values[i] = i + 1;
+    }
+
+    // Print the flexible array
+    for (int i = 0; i < fa->count; i++) {
+        printf("%d ", fa->values[i]);
+    }
+    printf("\n");
+
+    // Free the allocated memory
+    free(fa);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+12345
+```
+
+
+
+#### All variables should be initialized
+
+- Uninitialized variables can contain garbage values, leading to unpredictable behavior and bugs.
+
+- Always initialize variables when you declare them to ensure they start with a known value.
+
+- There are only a few exception to that rule: variable-length arrays (VLA) which don't allow for an initializer , and code that must be highly optimized.
+
+- The latter mainly occurs in situations that use pointers.
+
+- For most code that we are able to write so far, a modern compiler will be able to trace the origin of a value to its last assignment or its initialization. 
+
+- Superfluous initializations or assignments will simply be optimized out.
+
+- For scalar types such as integers and floating points, an initializer just contains an expression that can be converted to that type.
+
+- Optionally, such an initializer expression may be surrounded with `{}`.
+
+  ```C
+  double a = 7.8;
+  double b = 2 * a;
+  double c = {7.8};
+  double d = {0};
+  ```
+
+- Initializers for other types must have these `{}`.
+
+- For example, array initializers container initializers for the different elements, each of which is followed by a comma.
+
+```C
+double A[] = {7.8, };
+double B[3] = {2 * A[0], 7, 33};
+double C[] = {[0] = 6, [3] = 1, };
+```
+
+|      | [0]            |
+| ---- | -------------- |
+| A    | **double** 7.8 |
+
+
+
+|      | [0]             | [1]            | [2]             |
+| ---- | --------------- | -------------- | --------------- |
+| B    | **double** 15.6 | **double** 7.0 | **double** 33.0 |
+
+
+
+|      | [0]            | [1]            | [2]            | [3]            |
+| ---- | -------------- | -------------- | -------------- | -------------- |
+| C    | **double** 6.0 | **double** 0.0 | **double** 0.0 | **double** 1.0 |
+
+
+
+- Arrays that have an **incomplete type** because there is no length specification are completed by the initializer to fully specify the length.
+- Here, `A` has only one element, where as `C` has four.
+- For the first two initializers, the element to which the scalar initialization applies is deduced from the position of the scalar in the list: for example, `B[1]` is initialized to 7.
+- Designated initializers as for `C` are by far preferable, since they make the code more robust against small changes in declarations.
+
+#### Use designated initializers for all aggregate data types
+
+- Aggregate data types include arrays, structs, and unions.
+- Designated initializers allow you to initialize specific members of an aggregate data type, making the code more readable and less error-prone.
+
+```C
+typedef struct {
+    float x;
+    float y;
+} coordinate_t;
+
+coordinate_t point = { .x = 1.0F, .y = 2.0F };
+```
+

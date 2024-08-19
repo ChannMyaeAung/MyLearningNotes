@@ -3107,6 +3107,18 @@ double distance = 1.0; // 'distance' is a double
 
 In our code, if we are calculating the distance using `float` variables, we should use `float` literals to avoid unnecessary type conversions and to maintain precision.
 
+
+
+#### Additional Things to Note
+
+- Using `uint8_t` for the return type of the `dart_score`function is appropriate if the score values are guaranteed to be small and non-negative, as it saves memory and clearly indicates the range of possible values. 
+
+- However, if you anticipate that the score might need to handle larger values or if there's a possibility of negative values in the future, using `int` might be more flexible.
+
+- In this specific case, since the scores are small and non-negative (0, 1, 5, 10), `uint8_t` is a good choice. 
+
+- It makes the code more efficient in terms of memory usage and clearly communicates that the values are within the range of 0 to 255.
+
 ---
 
 ### Resistor Color Duo
