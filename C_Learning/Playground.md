@@ -3150,6 +3150,339 @@ From the example above: brown-green should return 15, and brown-green-violet sho
 
 
 
+#### First Solution
+
+`practice.h`
+
+```C
+extern const char *color_codes[];
+
+int get_color_value(char *color);
+```
+
+`functions.c`
+
+```C
+const char *color_codes[] = {"black", "brown", "red", "orange", "yellow", "green", "blue", "violet", "grey", "white"};
+
+int get_color_value(char *color)
+{
+    // Iterate through the color_codes array to find the color
+    for (int i = 0; i < 10; i++)
+    {
+        if (strcasecmp(color, color_codes[i]) == 0)
+        {
+            return i;
+        }
+    }
+    // Return -1 if the color is not found
+    return -1;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    // Define variables
+    char input[30];
+    char color1[10], color2[10];
+
+    // Get the input as a single string
+    printf("Enter the colors (e.g, brown-green): ");
+    scanf("%s", input);
+
+    // Split the input by the hyphen
+    sscanf(input, "%[^-]-%[^-]", color1, color2);
+
+    // Convert the first two colors to their respective values
+    int value1 = get_color_value(color1);
+    int value2 = get_color_value(color2);
+
+    // Check if the input colors are valid
+    if (value1 == -1 || value2 == -1)
+    {
+        printf("Invalid color entered.\n");
+        return 1;
+    }
+
+    // Calculate the two-digit number;
+    int result = value1 * 10 + value2;
+
+    // Print the result
+    printf("The resistor value is: %d\n", result);
+    return 0;
+}
+
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): brown-green
+The resistor value is: 15
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): brown-green-violet
+The resistor value is: 15
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): Brown-Green
+The resistor value is: 15
+```
+
+#### Additional Things to Note
+
+`sscanf(input, "%[^-]-%[^-]", color1, color2);` which captures the first two color names separated by hyphens and ignores any additional colors. This ensures that only the first two colors are processed, and any extra colors are ignored.
+
+-  The format string `"%[^-]-%[^-]"` used in `sscanf` is a way to parse a string by splitting it based on a delimiter, in this case, the hyphen (`-`).
+
+##### Explanation of `"%[^-]-%[^-]"`
+
+1. **`%[^-]`**:
+   - The `%` character indicates the start of a format specifier.
+   - The `[` character introduces a scanset, which is a set of characters to be matched.
+   - The `^` character inside the scanset negates the set, meaning it will match any character except those in the set.
+   - The `-` character inside the scanset specifies that the hyphen character should not be matched.
+   - Therefore, `%[^-]` matches any sequence of characters up to, but not including, the first hyphen.
+2. **`-`**:
+   - This matches the literal hyphen character in the input string.
+3. **`%[^-]`**:
+   - This is another scanset that matches any sequence of characters up to, but not including, the next hyphen.
+
+##### Putting It All Together
+
+- `"%[^-]-%[^-]` tells `sscanf` to:
+  1. Read characters into the first variable (`color1`) until a hyphen is encountered.
+  2. Skip the hyphen.
+  3. Read characters into the second variable (`color2`) until another hyphen is encountered or the end of the string is reached.
+
+##### Example
+
+Given the input string `"brown-green-violet"`:
+
+- `%[^-]` will match `"brown"` and store it in `color1`.
+- The hyphen `-` will be skipped.
+- `%[^-]` will match `"green"` and store it in `color2`.
+
+The third color `"violet"` will be ignored because the format string only specifies two scansets.
+
+
+
+**More about `delimiter` can be found  in `essentials.md`.**
+
+
+
+##### Explanation of `sscanf`
+
+- In C, the `sscanf` function is used to read formatted input from a string. 
+- It is similar to `scanf`, but instead of reading from standard input, it reads from a provided string.
+
+`Syntax`
+
+```C
+int sscanf(const char *str, const char *format, ...);
+```
+
+`Parameters`
+
+- `str`: The input string from which to read the data.
+- `format`: The format string that specifies how to interpret the input.
+- `...`: The additional arguments that point to the variables where the parsed values will be stored.
+
+`Return Value`
+
+- The function returns the number of input items successfully matched and assigned. 
+- If the input does not match the format, it returns `EOF`.
+
+`Example`
+
+```C
+#include <stdio.h>
+
+int main() {
+    char input[] = "brown green";
+    char color1[10], color2[10];
+
+    // Use sscanf to parse the input string
+    int result = sscanf(input, "%s %s", color1, color2);
+
+    if (result == 2) {
+        printf("Color 1: %s\n", color1);
+        printf("Color 2: %s\n", color2);
+    } else {
+        printf("Failed to parse input\n");
+    }
+
+    return 0;
+}
+```
+
+`Explanation`
+
+- The `input` string contains the colors "brown" and "green".
+- The `sscanf` function is used to parse these colors into the `color1`and `color2` variables.
+- The format string `"%s %s"` specifies that two strings separated by a space should be read.
+- The `result` variable will contain the number of successfully parsed items, which should be 2 in this case.
+
+#### Second Solution (Better Approach)
+
+`practice.h`
+
+```C
+#define ERROR_VALUE ((resistor_band_t) - 1)
+typedef enum{
+    BLACK = 0,
+    BROWN,
+    RED,
+    ORANGE,
+    YELLOW,
+    GREEN,
+    BLUE,
+    VIOLET,
+    GREY,
+    WHITE
+} resistor_band_t;
+
+// Struct to map color names to resistor_band_t values
+typedef struct{
+    const char *name;
+    resistor_band_t value;
+}color_map_t;
+
+uint16_t color_code(const resistor_band_t *bands);
+
+resistor_band_t lookup_color_value(const char *color);
+```
+
+`functions.c`
+
+```C
+color_map_t color_map[] = {
+    {"black", BLACK},
+    {"brown", BROWN},
+    {"red", RED},
+    {"orange", ORANGE},
+    {"yellow", YELLOW},
+    {"green", GREEN},
+    {"blue", BLUE},
+    {"violet", VIOLET},
+    {"grey", GREY},
+    {"white", WHITE},
+    {NULL, ERROR_VALUE}
+};
+
+// Function to print the duo color value
+uint16_t color_code(const resistor_band_t *bands){
+    return bands[0] * 10 + bands[1];
+}
+
+resistor_band_t lookup_color_value(const char *color){
+    // Iterate till the name of the struct is equal to NULL (the last value)
+    for(int i = 0; color_map[i].name != NULL; i++){
+        if(strcasecmp(color, color_map[i].name) == 0){
+            return color_map[i].value;
+        }
+    }
+    return ERROR_VALUE;
+}
+```
+
+`practice.c`
+
+```C
+int main(){
+    char input[30];
+    char color1[10], color2[10];
+    resistor_band_t bands[2];
+    
+    printf("Enter the colors (e.g, brown-green): ");
+    scanf("%s", input);
+    
+    // Read up to two color codes separated by a hyphen
+    sscanf(input, "%[^-]-%[^-]", color1, color2);
+    
+    // Look up resistor_band_t values for the colors
+    bands[0] = lookup_color_values(color1);
+    bands[1] = lookup_color_values(color2);
+    
+    if(bands[0] == ERROR_VALUE || bands[1] == ERROR_VALUE){
+        fprintf(stderr, "Invalid color name.\n");
+        return EXIT_FAILURE;
+    }
+    
+    // Calculate the resistor value
+    uint16_t resistor_value = color_code(bands);
+    
+    printf("The resistor value is %u\n", resistor_value);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the colors (e.g, brown-green): brown-green
+The resistor value is 15
+    
+chan@CMA:~/C_Programming/test$ ./final
+Enter the colors (e.g, brown-green): brown-green-violet
+The resistor value is 15
+    
+chan@CMA:~/C_Programming/test$ ./final
+Enter the colors (e.g, brown-green): black-white
+The resistor value is 9
+    
+chan@CMA:~/C_Programming/test$ ./final
+Enter the colors (e.g, brown-green): Brown-Green
+The resistor value is 15
+    
+chan@CMA:~/C_Programming/test$ ./final
+Enter the colors (e.g, brown-green): Brown
+Invalid color name.
+```
+
+#### Explanation
+
+- The `color_map_t` struct maps color names to their corresponding `resistor_band_t`values.
+- The `color_map` array holds the mappings, ending with a sentinel value.
+- The `lookup_color_value` function searches the `color_map` array for the given color name and returns the corresponding `resistor_band_t` value.
+- The `main` function prompts the user for input, parses the first two colors, looks up their `resistor_band_t` values using `lookup_color_value`, and then calls `color_code` to get the color code.
+- The result is printed to the console.
+
+---
+
+### Hamming Program
+
+#### Instructions
+
+Calculate the Hamming Distance between two DNA strands.
+
+Your body is made up of cells that contain DNA. Those cells regularly wear out and need replacing, which they achieve by dividing into daughter cells. In fact, the average human body experiences about 10 quadrillion cell divisions in a lifetime!
+
+When cells divide, their DNA replicates too. Sometimes during this process mistakes happen and single pieces of DNA get encoded with the incorrect information. If we compare two strands of DNA and count the differences between them we can see how many mistakes occurred. This is known as the "Hamming Distance".
+
+We read DNA using the letters C,A,G and T. Two strands might look like this:
+
+```
+GAGCCTACTAACGGGAT
+CATCGTAATGACGGCCT
+^ ^ ^  ^ ^    ^^
+```
+
+They have 7 differences, and therefore the Hamming Distance is 7.
+
+The Hamming Distance is useful for lots of things in science, not just biology, so it's a nice phrase to be familiar with :)
+
+#### Implementation notes
+
+The Hamming distance is only defined for sequences of equal length, so an attempt to calculate it between sequences of different lengths should not work.
+
+
+
 #### Solution
 
 `practice.h`
