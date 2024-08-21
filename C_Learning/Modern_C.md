@@ -1608,6 +1608,63 @@ double C[] = {[0] = 6, [3] = 1, };
 - For the first two initializers, the element to which the scalar initialization applies is deduced from the position of the scalar in the list: for example, `B[1]` is initialized to 7.
 - Designated initializers as for `C` are by far preferable, since they make the code more robust against small changes in declarations.
 
+#### Designated Initializers
+
+- Designated initializers in C allow us to initialize specific elements of an array or members of a structure by specifying their indices or names. 
+- This feature was introduced in the C99 standard. 
+- Designated initializers improve code readability and maintainability by making it clear which elements or members are being initialized.
+
+##### Example with Arrays
+
+```C
+int arr[5] = { [0] = 1, [2] = 3, [4] = 5 };
+// This initializes arr[0] to 1, arr[2] to 3, and arr[4] to 5. The other elements are initialized to 0.
+```
+
+##### Example with Structures
+
+```C
+struct Point {
+    int x;
+    int y;
+};
+
+int main()
+{
+    // This initializes p.x to 10 and p.y to 20.
+    struct Point p = {.x = 10, .y = 20};
+
+    printf("x: %d\n", p.x);
+    printf("y: %d\n", p.y);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+x: 10
+y: 20
+```
+
+##### Example with Nested Structures
+
+```C
+struct Inner {
+    int a;
+    int b;
+};
+
+struct Outer {
+    struct Inner inner;
+    int c;
+};
+
+struct Outer o = { .inner = { .a = 1, .b = 2 }, .c = 3 };
+// This initializes o.inner.a to 1, o.inner.b to 2, and o.c to 3.
+```
+
+- Designated initializers make it easier to understand and maintain the code, especially when dealing with large structures or arrays.
+
 #### Use designated initializers for all aggregate data types
 
 - Aggregate data types include arrays, structs, and unions.
@@ -1620,5 +1677,72 @@ typedef struct {
 } coordinate_t;
 
 coordinate_t point = { .x = 1.0F, .y = 2.0F };
+```
+
+#### {0} is a valid initializer for all object types that are not VLA
+
+- In C, the initializer `{0}` can be used to initialize any object type that is not a Variable Length Array (VLA). 
+- This is because `{0}` is a shorthand for zero-initialization, which sets all elements of an array or all members of a structure to zero (or the equivalent zero value for the type).
+- The compiler might warns us about this, some compiler implementers don't know about this special rule.
+- It is explicitly designed as a catch-all initializer in the C Standard.
+
+##### Examples:
+
+**For Arrays**:
+
+```C
+int arr[5] = {0}; // All elements of arr are initialized to 0.
+```
+
+**For Structures**:
+
+```C
+struct Point {
+    int x;
+    int y;
+};
+
+struct Point p = {0}; // Both p.x and p.y are initialized to 0.
+```
+
+**For Scalars:**
+
+```C
+int num = {0}; // num is initialized to 0.
+```
+
+---
+
+## Named Constants
+
+- Named constants in C are typically defined using the `#define` preprocessor directive or the `const` keyword. 
+- They provide a way to give meaningful names to constant values, improving code readability and maintainability.
+
+#### Using `#define`:
+
+```C
+#define PI 3.14159
+#define MAX_SIZE 100
+
+int main() {
+    double radius = 5.0;
+    double area = PI * radius * radius;
+    int arr[MAX_SIZE];
+    return 0;
+}
+```
+
+#### Using `const`:
+
+```C
+const double PI = 3.14159;
+const int MAX_SIZE = 100;
+
+int main() {
+    double radius = 5.0;
+    double area = PI * radius * radius;
+    int arr[MAX_SIZE];
+    return 0;
+}
 ```
 

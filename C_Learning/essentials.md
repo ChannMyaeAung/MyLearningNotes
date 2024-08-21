@@ -883,3 +883,273 @@ int main() {
 
 ### Delimiters
 
+Delimiters are characters or sequences of characters that are used to specify the boundary between separate, independent regions in plain text or other data streams. They are essential in parsing and processing strings, as they help to split the string into meaningful components.
+
+#### Common Delimiters
+
+- **Comma (`,`)**: Often used in CSV (Comma-Separated Values) files.
+- **Space (` `)**: Commonly used to separate words in a sentence.
+- **Hyphen (`-`)**: Can be used to separate parts of a compound word or identifier.
+- **Colon (`:`)**: Often used in key-value pairs.
+- **Semicolon (`;`)**: Used to separate statements in programming languages like C and JavaScript.
+- **Pipe (`|`)**: Used in command-line interfaces to separate commands.
+
+#### Example with Different Delimiters
+
+##### Using a Comma as a Delimiter
+
+- If we want to use a comma (`,`) as a delimiter, we can modify the format string to `"%[^,],%[^,]"`.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    // Define variables
+    char input[30];
+    char color1[10], color2[10];
+
+    // Get the input as a single string
+    printf("Enter the colors (e.g, brown,green): ");
+    scanf("%s", input);
+
+    // Split the input by the comma
+    sscanf(input, "%[^,],%[^,]", color1, color2);
+
+    // Print the parsed colors
+    printf("Color 1: %s\n", color1);
+    printf("Color 2: %s\n", color2);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown,green): brown,green
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown,green): Brown,Green,Blue
+Color 1: Brown
+Color 2: Green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown,green): Brown-Green
+Color 1: Brown-Green
+Color 2: �
+```
+
+##### Using a Space as a Delimiter
+
+- If we want to use a space ( ) as a delimiter, we can modify the format string to `%s %s` or `%[^ ] %[^ ]`.
+- Here, we won't be using `scanf` due to the fact that: 
+  - The `scanf` function reads the input until the first white-space, which means it will only capture the first word. 
+  - Therefore, the input variable will only contain the first color, and the second color will not be captured.
+- Thus, we will use `fgets` to read the entire line of input, including spaces, and then use `sscanf` to parse the colors.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    // Define variables
+    char input[30];
+    char color1[10], color2[10];
+
+    // Get the input as a single string
+    printf("Enter the colors (e.g, brown green): ");
+    scanf("%s", input);
+
+    // Split the input by the space
+    sscanf(input, "%s %s", color1, color2);
+
+    // Print the parsed colors
+    printf("Color 1: %s\n", color1);
+    printf("Color 2: %s\n", color2);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown green): brown green red
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown green): brown green
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown green): Brown Green
+Color 1: Brown
+Color 2: Green
+```
+
+```C
+int main()
+{
+    // Define variables
+    char input[30];
+    char color1[10], color2[10];
+
+    // Get the input as a single string
+    printf("Enter the colors (e.g, brown green): ");
+    fgets(input, sizeof(input), stdin);
+
+    // Remove the newline character from the input string
+    input[strcspn(input, "\n")] = '\0';
+
+    // Split the input by the space
+    sscanf(input, "%[^ ] %[^ ]", color1, color2);
+
+    printf("Color 1: %s\n", color1);
+    printf("Color 2: %s\n", color2);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown green): brown green
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown green): red blue violet
+Color 1: red
+Color 2: blue
+```
+
+#### Using a hyphen as a Delimiter
+
+```C
+int main()
+{
+    // Define variables
+    char input[30];
+    char color1[10], color2[10];
+
+    // Get the input as a single string
+    printf("Enter the colors (e.g, brown-green): ");
+    scanf("%s", input);
+
+    // Split the input by the hyphen
+    sscanf(input, "%[^-]-%[^-]", color1, color2);
+
+    printf("Color 1: %s\n", color1);
+    printf("Color 2: %s\n", color2);
+
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): brown-green
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): brown-green-violet
+Color 1: brown
+Color 2: green
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the colors (e.g, brown-green): red-black
+Color 1: red
+Color 2: black
+```
+
+#### Example with `strtok`
+
+```C
+int main(){
+    char input[] = "brown,green,blue";
+    char *token;
+    
+    // Using comma as a delimiter
+    token = strtok(input, ",");
+    while(token != NULL){
+        printf("Color: %s\n", token);
+        token = strtok(NULL, ",");
+    }
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Color: brown
+Color: green
+Color: blue
+```
+
+In this example:
+
+- `char input[\] = "brown,green,blue";` defines a string containing colors separated by commas.
+- `char *token;` declares a pointer to hold each token (color) extracted from the string.
+- `strtok` splits the input string into tokens separated by commas.
+- The first call to `strtok` initializes the tokenization and returns the first token "brown" and stored in `token`.
+- `while (token != NULL)` starts a loop that continues as long as `strtok` returns a non-NULL token.
+- Subsequent calls to `strtok` with `NULL` continue tokenizing the same string.
+- **Return Value**: `strtok` returns a pointer to the next token found in the string. If no more tokens are found, it returns `NULL`.
+
+**With input**
+
+```C
+int main()
+{
+    char input[30];
+
+    printf("Enter colors separated by commas (brown,green,blue): ");
+    scanf("%s", input);
+
+    char *token;
+
+    // Using comma as a delimiter
+    token = strtok(input, ",");
+
+    while (token != NULL)
+    {
+        printf("Color: %s\n", token);
+        token = strtok(NULL, ",");
+    }
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter colors separated by commas (brown,green,blue): brown,green,blue
+Color: brown
+Color: green
+Color: blue
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter colors separated by commas (brown,green,blue): red,hair-bright
+Color: red
+Color: hair-bright
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter colors separated by commas (brown,green,blue): red,blue,yellow,orange
+Color: red
+Color: blue
+Color: yellow
+Color: orange
+```
+
+
+
+#### Detailed Explanation of Delimiters
+
+1. **Definition**:
+   - A delimiter is a character or sequence of characters that marks the beginning or end of a unit of data.
+2. **Purpose**:
+   - Delimiters are used to separate data into distinct parts, making it easier to parse and process.
+3. **Usage in Parsing**:
+   - When parsing a string, delimiters help identify where one piece of data ends and another begins.
+4. **Common Functions**:
+   - `sscanf`: Uses format specifiers to parse strings based on delimiters.
+   - `strtok`: Splits a string into tokens based on specified delimiters.
+   - `fgets`: Reads a line from a file, often using newline characters as delimiters.
+5. **Examples**:
+   - CSV files use commas to separate values: `name,age,city`.
+   - URLs use slashes to separate components: `http://example.com/path/to/resource`.
+   - Programming languages use semicolons to separate statements: `int a = 5; int b = 10;`.
