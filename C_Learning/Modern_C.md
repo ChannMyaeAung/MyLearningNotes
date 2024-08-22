@@ -1746,3 +1746,131 @@ int main() {
 }
 ```
 
+
+
+#### All constants with a particular meaning must be named
+
+- Any constant value used in our code should be given a meaningful name. 
+- This practice improves code readability and makes it easier to understand the purpose of the constant. 
+- It also makes the code easier to maintain, as changes to the constant value need to be made in only one place.
+
+##### Example
+
+Instead of using a magic number:
+
+```C
+double area = 3.14159 * radius * radius;
+```
+
+Use a named constant:
+
+```C
+#define PI 3.14159
+double area = PI * radius * radius;
+```
+
+
+
+#### All constants with different meanings must be distinguished"
+
+- Constants with different purposes should have distinct names, even if they have the same value. 
+- This helps avoid confusion and makes the code more understandable by clearly indicating the role of each constant.
+
+##### Example:
+
+Even if two constants have the same value, they should be named according to their specific meanings:
+
+```C
+#define MAX_BUFFER_SIZE 1024
+#define DEFAULT_TIMEOUT 1024
+
+char buffer[MAX_BUFFER_SIZE];
+int timeout = DEFAULT_TIMEOUT;
+```
+
+- In this example, `MAX_BUFFER_SIZE` and `DEFAULT_TIMEOUT` both have the value `1024`, but they serve different purposes. Naming them differently clarifies their roles in the code.
+
+```C
+char const *const bird[3] = {
+    "raven",
+    "magpie",
+    "jay"};
+
+char const *const pronoun[3] = {
+    "we",
+    "you",
+    "they"};
+
+char const *const ordinal[3] = {
+    "first",
+    "second",
+    "third"};
+
+int main()
+{
+    for (unsigned i = 0; i < 3; ++i)
+    {
+        printf("Corvid %u is the %s\n", i, bird[i]);
+    }
+
+    for (unsigned i = 0; i < 3; ++i)
+    {
+        printf("%s plural pronoun is %s\n", ordinal[i], pronoun[i]);
+    }
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Corvid 0 is the raven
+Corvid 1 is the magpie
+Corvid 2 is the jay
+first plural pronoun is we
+second plural pronoun is you
+third plural pronoun is they
+```
+
+- Defining `char const *const` (or equivalently `const char *const`) for arrays of strings ensures both the pointers and the strings they point to are immutable. 
+
+  Let's break down the syntax:
+
+  ###### `char const *const bird[3]`
+
+  - `char const *`: This means that the characters in the string are constant. We cannot modify the characters in the string through this pointer.
+  - `const char *`: This is another way to write the same thing as `char const *`. It means the same thing: the characters are constant.
+  - `*const`: This means that the pointer itself is constant. We cannot change the pointer to point to a different string.
+
+##### Why Use `char const *const`?
+
+1. **Immutable Strings**: By using `char const *`, we ensure that the strings themselves cannot be modified. This is useful for string literals, which should not be altered.
+2. **Immutable Pointers**: By using `*const`, we ensure that the pointers themselves cannot be changed to point to different strings. This adds an extra layer of safety, ensuring that the array structure remains consistent throughout the program.
+
+According to the above code, we have arrays of strings defined as `char const *const`:
+
+```C
+char const *const bird[3] = {
+    "raven",
+    "magpie",
+    "jay"};
+
+char const *const pronoun[3] = {
+    "we",
+    "you",
+    "they"};
+
+char const *const ordinal[3] = {
+    "first",
+    "second",
+    "third"};
+```
+
+- **`bird[3]`**: An array of 3 constant pointers to constant characters. Neither the pointers nor the strings they point to can be modified.
+- **`pronoun[3]`**: Similarly, an array of 3 constant pointers to constant characters.
+- **`ordinal[3]`**: Again, an array of 3 constant pointers to constant characters.
+
+##### Benefits
+
+- **Safety**: Prevents accidental modification of string literals and pointers.
+- **Clarity**: Makes it clear to anyone reading the code that these strings and pointers are not meant to be changed.
