@@ -3488,6 +3488,96 @@ The Hamming distance is only defined for sequences of equal length, so an attemp
 `practice.h`
 
 ```C
+int compute(const char *lhs, const char *rhs);
+```
+
+`functions.c`
+
+```C
+int compute(const char *lhs, const char *rhs)
+{
+    int hamming_distance = 0;
+
+    // Check if the lengths are equal
+    if (strlen(lhs) != strlen(rhs))
+    {
+        return -1; //
+    }
+
+    // Calculate the Hamming distance
+    for (int i = 0; lhs[i] != '\0'; i++)
+    {
+        if (lhs[i] != rhs[i])
+        {
+            hamming_distance++;
+        }
+    }
+
+    return hamming_distance;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    const char *strand1 = "GAGCCTACTAACGGGAT";
+    const char *strand2 = "CATCGTAATGACGGCCT";
+
+    int distance = compute(strand1, strand2);
+
+    if (distance == -1)
+    {
+        printf("Error: DNA strands must be of equal length.\n");
+    }
+    else
+    {
+        printf("Hamming Distance: %d\n", distance);
+    }
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Hamming Distance: 7
+
+```
+
+---
+
+## Space Age
+
+### Instructions
+
+Given an age in seconds, calculate how old someone would be on:
+
+- Mercury: orbital period 0.2408467 Earth years
+- Venus: orbital period 0.61519726 Earth years
+- Earth: orbital period 1.0 Earth years, 365.25 Earth days, or 31557600 seconds
+- Mars: orbital period 1.8808158 Earth years
+- Jupiter: orbital period 11.862615 Earth years
+- Saturn: orbital period 29.447498 Earth years
+- Uranus: orbital period 84.016846 Earth years
+- Neptune: orbital period 164.79132 Earth years
+
+So if you were told someone were 1,000,000,000 seconds old, you should be able to say that they're 31.69 Earth-years old.
+
+If you're wondering why Pluto didn't make the cut, go watch [this YouTube video](https://www.youtube.com/watch?v=Z_2gbGXzFbs).
+
+Note: The actual length of one complete orbit of the Earth around the sun is closer to 365.256 days (1 sidereal year). The Gregorian calendar has, on average, 365.2425 days. While not entirely accurate, 365.25 is the value used in this exercise. See [Year on Wikipedia](https://en.wikipedia.org/wiki/Year#Summary) for more ways to measure a year.
+
+
+
+### Solution
+
+`practice.h`
+
+```C
 ```
 
 `functions.c`

@@ -1874,3 +1874,95 @@ char const *const ordinal[3] = {
 
 - **Safety**: Prevents accidental modification of string literals and pointers.
 - **Clarity**: Makes it clear to anyone reading the code that these strings and pointers are not meant to be changed.
+
+### Macros
+
+- Macros in C are a feature of the C preprocessor that allows us to define constants, functions, or code snippets that can be reused throughout our code. 
+- They are defined using the `#define` directive and are replaced by their corresponding values or code during the preprocessing phase, before the actual compilation of the code begins.
+
+#### Type of Macros
+
+1. **Object-like Macros**: These are simple constants.
+
+   ```C
+   #define PI 3.14159
+   ```
+
+2. **Function-like Macros**: These take arguments and can be used like functions.
+
+   ```C
+   #define SQUARE(x) ((x) * (x))
+   ```
+
+
+
+#### Example Usage
+
+```C
+#include <stdio.h>
+
+#define PI 3.14159
+#define SQUARE(x) ((x) * (x))
+
+int main() {
+    double radius = 5.0;
+    double area = PI * SQUARE(radius);
+
+    printf("Area of the circle: %f\n", area);
+    return 0;
+}
+```
+
+#### Key Points
+
+- **Preprocessing**: Macros are expanded during the preprocessing phase, before the actual compilation.
+- **No Type Checking**: Unlike functions, macros do not perform type checking, which can lead to unexpected behavior if not used carefully.
+- **Parentheses**: It's important to use parentheses in macros to ensure correct order of operations.
+
+#### Advantages
+
+- **Code Reusability**: Macros can make code more reusable and easier to maintain.
+- **Performance**: Since macros are expanded inline, they can sometimes be faster than function calls.
+
+#### Disadvantages
+
+- **Debugging**: Macros can make debugging more difficult because they are expanded before compilation.
+- **No Type Safety**: Macros do not provide type safety, which can lead to errors.
+
+#### Summary
+
+- Macros in C are a powerful tool for defining constants and reusable code snippets. 
+- They are expanded during the preprocessing phase and can improve code reusability and performance.
+- But they should be used with caution due to potential issues with debugging and type safety.
+
+---
+
+
+
+## Read-only objects
+
+- Don't confuse the term `constant`, which has a very specific meaning in C, with objects that can't be modified.
+
+```C
+char const *const bird[3] = {
+    "raven",
+    "magpie",
+    "jay"};
+
+char const *const pronoun[3] = {
+    "we",
+    "you",
+    "they"};
+
+char const *const ordinal[3] = {
+    "first",
+    "second",
+    "third"};
+```
+
+- `bird`, `pronoun` and `ordinal` are not constants according to our terminology; they are **const-qualitifed** objects.
+- This qualifier specifies that we don't have the right to change this object.
+- For `bird`, neither the array entries nor the actual strings can be modified, and the compiler will give us a diagnostic if we try to do so:
+
+### An object of **const-qualified** type is read-only
+
