@@ -1153,3 +1153,83 @@ Color: orange
    - CSV files use commas to separate values: `name,age,city`.
    - URLs use slashes to separate components: `http://example.com/path/to/resource`.
    - Programming languages use semicolons to separate statements: `int a = 5; int b = 10;`.
+
+---
+
+## `char *smth` vs `char smth[]`
+
+The difference between `char *smth` and `char smth[]` in C lies in how they are used and what they represent:
+
+### `char *smth`
+
+- **Pointer to a Character**: `char *smth` is a pointer to a character or the first character of a string.
+- **Dynamic Allocation**: It can point to dynamically allocated memory or a string literal.
+- **Modifiable Pointer**: The pointer itself can be changed to point to different memory locations.
+
+**Example**:
+
+```C
+char *str = "Hello, World!";
+```
+
+### `char smth[]`
+
+- **Array of Characters**: `char smth[]` is an array of characters.
+- **Fixed Size**: The size of the array is determined at compile time and cannot be changed.
+- **Array Name as Pointer**: The name of the array acts as a pointer to the first element, but it is not modifiable.
+
+**Example**
+
+```C
+char str[] = "Hello, World!";
+```
+
+### Key Differences
+
+1. **Memory Allocation**:
+   - `char *smth`: Points to a memory location, which can be changed.
+   - `char smth[]`: Allocates memory for the array elements at compile time.
+2. **Modifiability**:
+   - `char *smth`: The pointer can be reassigned to point to different strings.
+   - `char smth[]`: The array name cannot be reassigned, but the contents can be modified.
+3. **Initialization**:
+   - `char *smth`: Can be initialized with a string literal or dynamically allocated memory.
+   - `char smth[]`: Typically initialized with a string literal or an initializer list.
+
+### Example Comparison
+
+```C
+#include <stdio.h>
+
+int main() {
+    // Using char *smth
+    char *ptr = "Hello, World!";
+    printf("%s\n", ptr);
+    ptr = "New String"; // Pointer can be reassigned
+    printf("%s\n", ptr);
+
+    // Using char smth[]
+    char arr[] = "Hello, World!";
+    printf("%s\n", arr);
+    // arr = "New String"; // Error: array name cannot be reassigned
+    arr[0] = 'h'; // Contents can be modified
+    printf("%s\n", arr);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hello, World!
+New String
+Hello, World!
+hello, World!
+```
+
+
+
+### Summary
+
+- **`char \*smth`**: A pointer to a character, can be reassigned, and can point to dynamically allocated memory.
+- **`char smth[]`**: An array of characters, fixed size, and the array name cannot be reassigned but its contents can be modified.

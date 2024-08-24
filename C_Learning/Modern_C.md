@@ -1962,7 +1962,237 @@ char const *const ordinal[3] = {
 
 - `bird`, `pronoun` and `ordinal` are not constants according to our terminology; they are **const-qualitifed** objects.
 - This qualifier specifies that we don't have the right to change this object.
-- For `bird`, neither the array entries nor the actual strings can be modified, and the compiler will give us a diagnostic if we try to do so:
+- For `bird`, neither the array entries nor the actual strings can be modified, and the compiler will give us a diagnostic if we try to do so.
+- The above arrays use a pointer type, `char const*const`, to refer to a string literal.
+- A visualization of such an array looks like this, `birds` for example
+
+| bird | [0]                | [1]                | [2]                |
+| ---- | ------------------ | ------------------ | ------------------ |
+|      | `char const*const` | `char const*const` | `char const*const` |
+|      | "raven"            | "magpie"           | "jay"              |
+
+- That is, the string literals themselves are not stored inside the array `bird` but in some other place.
+- `bird` only refers to those places.
 
 ### An object of **const-qualified** type is read-only
 
+- In C, when we declare a variable with the `const` qualifier, it means that the value of that variable cannot be modified after it is initialized. 
+- This makes the variable read-only. 
+
+- That doesn't mean the compiler or run-time system may not perhaps change the value of such an object: other parts of the program may see that object without the qualification and change it.
+- That fact that we cannot write the summary of our bank account directly (but only read it) doesn't mean it will remain constant over time.
+
+```C
+const int x = 10;
+x = 20; // Error: assignment of read-only variable 'x'
+```
+
+### String literals are read-only
+
+- String literals in C are arrays of `const` characters. 
+- When we write a string literal, such as `"Hello, World!"`, the compiler stores this string in a read-only section of memory. 
+- This means we cannot modify the contents of a string literal.
+
+```C
+char *ptr = "Hello, World!";
+ptr[0] = 'h'; // Undefined behavior: attempting to modify a read-only string literal
+```
+
+---
+
+
+
+## Enumerations
+
+- Enumerations (enums) in C are a user-defined data type that consists of a set of named integer constants. 
+- They are used to assign names to integral constants to make a program more readable and maintainable.
+
+### Defining an Enumeration
+
+- An enumeration is defined using the `enum` keyword followed by a name and a list of named integer constants enclosed in curly braces. 
+
+```C
+enum Color{
+    RED,
+    GREEN, 
+    BLUE
+};
+```
+
+- In this example, `Color` is an enumeration with three named constants: `RED`, `GREEN`, and `BLUE`. 
+- By default, the values of these constants start from 0 and increment by 1. So, `RED` is 0, `GREEN` is 1, and `BLUE` is 2.
+
+### Custom Values
+
+- We can assign custom values to the enumeration constants. 
+- If we do not specify a value for a constant, it will take the value of the previous constant plus one.
+
+```C
+enum Color {
+    RED = 1,
+    GREEN = 3,
+    BLUE // BLUE will be 4
+};
+```
+
+### Example
+
+```C
+#include <stdio.h>
+
+enum Day {
+    SUNDAY,
+    MONDAY,
+    TUESDAY,
+    WEDNESDAY,
+    THURSDAY,
+    FRIDAY,
+    SATURDAY
+};
+
+int main() {
+    enum Day today = WEDNESDAY;
+
+    if (today == WEDNESDAY) {
+        printf("Today is Wednesday.\n");
+    }
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Today is Wednesday.
+```
+
+### Explanation
+
+1. **Definition**: The `enum Day` defines an enumeration with the days of the week.
+2. **Variable Declaration**: The variable `today` is declared of type `enum Day` and initialized to `WEDNESDAY`.
+3. **Comparison**: The value of `today` is compared to `WEDNESDAY`, and if they are equal, a message is printed.
+
+### Example 2
+
+```C
+enum corvid
+{
+    magpie,
+    raven,
+    jay,
+    corvid_num
+};
+
+char const *const bird[corvid_num] = {
+    [raven] = "raven",
+    [magpie] = "magpie",
+    [jay] = "jay",
+};
+
+int main()
+{
+    for (unsigned i = 0; i < corvid_num; i++)
+    {
+        printf("Corvid %u is the %s\n", i, bird[i]);
+    }
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Corvid 0 is the magpie
+Corvid 1 is the raven
+Corvid 2 is the jay
+```
+
+
+
+- Defines an enumeration `corvid` with four constants:
+  - `magpie` (value 0)
+  - `raven` (value 1)
+  - `jay` (value 2)
+  - `corvid_num` (value 3, used to represent the number of elements in the enumeration)
+- Defines an array of constant pointers to constant characters (`char const *const`). The array `bird`has a size of `corvid_num`(3). The elements are initialized using designated initializers:
+  - `bird[raven]` is set to `"raven"`
+  - `bird[magpie]` is set to `"magpie"`
+  - `bird[jay]` is set to `"jay"`
+- **Enumerations**: Used to define a set of named integer constants.
+- **Array of Strings**: Used to map enumeration values to their corresponding string representations.
+- **Main Function**: Iterates over the enumeration values and prints their corresponding string representations.
+- **Enumeration constants have either an explicit or a positional value.**
+- Positional values start from 0 onward, so in our example, we have `raven` with value 0, `magpie` with 1, `jay` with 2 and `corvid_num`with 3. The last 3 is obviously the 3 we are interested in.
+- This uses a different order for the array entities than before, and this is one of the advantages of the approach with enumerations.
+- We do not have to manually track the order we used in the array. 
+- The ording that is fixed in the enumeration type does that automatically.
+
+Now if we want to add another corvid, we just put it in the list, anywhere before `corvid_num`.
+
+```C
+enum corvid
+{
+    magpie,
+    raven,
+    jay,
+    chough,
+    corvid_num
+};
+
+char const *const bird[corvid_num] = {
+    [chough] = "chough",
+    [raven] = "raven",
+    [magpie] = "magpie",
+    [jay] = "jay",
+};
+
+int main()
+{
+    for (unsigned i = 0; i < corvid_num; i++)
+    {
+        printf("Corvid %u is the %s\n", i, bird[i]);
+    }
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Corvid 0 is the magpie
+Corvid 1 is the raven
+Corvid 2 is the jay
+Corvid 3 is the chough
+```
+
+### Additional Notes about Enumerations
+
+In C, enumerations (`enum`) are a way to define a set of named integer constants. However, there are a few nuances to understand about how they work:
+
+1. **Underlying Type**: The constants defined in an `enum`are essentially integers. The compiler assigns integer values to these constants starting from 0 by default, unless explicitly specified otherwise. For example, in our `enum corvid`, `magpie` is 0, `raven` is 1, `jay` is 2, and so on.
+
+2. **Type Conversion**: When we use an enumeration constant in expressions, it is treated as an integer. This means that even though we define an `enum`, the constants are not of a distinct enumeration type but are instead treated as integers. This is why we can use them in arithmetic operations and array indexing without any special handling.
+
+3. **Variable Declaration**: Declaring variables of an enumeration type is not very common because the primary use of enums is to create named constants. When we do declare a variable of an enum type, it is still treated as an integer in terms of storage and operations. For example:
+
+   ```C
+   enum corvid bird_type = magpie;
+   ```
+
+   - Here, `bird_type` is essentially an integer variable with a value of 0 (the value of magpie`]).
+
+4. **Enumeration Constants**: The constants themselves are not of the enumeration type but are simply integer constants. This is why we can use them interchangeably with other integers in our code.
+
+In summary, 
+
+- while enums provide a convenient way to define named constants, they are fundamentally treated as integers in C. 
+- This allows for flexibility in using these constants in various contexts, such as array indexing and arithmetic operations, without needing special handling for a distinct enumeration type.
+
+### Benefits of Enumerations
+
+- **Readability**: Enums make the code more readable by replacing magic numbers with meaningful names.
+- **Maintainability**: Enums make it easier to manage and update sets of related constants.
+- **Type Safety**: Enums provide a level of type safety by restricting variables to a defined set of values.
+
+### Summary
+
+- Enumerations in C are a powerful feature for defining sets of named integer constants, improving code readability, maintainability, and type safety. 
+- They are defined using the `enum` keyword and can be used to create variables that take on one of the predefined values.
