@@ -3578,20 +3578,90 @@ Note: The actual length of one complete orbit of the Earth around the sun is clo
 `practice.h`
 
 ```C
+#define EARTH_YEAR_SECONDS 31557600.0
+#define ERROR_CODE -1
+
+typedef enum planet
+{
+    MERCURY,
+    VENUS,
+    EARTH,
+    MARS,
+    JUPITER,
+    SATURN,
+    URANUS,
+    NEPTUNE,
+} planet_t;
+
+float age(planet_t planet, int64_t seconds);
+
 ```
+
+- This header file defines an enumeration `planet_t` for the planets in the solar system.
+- It also defines two constants: `EARTH_YEAR_SECONDS` representing the number of seconds in an Earth year, and `ERROR_CODE`for error handling.
 
 `functions.c`
 
 ```C
+const double orbital_periods[] = {
+    [MERCURY] = 0.2408467,
+    [VENUS] = 0.61519726,
+    [EARTH] = 1.0,
+    [MARS] = 1.8808158,
+    [JUPITER] = 11.862615,
+    [SATURN] = 29.447498,
+    [URANUS] = 84.016846,
+    [NEPTUNE] = 164.79132};
+
+float age(planet_t planet, int64_t seconds)
+{
+    if ((int)planet < 0)
+    {
+        return ERROR_CODE;
+    }
+
+    return seconds / (EARTH_YEAR_SECONDS * orbital_periods[planet]);
+}
 ```
+
+- The array `orbital_periods` holds the orbital periods of the planets in the solar system relative to Earth's orbital period (1.0). The array is indexed using enumerators like `MERCURY`, `VENUS`, etc.
+- Casting `planet` to `(int)` ensures the comparison is valid and checks if `planet` is a negative integer. Removing the cast to `(int)` will result in segmentation fault.
+- Array indexing in C automatically converts the index to an integer type.
+- `orbital_periods[planet]` works as long as `planet` is a valid index within the bounds of the `orbital_periods` array.
 
 `practice.c`
 
 ```C
+int main()
+{
+    int64_t age_in_seconds;
+
+    // Example input: 1 billion seconds
+    age_in_seconds = 1000000000;
+
+    printf("Age in seconds: %.0f\n", age_in_seconds);
+    printf("Age on Mercury: %.2f years\n", age(MERCURY, age_in_seconds));
+    printf("Age on Venus: %.2f years\n", age(VENUS, age_in_seconds));
+    printf("Age on Earth: %.2f years\n", age(EARTH, age_in_seconds));
+    printf("Age on Mars: %.2f years\n", age(MARS, age_in_seconds));
+    printf("Age on Jupiter: %.2f years\n", age(JUPITER, age_in_seconds));
+    printf("Age on Uranus: %.2f years\n", age(URANUS, age_in_seconds));
+    printf("Age on Neptune: %.2f years\n", age(NEPTUNE, age_in_seconds));
+    return 0;
+}
 ```
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Age in seconds: 1000000000
+Age on Mercury: 131.57 years
+Age on Venus: 51.51 years
+Age on Earth: 31.69 years
+Age on Mars: 16.85 years
+Age on Jupiter: 2.67 years
+Age on Uranus: 0.38 years
+Age on Neptune: 0.19 years
 ```
 
