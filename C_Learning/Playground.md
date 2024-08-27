@@ -3548,6 +3548,41 @@ Hamming Distance: 7
 
 ```
 
+
+
+#### Solution (Better and Optimized Solution)
+
+`practice.h`
+
+```C
+#define ERROR_CODE -1
+int computer(const char *lhs, const char *rhs);
+```
+
+
+
+`functions.c`
+
+```C
+#include <string.h>
+
+int computer(const char *lhs, const char *rhs){
+    int hamming_distance = 0;
+    int i = 0;
+    for(i = 0; lhs[i] != '\0' && rhs[i] != '\0'; i++){
+        if(lhs[i] != rhs[i]){
+            hamming_distance++;
+        }
+    }
+    
+    if(lhs[i] != '\0' || rhs[i] != '\0'){
+        return ERROR_CODE;
+    }
+}
+```
+
+
+
 ---
 
 ## Space Age
@@ -3665,6 +3700,122 @@ Age on Uranus: 0.38 years
 Age on Neptune: 0.19 years
 ```
 
+
+
+#### Better or Optimized Solution
+
+`practice.h`
+
+```C
+enum{
+    ERROR_CODe = -1
+};
+
+typedef enum planet
+{
+    MERCURY,
+    VENUS,
+    EARTH,
+    MARS,
+    JUPITER,
+    SATURN,
+    URANUS,
+    NEPTUNE,
+} planet_t;
+
+float age(planet_t planet, int64_t seconds);
+```
+
+- Here, we choose to define it as an enumerator in an unnamed `enum` instead.
+- Macros are a known source of issues, so if you can avoid them or reduce their usage it can make your code easier to work with.
+
+`functions.c`
+
+```C
+#define EARTH_YEAR_SECONDS 31557600.0f
+
+static const float orbital_periods[] = {
+    [MERCURY] = 0.2408467f,
+    [VENUS] = 0.61519726f,
+    [EARTH] = 1.0f,
+    [MARS] = 1.8808158f,
+    [JUPITER] = 11.862615f,
+    [SATURN] = 29.447498f,
+    [URANUS] = 84.016846f,
+    [NEPTUNE] = 164.79132f};
+
+float age(planet_t planet, int64_t seconds)
+{
+    if ((int)planet < 0 || (int)planet >= (int)(sizeof(orbital_periods) / sizeof(orbital_periods[0])))
+    {
+        return ERROR_CODE;
+    }
+
+    return seconds / (EARTH_YEAR_SECONDS * orbital_periods[planet]);
+}
+```
+
+##### First Modification:
+
+You've defined `EARTH_YEAR_SECONDS` in the `.h` file.
+
+That's perfectly fine if you consider it part of the interface of your code and if you want it to be used by other `.h` or `.c` files. But macros are tricky, they don't obey the usual scope and precedence rules, if the files that `#include` your `.h` file use that symbol themselves that will result in a compilation error.
+
+And as a warning: If this were a library, your users would eventually start to use this macro, depend on it and then you'd have to support it.
+
+In my view it's rather an implementation detail that others should not have to worry about. I'd suggest moving the macro to the `.c` file. That hides it from other files and communicates to the reader that it's not part of the interface.
+
+##### Second Modification
+
+You could consider defining it as `static const`. That would give the array *internal linkage*, it would essentially hide the array from other translation units and avoid conflicts with global variables of that name in other `.c` files.
+This is one of the differences between C and C++: In C++ the `const` alone would give the array internal linkage, in C you need to write `static` explicitly.
+
+##### Third Modification
+
+Lines 13-15 handle a negative value as an error. Great, that's what the tests require.
+
+But what about the other end, if the value of `planet` is too big? I'd suggest handling that as an error as well.
+
+`practice.c`
+
+```C
+int main()
+{
+    int64_t age_in_seconds;
+
+    // Example input: 1 billion seconds
+    age_in_seconds = 1000000000;
+
+    printf("Age in seconds: %.0ld\n", age_in_seconds);
+    printf("Age on Mercury: %.2f years\n", age(MERCURY, age_in_seconds));
+    printf("Age on Venus: %.2f years\n", age(VENUS, age_in_seconds));
+    printf("Age on Earth: %.2f years\n", age(EARTH, age_in_seconds));
+    printf("Age on Mars: %.2f years\n", age(MARS, age_in_seconds));
+    printf("Age on Jupiter: %.2f years\n", age(JUPITER, age_in_seconds));
+    printf("Age on Uranus: %.2f years\n", age(URANUS, age_in_seconds));
+    printf("Age on Neptune: %.2f years\n", age(NEPTUNE, age_in_seconds));
+    return 0;
+}
+
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Age in seconds: 1000000000
+Age on Mercury: 131.57 years
+Age on Venus: 51.51 years
+Age on Earth: 31.69 years
+Age on Mars: 16.85 years
+Age on Jupiter: 2.67 years
+Age on Uranus: 0.38 years
+Age on Neptune: 0.19 years
+
+```
+
+
+
 ---
 
 # RNA Transcription
@@ -3707,15 +3858,99 @@ Given a DNA strand, its transcribed RNA strand is formed by replacing each nucle
 `practice.h`
 
 ```C
+char *to_rna(const char *dna);
 ```
 
 `functions,c`
 
 ```C
+char *to_rna(const char *dna)
+{
+    // Get the length of the input DNA strand
+    size_t length = strlen(dna);
+
+    // Allocate memory for the RNA strand (same as DNA)
+    char *rna = (char *)malloc(length + 1); // +1 for the null terminator
+
+    // Check if memory allocation was successful
+    if (rna == NULL)
+    {
+        return NULL;
+    }
+
+    // Iterate through each nucleotide in the DNA strand
+    for (size_t i = 0; i < length; i++)
+    {
+        switch (dna[i])
+        {
+        case 'G':
+            rna[i] = 'C';
+            break;
+        case 'C':
+            rna[i] = 'G';
+            break;
+        case 'T':
+            rna[i] = 'A';
+            break;
+        case 'A':
+            rna[i] = 'U';
+            break;
+        default:
+            // Free allocated memory
+            free(rna);
+            // Return NULL if an invalid character is found
+            return NULL;
+        }
+    }
+
+    // Null-terminate the RNA string
+    rna[length] = '\0';
+    return rna;
+}
 ```
 
-`practice.h`
+`practice.c`
 
 ```C
+int main()
+{
+    // Example DNA sequence
+    const char *dna_seq = "GATTACA";
+
+    // Convert the DNA to RNA
+    char *rna_seq = to_rna(dna_seq);
+
+    // Check if the conversion is successful
+    if (rna_seq != NULL)
+    {
+        printf("RNA Complement: %s\n", rna_seq);
+        // Free the allocated memory for the RNA sequence
+        free(rna_seq);
+    }
+    else
+    {
+        printf("Invalid DNA sequence or memory allocation failed.\n");
+    }
+    return 0;
+}
+
 ```
 
+`Output`
+
+```C
+chan@CMA:~/C_Programming/practice$ ./practice
+RNA Complement: CUAAUGU
+```
+
+### Explanation:
+
+1. **Memory Allocation**:
+   We use `malloc` to allocate enough memory for the RNA string, which is the same length as the DNA string plus 1 for the null terminator (`'\0'`).
+2. **Transcription Process**:
+   We loop through each character in the DNA string and convert it to the corresponding RNA nucleotide using a `switch` statement.
+3. **Error Handling**:
+   If an invalid character is found (not 'G', 'C', 'T', or 'A'), the function will return `NULL`, indicating an error. Memory is freed in this case to avoid memory leaks.
+4. **Null-Termination**:
+   After the conversion, we append the null terminator (`'\0'`) to the RNA string to make it a valid C string.
+5. **Example Execution**: For the DNA sequence `"GATTACA"`, the RNA sequence will be `"CUAAUGU"`.
