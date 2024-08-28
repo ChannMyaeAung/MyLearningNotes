@@ -2347,3 +2347,141 @@ For example:
 
 - The maximum value of an integer type is determined by the number of bits used to represent it, following the formula (2<sup>p</sup> - 1).
 - Arithmetic on unsigned integers wraps around when the result exceeds the maximum value that can be represented by the given number of bits.
+
+
+
+#### Bit sets and bitwise operators
+
+" A = 240 , representing {4, 5, 6, 7} and B = 287, the bit set {0, 1, 2, 3, 4, 8}"
+
+**Binary Representation**
+
+1. **240 in Binary**:
+   - Decimal 240 can be represented in binary as `11110000`.
+   - This means that the bits at positions 4, 5, 6, and 7 are set (counting from 0).
+2. **287 in Binary**:
+   - Decimal 287 can be represented in binary as `100011111`.
+   - This means that the bits at positions 0, 1, 2, 3, 4, and 8 are set.
+
+##### Explanation
+
+- **A = 240**:
+  - Binary: `11110000`
+  - Bits set: {4, 5, 6, 7}
+- **B = 287**:
+  - Binary: `100011111`
+  - Bits set: {0, 1, 2, 3, 4, 8}
+
+##### Visual Representation
+
+- 240 (A):
+
+  ```
+  Bit positions:  7 6 5 4 3 2 1 0
+  Binary:         1 1 1 1 0 0 0 0
+  ```
+
+- 287 (B):
+
+  ```
+  Bit positions:  8 7 6 5 4 3 2 1 0
+  Binary:         1 0 0 0 1 1 1 1 1
+  ```
+
+#### The Complement Operator
+
+- Also an operator that operates on the bits of the value.
+
+**"The complement ~A would have value 65295 and would correspond to the set {0,1,2,3,8,9,10,11,12,13,14,15}"**
+
+##### Step-by-Step Explanation
+
+1. **Original Value of A**:
+   - `A = 240`
+   - Binary representation of `A`: `0000000011110000` (assuming a 16-bit representation for clarity)
+2. **Complement of A (`~A`)**:
+   - The complement operator `~` inverts all the bits.
+   - Binary representation of `~A`: `1111111100001111`
+3. **Decimal Value of `~A`**:
+   - Binary `1111111100001111` converts to decimal `65295`.
+4. **Set of Bits in `~A`**:
+   - The bits that are set (i.e., bits that are 1) in `~A` are at positions: {0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15}.
+
+##### Visual Representation
+
+- **Original A (240):**
+
+  ```
+  Bit positions:  15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+  Binary:         0  0  0  0  0  0  0 0 1 1 1 1 0 0 0 0
+  ```
+
+- **Complement ~A (65295)**:
+
+  ```
+  Bit positions:  15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+  Binary:         1  1  1  1  1  1  1 1 0 0 0 0 1 1 1 1
+  ```
+
+##### Summary
+
+- **Complement ~A**:
+  - Decimal value: `65295`
+  - Binary representation: `1111111100001111`
+  - Set of bits: {0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15}
+
+
+
+### Signed Integers
+
+- Signed types are a bit more complicated than unsigned types.
+- A C implementation has to decide about two points:
+  - What happens on arithmetic overflow?
+  - How is the sign of a signed type represented?
+- Signed and unsigned types come in pairs according to their integer rank, with the notable two exceptions, `char` and `bool`.
+
+#### "Positive values are represented independently from signedness"
+
+
+
+##### Explanation
+
+1. **Binary Representation**:
+   - Positive integers have the same binary representation in both signed and unsigned types.
+   - For example, the binary representation of the decimal number `5` is `00000101` in an 8-bit system. This representation is the same whether `5` is stored in a signed or unsigned variable.
+2. **Signed vs. Unsigned Types**:
+   - **Signed Types**: Can represent both positive and negative values. For example, `int` can represent values from `-2,147,483,648` to `2,147,483,647` in a 32-bit system.
+   - **Unsigned Types**: Can only represent non-negative values. For example, `unsigned int` can represent values from `0` to `4,294,967,295` in a 32-bit system.
+3. **Positive Values**:
+   - When dealing with positive values, the binary representation does not change based on whether the type is signed or unsigned.
+   - For instance, the number `10` is represented as `00001010` in binary. This representation is the same for both `int` and `unsigned int`.
+
+##### Example
+
+```C
+#include <stdio.h>
+
+int main() {
+    int signed_val = 10;
+    unsigned int unsigned_val = 10;
+
+    printf("Signed value: %d\n", signed_val);
+    printf("Unsigned value: %u\n", unsigned_val);
+
+    return 0;
+}
+```
+
+- Output:
+
+```sh
+Signed value: 10
+Unsigned value: 10
+```
+
+In this example, both `signed_val` and `unsigned_val` have the same binary representation (`00001010`), and thus they both represent the value `10` correctly.
+
+##### Summary
+
+- Positive values have the same binary representation regardless of whether they are stored in signed or unsigned types.
+- This means that the representation of positive integers is independent of the signedness of the type.

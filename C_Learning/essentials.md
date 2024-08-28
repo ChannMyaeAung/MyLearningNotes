@@ -1085,7 +1085,7 @@ Color: blue
 
 In this example:
 
-- `char input[\] = "brown,green,blue";` defines a string containing colors separated by commas.
+- `char input[] = "brown,green,blue";` defines a string containing colors separated by commas.
 - `char *token;` declares a pointer to hold each token (color) extracted from the string.
 - `strtok` splits the input string into tokens separated by commas.
 - The first call to `strtok` initializes the tokenization and returns the first token "brown" and stored in `token`.
@@ -1231,5 +1231,93 @@ hello, World!
 
 ### Summary
 
-- **`char \*smth`**: A pointer to a character, can be reassigned, and can point to dynamically allocated memory.
+- **`char *smth`**: A pointer to a character, can be reassigned, and can point to dynamically allocated memory.
 - **`char smth[]`**: An array of characters, fixed size, and the array name cannot be reassigned but its contents can be modified.
+
+---
+
+## Normal Function vs Function Pointer
+
+In C, a normal function and a function pointer serve different purposes. Here's a brief explanation of each:
+
+### Normal Function
+
+- A normal function is a block of code that performs a specific task. 
+- It has a name, a return type, and parameters. 
+
+- We call it by using its name and passing the required arguments.
+
+#### Example
+
+```C
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int result = add(3, 4); // Calling the normal function
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+### Function Pointer
+
+- A function pointer is a variable that stores the address of a function. 
+- We can use it to call the function indirectly. 
+- Function pointers are useful for callback functions, implementing function tables, and dynamic function calls.
+
+#### Example
+
+```C
+#include <stdio.h>
+
+// Normal function
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    // Declare a function pointer
+    int (*func_ptr)(int, int);
+
+    // Assign the address of the function to the pointer
+    func_ptr = add;
+
+    // Call the function using the pointer
+    int result = func_ptr(3, 4);
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+### Key Differences
+
+1. **Declaration**:
+   - Normal Function: `return_type function_name(parameter_list)`
+   - Function Pointer: `return_type (*pointer_name)(parameter_list)`
+2. **Usage**:
+   - Normal Function: Called directly by its name.
+   - Function Pointer: Called indirectly using the pointer.
+3. **Flexibility**:
+   - Normal Function: Fixed at compile time.
+   - Function Pointer: Can point to different functions at runtime, providing more flexibility.
+
+### Note
+
+```C
+char *to_rna(const char *dna){
+    ...
+}
+```
+
+#### Is the function `to_rna` a pointer function?
+
+- The answer is No. It's a normal function that **returns a pointer** to a `char` (a string).
+
+#### Explanation
+
+- **Normal Function**: `to_rna` is a normal function because it is defined with a standard function signature and is called directly by its name.
+- **Returns a Pointer**: The function returns a pointer to a `char`(`char *`), which is a common practice when dealing with strings in C.
+- `char *to_rna(const char *dna)` indicates that `to_rna` is a function that takes a `const char *` as an argument and returns a `char *`.
+- `to_rna` is a normal function that returns a pointer to a `char`. It is not a function pointer or a pointer function.
