@@ -3998,6 +3998,127 @@ So: `101 => 1*2^2 + 0*2^1 + 1*2^0 => 1*4 + 0*2 + 1*1 => 4 + 1 => 5 base 10`.
 `practice.h`
 
 ```C
+enum{
+    ERROR_CODE = -1
+};
+
+int convert(const char *input);
+```
+
+`functions.c`
+
+```C
+int convert(const char *input){
+    int num_length = strlen(input);
+    int result = 0;
+    int i = 0;
+    for(i = num_length - 1; i >= 0; i--){
+        if(input[i] == '1'){
+            result += pow(2, num_length - 1 - i);
+        }
+        if(input[i] != '0' && input[i] != '1'){
+            return ERROR_CODE;
+        }
+    }
+    return result;
+}
+```
+
+`practice.c` (Main)
+
+```C
+int main(){
+    char num[100];
+    int result = 0;
+    
+    while(1){
+        printf("Enter the binary number for coversion to the decimal: ");
+    	scanf("%99s", num);
+        result = convert(num);
+        if(result != ERROR_CODE){
+            break;
+        }else{
+            printf("Invalid binary number. Please try again.\n");
+        }
+    }
+    
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 101
+Result: 5
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 111
+Result: 7
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 100101
+Result: 37
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 234
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 401
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 104
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 102
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 110
+Result: 6
+```
+
+#### Explanation for the Solution 1
+
+The expression `pow(2, num_length - 1 - i)` is used to calculate the power of 2 for the corresponding binary digit in the string. Let's break it down step-by-step:
+
+1. **Binary Representation**: In a binary number, each digit (bit) represents an increasing power of 2, starting from the rightmost bit (least significant bit) to the leftmost bit (most significant bit).
+2. **Indexing**:
+   - `num_length` is the length of the input string.
+   - `i`is the current index in the loop, which starts from the last character of the string (`num_length - 1`) and decrements to 0.
+3. **Power Calculation**:
+   - `num_length - 1 - i` calculates the position of the bit from the right (least significant bit).
+   - For example, if `num_length`, and `i`is 3 (the leftmost bit), `num_length - 1 - i` would be `4 - 1 - 3 = 0`, which means the leftmost bit is at position 0 from the right.
+   - As `i` decreases, `num_length - 1 - i` increases, representing the increasing powers of 2 from right to left.
+4. **Using `pow` Function**:
+   - `pow(2, num_length - 1 - i)` computes `2` raised to the power of `(num_length - 1 - i)`.
+   - This gives the value of the bit at position `i` in the binary number.
+5. This loop iterates over each bit of the binary number from right to left.
+6. If the bit is `1`, it adds the corresponding power of 2 to the `result`.
+
+#### Example Breakdown:
+
+Consider the binary number `1101`:
+
+`num_length` = 4
+**Loop iterations:**
+
+- `i = 3`: `input[3]` is `1`, `num_length - 1 - i is 0, pow(2, 0)` is `1`.
+- `i = 2`: `input[2]` is `0`, `num_length - 1 - i` is `1`, `pow(2, 1)`  is  `2`.
+- `i = 1`: `input[1]` is `1`, `num_length - 1 - i` is `2`, `pow(2, 2)` is `4`.
+- `i = 0`: `input[0]` is `1`, `num_length - 1 - i` is `3`, `pow(2, 3)` is `8`.
+- **Final Calculation:**
+  The decimal value is calculated as:
+  `1 * 8 + 1 * 4 + 0 * 2 + 1 * 1 = 8 + 4 + 0 + 1 = 13`
+
+
+
+However, the use of `pow` function returns a `double`, which is not ideal for integer calculations. Instead, use bitwise operations for better performance and accuracy.
+
+
+
+#### Solution 2 with bitwise operators
+
+`practice.h`
+
+```C
 ```
 
 `functions.c`
@@ -4005,7 +4126,7 @@ So: `101 => 1*2^2 + 0*2^1 + 1*2^0 => 1*4 + 0*2 + 1*1 => 4 + 1 => 5 base 10`.
 ```C
 ```
 
-`practice.c` (Main)
+`practice.c`
 
 ```C
 ```
