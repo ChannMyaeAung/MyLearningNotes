@@ -4119,20 +4119,167 @@ However, the use of `pow` function returns a `double`, which is not ideal for in
 `practice.h`
 
 ```C
+enum
+{
+    ERROR_CODE = -1
+};
+
+int convert(const char *input);
+
 ```
 
 `functions.c`
 
 ```C
+int convert(const char *input){
+    int num_length = strlen(input);
+    int result = 0;
+    int i = 0;
+    for(i = 0; i < num_length; i++){
+        if(input[i] == '1'){
+            result = (result << 1) | 1;
+        }else if(input[i] == '0'){
+            return = result << 1;
+        }else{
+            return ERROR_CODE;
+        }
+    }
+}
 ```
 
 `practice.c`
 
 ```C
+int main()
+{
+    char num[100];
+    int result = 0;
+    while (1)
+    {
+        printf("Enter the binary number for conversion to the decimal: ");
+        scanf("%99s", num);
+
+        result = convert(num);
+        if (result != ERROR_CODE)
+        {
+            break;
+        }
+        else
+        {
+            printf("Invalid binary number. Please try again.\n");
+        }
+    }
+
+    printf("Result: %d\n", result);
+    return 0;
+}
 ```
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 101
+Result: 5
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 111
+Result: 7
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 234
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 112
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 4312
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 1131
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 100101
+Result: 37
 ```
 
+#### Explanation for the Solution 2
+
+- The `convert` function takes a string of binary digits (`'0'` and `'1'`) and converts it into an integer. If the string contains any character other than `'0'` or `'1'`, it returns an error code (`ERROR_CODE`).
+
+##### Left Shift Operator (`<<`)
+
+- The left shift operator (`<<`) shifts all bits in a number to the left by a specified number of positions.
+- Each shift to the left is equivalent to multiplying the number by 2.
+- Example:
+  - `5 << 1` shifts the bits of `5` (binary `101`) to the left, resulting in `10` (binary `1010`).
+  - `10 << 1` shifts the bits of `10` (binary `1010`) to the left, resulting in `20` (binary `10100`).
+
+- **If the character is `'1'`:**
+  - `result = (result << 1) | 1;`
+  - The left shift operator (`<<`) shifts all bits in `result` one position to the left. This is equivalent to multiplying `result` by 2.
+  - The bitwise OR operator (`|`) sets the least significant bit to 1.
+  - Example: If `result` is `5` (binary `101`), `result << 1` becomes `10` (binary `1010`). Then, `10 | 1` becomes `11` (binary `1011`).
+- **If the character is `'0'`:**
+  - `result = result << 1;`
+  - The left shift operator (`<<`) shifts all bits in `result` one position to the left. This is equivalent to multiplying `result` by 2.
+  - Example: If `result` is `5` (binary `101`), `result << 1` becomes `10` (binary `1010`).
+- **If the character is neither `'1'` nor `'0'`:**
+  - `return ERROR_CODE;`
+  - The function returns an error code.
+
+#### Example Conversion
+
+Let's walk through an example conversion of the binary string `"1011"`:
+
+1. Initial `result = 0`
+2. First character `'1'`: `result = (0 << 1) | 1 = 1`
+3. Second character `'0'`: `result = 1 << 1 = 2`
+4. Third character `'1'`: `result = (2 << 1) | 1 = 5`
+5. Fourth character `'1'`: `result = (5 << 1) | 1 = 11`
+
+Final result is `11`, which is the integer representation of the binary string `"1011"`.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 1011
+Result: 11
+```
+
+**Why 10 | 1 becomes 11?**
+
+- The bitwise OR operator (`|`) compares each bit of two numbers and returns a new number whose bits are set to `1` if either of the corresponding bits of the operands is `1`.
+
+Let's look at the binary representation of the numbers involved:
+
+- `10` in binary is `1010`
+- `1`in binary is `0001`
+
+When we perform the bitwise OR operation, we compare each bit of `10` and `1`:
+
+```
+  1010  (10 in binary)
+| 0001  (1 in binary)
+------
+  1011  (result in binary)
+```
+
+#### Step-by-Step Breakdown
+
+1. First bit (from the right):
+   - `0 | 1` = `1`
+2. Second bit:
+   - `1 | 0` = `1`
+3. Third bit:
+   - `0 | 0` = `0`
+4. Fourth bit:
+   - `1 | 0` = `1`
+
+So, `1010 | 0001` results in `1011`.
+
+#### Conversion to Decimal
+
+The binary number `1011` converts to the decimal number `11`:
+
+- `1 * 2^3` = `8`
+- `0 * 2^2`)= `0`
+- `1 * 2^1` = `2`
+- `1 * 2^0` = `1`
+
+Adding these values together: `8 + 0 + 2 + 1 = 11`.
+
+Therefore, `10 | 1` results in `11`.
