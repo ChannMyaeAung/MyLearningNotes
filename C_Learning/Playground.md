@@ -4227,10 +4227,55 @@ Result: 37
 Let's walk through an example conversion of the binary string `"1011"`:
 
 1. Initial `result = 0`
+
 2. First character `'1'`: `result = (0 << 1) | 1 = 1`
+
+   ```
+   0 << 1 = 0 0 0 0
+   1      = 0 0 0 1
+   -----------------
+   XOR    = 0 0 0 1
+   
+   decimal = 1
+   ```
+
+   
+
 3. Second character `'0'`: `result = 1 << 1 = 2`
+
+   ```
+   1 << 1 = 0 0 1 0
+   
+   decimal value = 2
+   ```
+
+   
+
 4. Third character `'1'`: `result = (2 << 1) | 1 = 5`
+
+   ```
+   2 << 1 = 0 1 0 0 
+   1      = 0 0 0 1
+   ----------------
+   XOR	   = 0 1 0 1
+   
+   decimal value = 5;
+   ```
+
+   
+
 5. Fourth character `'1'`: `result = (5 << 1) | 1 = 11`
+
+   ```
+   5 << 1 = 1 0 1 0
+   1      = 0 0 0 1
+   -----------------
+   XOR    = 1 0 1 1
+   
+   decimal value = 11
+   ```
+
+   
 
 Final result is `11`, which is the integer representation of the binary string `"1011"`.
 
@@ -4282,4 +4327,82 @@ The binary number `1011` converts to the decimal number `11`:
 
 Adding these values together: `8 + 0 + 2 + 1 = 11`.
 
+- `5 << 1` results in `10` (binary `1010`).
+- `10 | 1` results in `11` (binary `1011`).
+- When we print the result using `%d`, it is displayed as a decimal number `11`.
+
 Therefore, `10 | 1` results in `11`.
+
+---
+
+
+
+## Eliud's Eggs
+
+### Instruction
+
+Your friend Eliud inherited a farm from her grandma Tigist. Her granny was an inventor and had a tendency to build things in an overly complicated manner. The chicken coop has a digital display showing an encoded number representing the positions of all eggs that could be picked up.
+
+Eliud is asking you to write a program that shows the actual number of eggs in the coop.
+
+The position information encoding is calculated as follows:
+
+1. Scan the potential egg-laying spots and mark down a `1` for an existing egg or a `0` for an empty spot.
+2. Convert the number from binary to decimal.
+3. Show the result on the display.
+
+**Example 1**:
+
+```
+Chicken Coop:
+ _ _ _ _ _ _ _
+|E| |E|E| | |E|
+
+Resulting Binary:
+ 1 0 1 1 0 0 1
+
+Decimal number on the display:
+89
+
+Actual eggs in the coop:
+4
+```
+
+**Example 2**:
+
+```
+Chicken Coop:
+ _ _ _ _ _ _ _ _
+| | | |E| | | | |
+
+Resulting Binary:
+ 0 0 0 1 0 0 0 0
+
+Decimal number on the display:
+16
+
+Actual eggs in the coop:
+1
+```
+
+Your task is to count the number of 1 bits in the binary representation of a number.
+
+
+
+### Solution
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+```C
+```
+

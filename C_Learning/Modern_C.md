@@ -2485,3 +2485,317 @@ In this example, both `signed_val` and `unsigned_val` have the same binary repre
 
 - Positive values have the same binary representation regardless of whether they are stored in signed or unsigned types.
 - This means that the representation of positive integers is independent of the signedness of the type.
+
+#### Sign Representation
+
+- The next thing the standard prescribes is that signed types have one additional bit, the **sign bit**.
+- If it is 0, we have a positive value, if it is 1, the value is negative.
+- Unfortunately, there are different concepts of how such a sign bit can be used to obtain a negative number.
+- C allows three different **sign representations**:
+  - **Sign and magnitude**
+  - **Ones' complement**
+  - **Two's complement**
+- The first two nowadays probably only have historical or exotic relevance: for sign and magnitude, the magnitude is taken as positive values, and the sign bit simply specifies that there is a minus sign.
+- Ones' complement takes the corresponding positive value and complements all bits.
+- Both representations have the disadvantage that two values evaluate to 0: there is a positive and a negative 0.
+
+#### Two's Complement Representation
+
+**Commonly used on modern platforms** is the **two's complement representation**. 
+
+- It performs exactly the same arithmetic for unsigned types, but the upper half of unsigned values (those with a high-order bit of 1) is interpreted as being negative.
+- In C, the two's complement representation is used to represent signed integers. 
+- This representation allows for straightforward binary arithmetic and simplifies the design of arithmetic circuits. 
+- Here's a brief explanation of how two's complement works:
+
+##### Two's Complement Representation
+
+1. **Positive Numbers:**
+   - Positive numbers are represented as usual in binary.
+   - For example, `5` in an 8-bit system is `00000101`.
+2. **Negative Numbers:**
+   - To represent a negative number, you first write its absolute value in binary.
+   - Then, invert all the bits (change `0`to `1` and `1` to `0`).
+   - Finally, add `1` to the least significant bit (LSB).
+
+##### Example: Representing `-5` in an 8-bit System
+
+1. **Absolute Value:**
+   - `5` in binary is `00000101`.
+2. **Invert the Bits:**
+   - Inverting `00000101` gives `11111010`.
+3. **Add `1`:**
+   - Adding `1` to `11111010` gives `11111011`.
+
+So, `-5` in an 8-bit two's complement representation is `11111011`.
+
+```C
+#include <stdio.h>
+
+int main() {
+    signed char positive = 5;  // 00000101 in binary
+    signed char negative = -5; // 11111011 in binary (two's complement)
+
+    printf("Positive: %d, Binary: ", positive);
+    for (int i = 7; i >= 0; i--) {
+        printf("%d", (positive >> i) & 1);
+    }
+    printf("\n");
+
+    printf("Negative: %d, Binary: ", negative);
+    for (int i = 7; i >= 0; i--) {
+        printf("%d", (negative >> i) & 1);
+    }
+    printf("\n");
+
+    return 0;
+}
+```
+
+###### Explanation
+
+- The program prints the binary representation of `5` and `-5` using two's complement.
+- The `>>` operator is used to shift bits to the right, and `& 1` is used to extract the least significant bit.
+
+###### Iteration Details for Positive Number
+
+- **i = 7:**
+  - `positive >> 7` shifts the bits 7 positions to the right: `00000000`
+  - `(00000000) & 1` results in `0`
+  - Output: `0`
+- **i = 6:**
+  - `positive >> 6` shifts the bits 6 positions to the right: `00000000`
+  - `(00000000) & 1` results in `0`
+  - Output: `0`
+- **i = 5:**
+  - `positive >> 5` shifts the bits 5 positions to the right: `00000000`
+  - `(00000000) & 1` results in `0`
+  - Output: `0`
+- **i = 4:**
+  - `positive >> 4` shifts the bits 4 positions to the right: `00000000`
+  - `(00000000) & 1` results in `0`
+  - Output: `0`
+- **i = 3:**
+  - `positive >> 3` shifts the bits 3 positions to the right: `00000000`
+  - `(00000000) & 1` results in `0`
+  - Output: `0`
+- **i = 2:**
+  - `positive >> 2` shifts the bits 2 positions to the right: `00000001`
+  - `(00000001) & 1` results in `1`
+  - Output: `1`
+- **i = 1:**
+  - `positive >> 1` shifts the bits 1 position to the right: `00000010`
+  - `(00000010) & 1` results in `0`
+  - Output: `0`
+- **i = 0:**
+  - `positive >> 0` shifts the bits 0 positions to the right: `00000101`
+  - `(00000101) & 1` results in `1`
+  - Output: `1`
+
+###### Final Output for Positive Number
+
+- Binary representation: `00000101`
+
+###### Negative Number: -5 (Binary: 11111011)
+
+1. **Initial Value:**
+   - `negative = -5` (binary `11111011` in two's complement)
+2. **Loop Iteration:**
+   - The loop iterates from `i = 7` to `i = 0`.
+3. **Right Shift and Bitwise AND:**
+   - For each iteration, the expression `(negative >> i) & 1` is evaluated.
+
+###### Iteration Details for Negative Number
+
+- **i = 7:**
+  - `negative >> 7` shifts the bits 7 positions to the right: `11111111` (sign extension)
+  - `(11111111) & 1` results in `1`
+  - Output: `1`
+- **i = 6:**
+  - `negative >> 6` shifts the bits 6 positions to the right: `11111111` (sign extension)
+  - `(11111111) & 1` results in `1`
+  - Output: `1`
+- **i = 5:**
+  - `negative >> 5` shifts the bits 5 positions to the right: `11111111` (sign extension)
+  - `(11111111) & 1` results in `1`
+  - Output: `1`
+- **i = 4:**
+  - `negative >> 4` shifts the bits 4 positions to the right: `11111111` (sign extension)
+  - `(11111111) & 1` results in `1`
+  - Output: `1`
+- **i = 3:**
+  - `negative >> 3` shifts the bits 3 positions to the right: `11111111` (sign extension)
+  - `(11111111) & 1` results in `1`
+  - Output: `1`
+- **i = 2:**
+  - `negative >> 2` shifts the bits 2 positions to the right: `11111110`
+  - `(11111110) & 1` results in `0`
+  - Output: `0`
+- **i = 1:**
+  - `negative >> 1` shifts the bits 1 position to the right: `11111101`
+  - `(11111101) & 1` results in `1`
+  - Output: `1`
+- **i = 0:**
+  - `negative >> 0` shifts the bits 0 positions to the right: `11111011`
+  - `(11111011) & 1` results in `1`
+  - Output: `1`
+
+###### Final Output for Negative Number
+
+- Binary representation: `11111011`
+
+
+
+### Additional Theories of signed integers
+
+#### "Signed arithmetic may trap badly"
+
+**Explanation**:
+
+- **Signed arithmetic** refers to arithmetic operations involving signed integers (integers that can be both positive and negative).
+- **Trapping** means causing an exception or error during execution.
+- **May trap badly** implies that certain operations on signed integers can lead to undefined behavior or runtime errors.
+
+**Example**:
+
+- Consider an overflow scenario: if you add two large positive signed integers and the result exceeds the maximum value that can be stored in the integer type, it can cause an overflow, leading to undefined behavior.
+
+#### "In two's complement representation, INT_MIN < -INT_MAX."
+
+**Explanation**:
+
+- **Two's complement** is a method for representing signed integers in binary.
+- **INT_MIN** is the smallest value that can be represented by a signed integer type.
+- **INT_MAX** is the largest value that can be represented by a signed integer type.
+- In two's complement, the range of representable values is asymmetric. For example, in a 32-bit signed integer:
+  - INT_MIN = -2,147,483,648
+  - INT_MAX = 2,147,483,647
+- Therefore, INT_MIN is less than -INT_MAX because:
+  - INT_MIN = -2,147,483,648
+  - -INT_MAX = -2,147,483,647
+
+#### "Negation may overflow for signed arithmetic"
+
+**Explanation**:
+
+- **Negation** refers to changing the sign of a number (e.g., from positive to negative or vice versa).
+- **Overflow** occurs when the result of an arithmetic operation exceeds the range that can be represented by the data type.
+- For signed integers, negating the smallest possible value (INT_MIN) can cause overflow because there is no positive counterpart for INT_MIN in two's complement representation.
+- For signed types, bit operations work with the binary representation.
+- So the value of a bit operation depends in particular on the sign representation.
+- In face, bit operations even allow us to detect the sign representation.
+- The shift operations then become really messy. The semantics of what such an operation is for a negative value is not clear.
+
+**Example**:
+
+- In a 32-bit signed integer:
+  - INT_MIN = -2,147,483,648
+  - Negating INT_MIN would theoretically result in 2,147,483,648, which cannot be represented in a 32-bit signed integer (the maximum positive value is 2,147,483,647).
+
+```C
+char const *sign_rep[4] = {
+    [1] = "sign and magnitude",
+    [2] = "one's complement",
+    [3] = "two's complement",
+    [0] = "weird",
+};
+
+enum
+{
+    sign_magic = -1 & 3
+};
+
+int main()
+{
+    printf("Sign representation: %s\n", sign_rep[sign_magic]);
+    return 0;
+}
+```
+
+##### Explanation
+
+- Declares an array of string literals (`sign_rep`) with 4 elements.
+  - The array `sign_rep` is initialized using designated initializers, which allow us to specify the index for each element explicitly.
+  - This feature makes the code more readable and maintainable, as we can see exactly which string is assigned to which index.
+- The array is initialized using designated initializers:
+  - `sign_rep[1]` is set to `"sign and magnitude"`.
+  - `sign_rep[2]` is set to `"one's complement"`.
+  - `sign_rep[3]` is set to `"two's complement"`.
+  - `sign_rep[0]` is set to `"weird"`.
+- Declares an anonymous enumeration with a single enumerator `sign_magic`.
+- The value of`sign_magic` is calculated using the bitwise AND operation:
+  - `-1` in binary (two's complement) is represented with all bits set to `1`.
+  - `3` in binary is `00000011`.
+  - The bitwise AND operation `-1 & 3` results in `3` because the last two bits of `-1` are `1`.
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Sign representation: two's complement
+```
+
+
+
+#### "Use unsigned types for bit operations."
+
+The statement "Use unsigned types for bit operations" is a guideline suggesting that when performing bitwise operations, we should use unsigned integer types. Here's why:
+
+##### Explanation
+
+1. **Predictable Behavior**:
+   - Unsigned integers have a well-defined behavior for bitwise operations. They do not have a sign bit, so all bits are used to represent the value, making the operations more predictable.
+2. **Avoiding Undefined Behavior**:
+   - Signed integers can lead to undefined behavior when performing bitwise operations, especially with shifts. For example, shifting a negative signed integer can produce unexpected results.
+3. **Logical Representation**:
+   - Bitwise operations are often used for manipulating individual bits, flags, or masks. Unsigned integers are more suitable for these purposes because they represent non-negative values, aligning better with the concept of bit manipulation.
+
+##### Example
+
+Let's consider the following example where bitwise operations are performed on both signed and unsigned integers:
+
+```C
+#include <stdio.h>
+
+int main()
+{
+    int signedInt = -1;          // Signed integer
+    unsigned int unsignedInt = -1; // Unsigned integer (wraps around to maximum value)
+
+    printf("Signed int: %d\n", signedInt);
+    printf("Unsigned int: %u\n", unsignedInt);
+
+    // Bitwise shift operations
+    printf("Signed int shifted right: %d\n", signedInt >> 1);
+    printf("Unsigned int shifted right: %u\n", unsignedInt >> 1);
+
+    return 0;
+}
+```
+
+**Output**
+
+```sh
+Signed int: -1
+Unsigned int: 4294967295
+Signed int shifted right: -1
+Unsigned int shifted right: 2147483647
+```
+
+##### Explanation of Output
+
+- **Signed Integer**:
+  - `signedInt` is initialized to `-1`, which in binary (two's complement) is represented with all bits set to `1`.
+  - Shifting `signedInt` right by 1 bit (`signedInt >> 1`) results in `-1` due to sign extension (the sign bit is propagated).
+- **Unsigned Integer**:
+  - `unsignedInt` is initialized to `-1`, which wraps around to the maximum value for an unsigned integer (`4294967295` for a 32-bit unsigned int).
+  - Shifting `unsignedInt` right by 1 bit (`unsignedInt >> 1`) results in `2147483647`, which is the expected logical right shift.
+
+#### Summary
+
+- **Signed arithmetic may trap badly**: Operations on signed integers can lead to undefined behavior or runtime errors, especially in cases of overflow.
+- **In two's complement representation, INT_MIN < -INT_MAX**: The smallest representable value (INT_MIN) is less than the negation of the largest representable value (INT_MAX) due to the asymmetric range of two's complement representation.
+- **Negation may overflow for signed arithmetic**: Negating the smallest possible signed integer (INT_MIN) can cause overflow because the result exceeds the representable range.
+- Using unsigned types for bit operations ensures that the operations behave as expected without the complications introduced by sign bits and sign extension. This makes the code more robust and easier to understand.
+
+These concepts are crucial for understanding the limitations and potential pitfalls of arithmetic operations on signed integers in programming.
