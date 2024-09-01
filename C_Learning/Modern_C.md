@@ -2799,3 +2799,355 @@ Unsigned int shifted right: 2147483647
 - Using unsigned types for bit operations ensures that the operations behave as expected without the complications introduced by sign bits and sign extension. This makes the code more robust and easier to understand.
 
 These concepts are crucial for understanding the limitations and potential pitfalls of arithmetic operations on signed integers in programming.
+
+---
+
+## Fixed-width integer types
+
+- Fixed-width integers in C are types defined in the `<stdint.h>` header that provide integer types with specified widths. 
+- These types are particularly useful for ensuring consistent behavior across different platforms, as they guarantee the size of the integers.
+
+- The precision for the integer types that we have seen so far can be inspected indirectly by using macros from `limits.h` such as `UINT_MAX` and `LONG_MIN`.
+- The C Standard only gives us a minimal precision for them.
+- For the unsigned types, these are
+
+| Type               | Minimal precision |
+| ------------------ | ----------------- |
+| bool               | 1                 |
+| unsigned char      | 8                 |
+| unsigned short     | 16                |
+| unsigned           | 16                |
+| unsigned long      | 32                |
+| unsigned long long | 64                |
+
+- Under usual circumstances, these guarantees should give us enough information.
+- But under some technical constraints, such guarantees might not be sufficient, or we might want to emphasize a particular precision.
+- This may be the case if we want to use an unsigned quantity to represent a bit set of a known maximal set.
+- If we know that 32-bit will suffice for our set, depending on the platform, we might want to choose `unsigned` or `unsigned long` to represent it.
+- The C Standard provides names for **exact-width integer types** in `stdint.h`.
+- As the name indicates, they are of an exact prescribed "width", which for provided unsigned types is guaranteed to be the same as their precision.
+
+### Common Fixed-Width Integer Types
+
+1. **Exact-width integer types**:
+   - These types have a precise number of bits.
+   - Examples:
+     - `int8_t`: 8-bit signed integer
+     - `uint8_t`: 8-bit unsigned integer
+     - `int16_t`: 16-bit signed integer
+     - `uint16_t`: 16-bit unsigned integer
+     - `int32_t`: 32-bit signed integer
+     - `uint32_t`: 32-bit unsigned integer
+     - `int64_t`: 64-bit signed integer
+     - `uint64_t`: 64-bit unsigned integer
+2. **Minimum-width integer types**:
+   - These types have at least the specified number of bits.
+   - Examples:
+     - `int_least8_t`: At least 8-bit signed integer
+     - `uint_least8_t`: At least 8-bit unsigned integer
+     - `int_least16_t`: At least 16-bit signed integer
+     - `uint_least16_t`: At least 16-bit unsigned integer
+     - `int_least32_t`: At least 32-bit signed integer
+     - `uint_least32_t`: At least 32-bit unsigned integer
+     - `int_least64_t`: At least 64-bit signed integer
+     - `uint_least64_t`: At least 64-bit unsigned integer
+3. **Fastest minimum-width integer types**:
+   - These types are the fastest integer types with at least the specified number of bits.
+   - Examples:
+     - `int_fast8_t`: Fastest signed integer with at least 8 bits
+     - `uint_fast8_t`: Fastest unsigned integer with at least 8 bits
+     - `int_fast16_t`: Fastest signed integer with at least 16 bits
+     - `uint_fast16_t`: Fastest unsigned integer with at least 16 bits
+     - `int_fast32_t`: Fastest signed integer with at least 32 bits
+     - `uint_fast32_t`: Fastest unsigned integer with at least 32 bits
+     - `int_fast64_t`: Fastest signed integer with at least 64 bits
+     - `uint_fast64_t`: Fastest unsigned integer with at least 64 bits
+4. **Integer types capable of holding object pointers**:
+   - These types can hold any pointer to an object.
+   - Examples:
+     - `intptr_t`: Signed integer type capable of holding a pointer
+     - `uintptr_t`: Unsigned integer type capable of holding a pointer
+5. **Greatest-width integer types**:
+   - These types have the greatest width supported by the implementation.
+   - Examples:
+     - `intmax_t`: Greatest-width signed integer type
+     - `uintmax_t`: Greatest-width unsigned integer type
+
+- The presence and bounds can be tested with the macros `UINT8_MAX,..., UINT64_MAX` for unsigned types and `INT8_MIN, INT8_MAX,..., INT64_MIN, INT64_MAX,` respectively.
+- To encode literals of the requested type, there are macros `UINT8_C,..., UINT64_C`, and `INT8_C,..., INT64_C` respectively.
+- For example, on platforms where `uint64_t` is `unsigned long`, `INT64_C`(1) expands to `1UL`.
+
+### Example Usage
+
+Here's an example of how you might use fixed-width integers in a program:
+
+```C
+#include <stdio.h>
+
+#include <stdint.h>
+
+int main() {
+
+  int32_t a = 100; // 32-bit signed integer
+
+  uint64_t b = 10000000000ULL; // 64-bit unsigned integer
+
+  printf("a: %d\n", a);
+
+  printf("b: %llu\n", b);
+
+  return 0;
+
+}
+```
+
+### Benefits of Using Fixed-Width Integers
+
+1. **Portability**: Ensures that the program behaves consistently across different platforms.
+2. **Clarity**: Makes the code more readable and understandable by explicitly specifying the size of the integers.
+3. **Precision**: Avoids issues related to integer overflow and underflow by using appropriately sized types.
+
+By using fixed-width integers, we can write more robust and portable code, especially in systems programming, embedded systems, and applications where precise control over data size is crucial.
+
+---
+
+## Floating-point data
+
+- Whereas integers come near the mathematical concepts of `N(unsigned)` or `Z (signed)`, floating-point types are close to `R(non-complex)` or `C (complex)`.
+- The way they differ from these mathematical concepts is twofold.
+- First there is a size restriction on what is representable. 
+- The include file `float.h` for example, has constants, `DBL_MIN` and `DBL_MAX` that provide us with the minimal and maximal values for `double`.
+- But be aware that, `DBL_MIN` is the smallest number that is strictly greater than `0.0`; the smallest negative double value is `-DBL_MAX`.
+- But real numbers (R) have another difficulty when we want to represent them on a physical system: they can have an unlimited expansion such as the value <sup>1</sup>/<sub>3</sub>, which has an endless repetition of the digit 3 in decimal representation, or the value of `π`, which is "transcendent" and so has an endless expansion in any representation and doesn't repeat in any way.
+- C and other programming languages deal with these difficulties by cutting off the expansion.
+- The position where the expansion is cut is "floating" (thus the name) and depends on the magnitude of the number in question.
+
+### Definition
+
+- Floating-point data in C is used to represent real numbers that have fractional parts. 
+- C provides several types for floating-point numbers, each with different precision and range. 
+- These types are defined in the C standard library and are typically implemented using IEEE 754 standard.
+  - The IEEE 754 standard is a technical standard for floating-point arithmetic established by the Institute of Electrical and Electronics Engineers (IEEE). 
+  - It defines the representation and behavior of floating-point numbers in computers, ensuring consistency and portability across different platforms and programming languages.
+
+### **Key Concepts of IEEE 754 in C:**
+
+1. **Floating-Point Number Representation:**
+   - Single Precision (32-bit):
+     - 1 bit for the sign (0 for positive, 1 for negative)
+     - 8 bits for the exponent (with a bias of 127)
+     - 23 bits for the fraction (or mantissa/significand)
+   - Double Precision (64-bit):
+     - 1 bit for the sign
+     - 11 bits for the exponent (with a bias of 1023)
+     - 52 bits for the fraction
+2. **Special Values:**
+   - **Zero:** Represented with all bits of the exponent and fraction set to 0. There are two representations: +0 and -0.
+   - **Infinity:** Occurs when all exponent bits are 1, and the fraction bits are all 0. There is +∞ and -∞.
+   - **NaN (Not a Number):** Occurs when all exponent bits are 1, and the fraction is non-zero. It represents undefined or unrepresentable values like the result of `0/0`.
+3. **Rounding Modes:**
+   - IEEE 754 defines several rounding modes, with the most common being **round to nearest, ties to even** (default), where a value is rounded to the nearest representable number, and if it's exactly halfway, it rounds to the nearest even number.
+4. **Precision and Accuracy:**
+   - The standard ensures that arithmetic operations like addition, subtraction, multiplication, and division produce the most accurate result possible within the constraints of the precision.
+   -  However, due to the way floating-point numbers are represented in memory, these operations can introduce rounding errors.
+5. **Floating-Point Exceptions:**
+   - IEEE 754 specifies exceptions like overflow, underflow, division by zero, invalid operation, and inexact result. These exceptions can trigger flags that can be handled programmatically.
+
+### Floating-Point Types
+
+1. **`float`**:
+   - Single-precision floating-point.
+   - Typically 32 bits.
+   - Precision: about 7 decimal digits.
+   - Example: `float a = 3.14f;`
+2. **`double`**:
+   - Double-precision floating-point.
+   - Typically 64 bits.
+   - Precision: about 15 decimal digits.
+   - Example: `double b = 3.14;`
+3. **`long double`**:
+   - Extended-precision floating-point.
+   - Typically more than 64 bits (implementation-dependent).
+   - Precision: more than `double`.
+   - Example: `long double c = 3.14L;`
+
+### **Usage in C:**
+
+- **Floating-Point Types:**
+
+  - C provides `float` (single precision) and `double` (double precision) types that conform to the IEEE 754 standard.
+
+  - Example:
+
+    ```C
+    float a = 1.0f / 3.0f;  // Single precision
+    double b = 1.0 / 3.0;   // Double precision
+    ```
+
+- **Special Constants:**
+
+  - C provides constants like `INFINITY` and `NAN` in the `math.h` header to represent infinity and NaN values.
+
+  - Example:
+
+    ```C
+    #include <math.h>
+    
+    float inf = INFINITY;
+    double not_a_number = NAN;
+    ```
+
+- **Rounding and Precision Control:**
+
+  - The `fenv.h` header provides functions to control the rounding mode and handle floating-point exceptions.
+
+
+
+#### "Floating-point operations are neither associative, commutative, nor distributive."
+
+##### Associativity
+
+- Associativity refers to the property that the grouping of operations does not affect the result. For example, in integer arithmetic, addition is associative: `[ (a + b) + c = a + (b + c) ]`
+
+- However, floating-point addition is not associative due to rounding errors.
+
+```C
+#include <stdio.h>
+
+int main() {
+    float a = 1.0e10f;
+    float b = -1.0e10f;
+    float c = 1.0f;
+
+    float result1 = (a + b) + c;
+    float result2 = a + (b + c);
+
+    printf("(a + b) + c = %.1f\n", result1);
+    printf("a + (b + c) = %.1f\n", result2);
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+(a + b) + c = 1.0
+a + (b + c) = 0.0
+```
+
+- The results are different because of the way floating-point arithmetic handles precision and rounding.
+
+
+
+##### Commutativity
+
+- Commutativity refers to the property that the order of operations does not affect the result. For example, in integer arithmetic, addition is commutative: 
+
+  [ a + b = b + a ]
+
+- However, floating-point addition is not always commutative due to rounding errors.
+
+```C
+#include <stdio.h>
+
+int main() {
+    float a = 1.0e10f;
+    float b = 1.0f;
+
+    float result1 = a + b;
+    float result2 = b + a;
+
+    printf("a + b = %f\n", result1);
+    printf("b + a = %f\n", result2);
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+a + b = 10000000000.000000
+b + a = 10000000000.000000
+```
+
+- In this case, the results are the same, but in more complex scenarios involving multiple operations, the results can differ due to rounding errors.
+
+##### Distributivity
+
+- Distributivity refers to the property that multiplication distributes over addition. For example, in integer arithmetic: [ a * (b + c) = (a * b) + (a * c) ]
+- However, floating-point multiplication is not always distributive due to rounding errors.
+
+```C
+#include <stdio.h>
+
+int main() {
+    float a = 1.0e10f;
+    float b = 1.0f;
+    float c = 1.0e-10f;
+
+    float result1 = a * (b + c);
+    float result2 = (a * b) + (a * c);
+
+    printf("a * (b + c) = %f\n", result1);
+    printf("(a * b) + (a * c) = %f\n", result2);
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+a * (b + c) = 10000000000.000000
+(a * b) + (a * c) = 10000000000.000000
+```
+
+- In this case, the results are the same, but in more complex scenarios, the results can differ due to rounding errors.
+
+
+
+#### "In this case, the results are the same, but in more complex scenarios, the results can differ due to rounding errors."
+
+- Due to the way floating-point numbers are represented in memory, they can suffer from precision issues. 
+- This means that two floating-point numbers that are mathematically equal might not be exactly equal when represented in binary form.
+
+```C
+int main()
+{
+    double a = 0.1;
+    double b = 0.2;
+    double c = a + b;
+
+    if (c == 0.3)
+    {
+        printf("c is exactly 0.3\n");
+    }
+    else
+    {
+        printf("c is not exactly 0.3, it is %.17f\n", c);
+    }
+    return 0;
+}
+
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+c is not exactly 0.3, it is 0.30000000000000004
+```
+
+- In this example, `c` is not exactly `0.3` due to the precision issues inherent in floating-point arithmetic.
+- Using float instead of double might yield "c is exactly 0.3" but it is platform-dependent.
+- The exact behavior of floating-point arithmetic can vary slightly depending on the compiler and the platform.
+
+##### Conclusion
+
+- **Floating-point operations are neither associative, commutative, nor distributive**: This is due to rounding errors and precision issues inherent in floating-point arithmetic.
+- **Never compare floating-point values for equality**: Instead, use a small tolerance to check if the values are close enough, accounting for precision issues.

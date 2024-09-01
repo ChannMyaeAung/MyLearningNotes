@@ -4333,6 +4333,174 @@ Adding these values together: `8 + 0 + 2 + 1 = 11`.
 
 Therefore, `10 | 1` results in `11`.
 
+
+
+#### The Best Solution (Based on the feedback, code review from a mentor on "Exercism" platform)
+
+##### **What the mentor said about the above solution:**
+
+Clear and simple. Well done!
+
+I love that you've replaced the macro `INVALID` from the initial stub with an enumerator of an unnamed `enum`. That gets the job done without involving the preprocessor.
+
+I just have some small suggestions:
+
+------
+
+The parameter is named `input`, the variable in line 4 is named `num_len`.
+
+*Personally* I'm not a big fan of generic names like `input`. From the point of view of the function any parameter (that is not an OUT-variable) is "input". That doesn't tell the reader anything about the meaning or purpose of the parameter. How about something like `num` or `binary`?
+
+`num_len` represents the length of the `input`. You could consider choosing a name that makes it more obvious how the two variables are related. If you'd rename `input` to `num` *OR* `num_len` to `input_len` I think that would make the code a tiny bit easier to understand.
+
+But naming is subjective to a large degree. If you like the names and think they are easy to understand, keep them.
+
+------
+
+I recommend defining variables as late as possible and in the narrowest possible scope. Often that turns unintended uses into compilation errors (which is a good thing). It also reduces the mental burden of the reader because they don't have to remember the type and value of a variable for several lines.
+
+Since `i` is not used outside the loop you could define it in the first part of the `for` construct in line 7 where you assign a value to it. Then you wouldn't need line 6 anymore and the code would become a tiny bit shorter.
+
+------
+
+Line 4 calls `strlen()` to determine the length of the string.
+
+`strlen()` computes its result by traversing the string until it finds the terminating null-byte. That means lines 4 and 7-15 traverse the `input` twice.
+IMHO that's fine, the `input` will probably be not that long and it won't make a bit difference whether you traverse a string once or twice.
+
+But if you're looking for potential optimizations: The loop in line 7 could loop until the current character `input[i]` is the terminating null-byte. Then you wouldn't need line 4.
+
+------
+
+Lines 9 and 11 calculate the new value of the `result` with a bitwise left-shift operation and a bitwise `OR`. Nothing wrong with that.
+
+*Personally* I would rather keep the calculation on the arithmetic level, use a multiplication and an addition, and trust my compiler that it will generate optimized instructions.
+You can see that in the [compiler explorer](https://compiler-explorer.com/z/YEqeEKxf7).
+
+But if you like these bitwise operations and think they are easy to understand, keep them.
+
+`practice.h`
+
+```C
+enum{
+    ERROR_CODe = -1
+};
+
+int convert(const char *binary);
+```
+
+`functions.c`
+
+```C
+int convert(const chaar *binary){
+    int result = 0;
+    for(int i = 0; binary[i] != '\0'; i++){
+        if(binary[i] == '1'){
+            result = result * 2 + 1;
+        }else if(binary[i] == '0'){
+            result *= 2;
+        }else{
+            return ERROR_CODE;
+        }
+    }
+    return result;
+}
+```
+
+`practice.c`
+
+```c
+int main()
+{
+    char num[100];
+    int result = 0;
+    while (1)
+    {
+        printf("Enter the binary number for conversion to the decimal: ");
+        scanf("%99s", num);
+
+        result = convert(num);
+        if (result != ERROR_CODE)
+        {
+            break;
+        }
+        else
+        {
+            printf("Invalid binary number. Please try again.\n");
+        }
+    }
+
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 1011
+Result: 11
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 101
+Result: 5
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the binary number for conversion to the decimal: 231
+Invalid binary number. Please try again.
+Enter the binary number for conversion to the decimal: 1101
+Result: 13
+```
+
+`Explanation`
+
+###### Iteration Process
+
+Let's assume the input binary string is `"1011"`. We'll go through each character of the string and see how `result` is updated in each iteration.
+
+1. **Initialization**:
+   - `result` is initialized to `0`.
+2. **First Iteration (`i = 0`)**:
+   - `num[0]` is `'1'`.
+   - Since `num[0]` is `'1'`, the code executes `result = result * 2 + 1`.
+   - Calculation: `result = 0 * 2 + 1 = 1`.
+   - `result` is now `1`.
+3. **Second Iteration (`i = 1`)**:
+   - `num[1]` is `'0'`.
+   - Since `num[1]` is `'0'`, the code executes `result *= 2`.
+   - Calculation: `result = 1 * 2 = 2`.
+   - `result`is now `2`.
+4. **Third Iteration (`i = 2`)**:
+   - `num[2]` is `'1'`.
+   - Since `num[2]` is `'1'`, the code executes `result = result * 2 + 1`.
+   - Calculation: `result = 2 * 2 + 1 = 5`.
+   - `result` is now `5`.
+5. **Fourth Iteration (`i = 3`)**:
+   - `num[3]` is `'1'`.
+   - Since `num[3]` is `'1'`, the code executes `result = result * 2 + 1`.
+   - Calculation: `result = 5 * 2 + 1 = 11`.
+   - `result` is now `11`.
+6. **End of Loop**:
+   - The loop terminates because `num[4]`is the null-byte (`'\0'`).
+
+###### Final Result
+
+- The function returns `result`, which is `11`.
+
+###### Summary of Iterations
+
+| Iteration | `num[i]` | Operation                 | Calculation      | `result` |
+| --------- | -------- | ------------------------- | ---------------- | -------- |
+| 0         | '1'      | `result = result * 2 + 1` | `0 * 2 + 1 = 1`  | 1        |
+| 1         | '0'      | `result *= 2`             | `1 * 2 = 2`      | 2        |
+| 2         | '1'      | `result = result * 2 + 1` | `2 * 2 + 1 = 5`  | 5        |
+| 3         | '1'      | `result = result * 2 + 1` | `5 * 2 + 1 = 11` | 11       |
+
+###### Conclusion
+
+The function correctly converts the binary string `"1011"` to its decimal equivalent `11` by iterating through each character of the string and updating the `result`] accordingly. If any character other than `'0'` or `'1'` is encountered, the function returns `ERROR_CODE`.
+
 ---
 
 
