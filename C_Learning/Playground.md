@@ -4562,6 +4562,168 @@ Your task is to count the number of 1 bits in the binary representation of a num
 `practice.h`
 
 ```C
+int eggs_count(int encoded_num);
+```
+
+`functions.c`
+
+```C
+int eggs_count(int encoded_num){
+    int count = 0;
+    
+    // Loop thru each bit of the number
+    while(encoded_num > 0){
+        // Check if the least significant bit is 1
+        if(encoded_num & 1){
+            count++;
+        }
+        
+        //Shift the number to the right by 1 bit
+        encoded_num >>= 1;
+    }
+    return count;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    int encoded_num = 0;
+    printf("Enter the encoded number: ");
+    scanf("%d", &encoded_num);
+
+    printf("Actual eggs in the coop: %d\n", eggs_count(encoded_num));
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 89
+Actual eggs in the coop: 4
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 16
+Actual eggs in the coop: 1
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: -1
+Actual eggs in the coop: 0
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: -4
+Actual eggs in the coop: 0
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: -5
+Actual eggs in the coop: 0
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 0
+Actual eggs in the coop: 0
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 1
+Actual eggs in the coop: 1
+
+```
+
+#### Things to Note
+
+The bitwise AND operation compares each bit of two numbers and returns a new number whose bits are set to `1` only if both corresponding bits of the operands are `1`. For example:
+
+- `5` in binary is `0101`
+- `3` in binary is `0011`
+- `5 & 3` results in `0001` (which is `1` in decimal)
+
+- `while (encoded_num > 0)`: Loops as long as `encoded_num` is greater than 0.
+  - **Check Least Significant Bit:**
+    - `if (encoded_num & 1)`: Uses the bitwise AND operator to check if the least significant bit of `encoded_num` is 1. If it is, the condition is true.
+    - `count++`: Increments the `count`variable by 1 if the least significant bit is 1.
+  - **Shift Right:**
+    - `encoded_num >>= 1;`: Shifts `encoded_num`]to the right by 1 bit, effectively dividing it by 2 and discarding the least significant bit.
+
+##### Example Looping
+
+- Let's use `13` as an example input (`encoded_num = 13`), which is `1101` in binary.
+
+  1. **Initialization**:
+     - `encoded_num = 13` (binary `1101`)
+     - `count = 0`
+  2. **First Iteration**:
+     - `encoded_num & 1` checks if the least significant bit is `1`(which it is, since `1101 & 0001 = 0001`).
+     - `count`is incremented to `1`.
+     - `encoded_num` is right-shifted by 1 bit, resulting in `110` (which is `6` in decimal).
+  3. **Second Iteration**:
+     - `encoded_num & 1` checks if the least significant bit is `1`(which it is not, since `0110 & 0001 = 0000`).
+     - `count` remains `1`.
+     - `encoded_num`is right-shifted by 1 bit, resulting in `11` (which is `3` in decimal).
+  4. **Third Iteration**:
+     - `encoded_num & 1`checks if the least significant bit is `1` (which it is, since `0011 & 0001 = 0001`).
+     - `count`is incremented to `2`.
+     - `encoded_num` is right-shifted by 1 bit, resulting in `1` (which is `1` in decimal).
+  5. **Fourth Iteration**:
+     - `encoded_num & 1`checks if the least significant bit is `1` (which it is, since `0001 & 0001 = 0001`).
+     - `count` is incremented to `3`.
+     - `encoded_num` is right-shifted by 1 bit, resulting in `0`.
+  6. **Termination**:
+     - The loop terminates because `encoded_num` is now `0`.
+
+  The function returns `3`, which is the number of `1`s in the binary representation of `13`.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 13
+Actual eggs in the coop: 3
+```
+
+---
+
+
+
+## Two Fer
+
+### Introduction
+
+In some English accents, when you say "two for" quickly, it sounds like "two fer". Two-for-one is a way of saying that if you buy one, you also get one for free. So the phrase "two-fer" often implies a two-for-one offer.
+
+Imagine a bakery that has a holiday offer where you can buy two cookies for the price of one ("two-fer one!"). You take the offer and (very generously) decide to give the extra cookie to someone else in the queue.
+
+Your task is to determine what you will say as you give away the extra cookie.
+
+If you know the person's name (e.g. if they're named Do-yun), then you will say:
+
+```text
+One for Do-yun, one for me.
+```
+
+If you don't know the person's name, you will say *you* instead.
+
+```text
+One for you, one for me.
+```
+
+Here are some examples:
+
+| Name   | Dialogue                    |
+| :----- | :-------------------------- |
+| Alice  | One for Alice, one for me.  |
+| Bohdan | One for Bohdan, one for me. |
+|        | One for you, one for me.    |
+| Zaphod | One for Zaphod, one for me. |
+
+
+
+### Solution
+
+`practice.h`
+
+```C
 ```
 
 `functions.c`
@@ -4572,5 +4734,10 @@ Your task is to count the number of 1 bits in the binary representation of a num
 `practice.c`
 
 ```C
+```
+
+`Output`
+
+```sh
 ```
 

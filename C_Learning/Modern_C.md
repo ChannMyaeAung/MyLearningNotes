@@ -3151,3 +3151,69 @@ c is not exactly 0.3, it is 0.30000000000000004
 
 - **Floating-point operations are neither associative, commutative, nor distributive**: This is due to rounding errors and precision issues inherent in floating-point arithmetic.
 - **Never compare floating-point values for equality**: Instead, use a small tolerance to check if the values are close enough, accounting for precision issues.
+
+## Bullet Points up until this point
+
+- C programs run in an abstract state machine that is mostly independent of the specific computer where it is launched.
+- All basic C types are kinds of numbers, but not all of them can be used directly for arithmetic.
+- Values have a type and a binary representation.
+- When necessary, types of values are implicitly converted to fit the needs of particular places where they are used.
+- Variables must be explicitly initialized before their first use.
+- Integer computations give exact values as long as there is no overflow.
+- Floating-point computations give only approximated results that are cut off after a certain number of binary digits.
+
+---
+
+# Derived data types
+
+- There are **four strategies** for deriving data types.
+- Two of them are called **aggregate data types**, because they combine multiple instances of one or several other data types:
+  - **Arrays**: These combine items that all have the same base type.
+  - **Structures**: These combine items that may have different base types.
+- The two other strategies to derive data types are more involved:
+  - **Pointers**: Entities that refer to an object in memory.
+  - **Unions**: These overlay items of different base types in the same memory location. Unions require a deeper understanding of C's memory model and are not of much use in a programmer's everyday life.
+- There is a fifth strategy that introduces new names for types: **typedef**
+  - Unlike the previous four, this does not create a new type in C's type system, but only creates a new name for an existing type.
+  - In that way, it is similar to the definition of macros with `#define`: thus the choice for the keyword for this feature.
+
+
+
+## Arrays
+
+- Arrays allow us to group objects of the same type into an encapsulating object.
+- Arrays and pointers are closely related in C.
+- Arrays look like pointers in many contexts, and pointers refer to array objects.
+
+### Array declaration
+
+```C
+double a[4];
+signed b[N];
+```
+
+- Here, `a` comprises 4 subobjects of type `double` and `b` comprises `N` of type `signed`.
+
+|      | [0]         | [1]                       | [2]         | [3]         |
+| ---- | ----------- | ------------------------- | ----------- | ----------- |
+| a    | `double` ?? | `double` ??               | `double` ?? | `double` ?? |
+|      | [0]         |                           | [`N` - 1]   |             |
+| b    | `signed` ?? | ...                  .... | `signed` ?? |             |
+
+- The dots ... here indicate that there may be an unknown number of similar items between two boxes.
+
+The type that composes an array may itself again be an array, forming a **multidimensional array**.
+
+```C
+double C[M][N];
+double (D[M])[N];
+```
+
+- Both `C` and `D` are `M` objects of array type `double`.
+- This means we have to read a nested array declaration from inside out to describe its structure:
+
+|      |             | [0]  |             |             | [M-1] |              |
+| ---- | ----------- | ---- | ----------- | ----------- | ----- | ------------ |
+|      | `[0][0]`    |      | `[0][N-1]`  | `[M-1][0]`  |       | `[M-1][N-1]` |
+| C    | `double` ?? | ...  | `double` ?? | `double` ?? | ...   | `double` ??  |
+
