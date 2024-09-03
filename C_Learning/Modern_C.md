@@ -3217,3 +3217,225 @@ double (D[M])[N];
 |      | `[0][0]`    |      | `[0][N-1]`  | `[M-1][0]`  |       | `[M-1][N-1]` |
 | C    | `double` ?? | ...  | `double` ?? | `double` ?? | ...   | `double` ??  |
 
+- During development, designated initializers help to make our code robust against small changes in array sizes or positions.
+
+### Array operations
+
+#### "An array in a condition evaluates to `true`."
+
+- In C, when an array is used in a condition, it decays to a pointer to its first element. 
+- This pointer is not `NULL`, so it evaluates to `true`.
+- An array in a condition evaluates to `true` because it decays to a pointer to its first element, which is non-zero.
+
+```C
+int arr[5] = {1, 2, 3, 4 ,5};
+if(arr){
+    // This block will always execute because arr decays to a pointer to its first element.
+    printf("Array is non_null\n");
+}
+```
+
+
+
+#### "There are array objects but no array values."
+
+- In C, arrays are treated as objects, but they do not have a single value that can be assigned or compared directly. Instead, they are collections of elements.
+  - **Explanation**: Arrays are objects that hold multiple values (elements), but the array itself does not have a single value. You can access and manipulate individual elements, but you cannot treat the array as a single value.
+
+```C
+int arr[5] = {1, 2, 3, 4, 5};
+// arr is an object containing 5 integers, but arr iteself does not have a single value.
+```
+
+
+
+#### "Arrays can't be compared"
+
+- In C, we cannot directly compare arrays using comparison operators like `==` or `!=`.
+  - **Explanation**: Arrays cannot be compared directly because the comparison operators do not work on array objects. Instead, we need to compare each element individually or use functions like `memcmp` from the standard library.
+
+```C
+int arr1[5] = {1, 2, 3, 4, 5};
+int arr2[5] = {1, 2, 3, 4, 5};
+
+// if (arr1 == arr2){
+	// This is invalid in C
+	// printf("Arrays are equal\n");
+//}
+
+// Correct way to compare arrays
+int are_equal = 1;
+for(int i = 0; i < 5; i++){
+    if(arr1[i] != arr2[i]){
+        are_equal = 0;
+        break;
+    }
+}
+
+if(are_equal){
+    printf("Arrays are equal\n");
+}
+```
+
+
+
+#### "Arrays can't be assigned to"
+
+- In C, we cannot assign one array to another using the assignment operator `=`.
+  - **Explanation**: Arrays cannot be assigned to each other directly because the assignment operator does not work on array objects. Instead, you need to copy each element individually or use functions like `memcpy` from the standard library.
+
+```C
+int arr1[5] = {1, 2, 3, 4, 5};
+int arr2[5];
+
+// arr2 = arr1; // This is invalid in C
+
+// Correct way to copy arrays
+for(int i = 0; i < 5; i++){
+    arr2[i] = arr1[i];
+}
+```
+
+
+
+### Array length
+
+- There are two categories of arrays: **fixed-length arrays (FLA)** and **variable-length arrays (VLA)**.
+- The first are a concept that has been present in C since the beginning; this feature is shared with many other programming languages.
+- The second was introduced in C99 and is relatively unique to C, and it has some restrictions on its usage.
+
+#### 1. "VLAs can't have initializers."
+
+- Variable Length Arrays (VLAs) in C cannot be initialized at the time of declaration.
+  - **Explanation**: Unlike fixed-length arrays, VLAs cannot have initial values assigned to them when they are declared. We must assign values to the elements of a VLA after its declaration.
+
+```C
+void example(int n){
+    int arr[n]; //VLA
+    // int arr[n] = {1, 2, 3}; // This is invalid
+    for(int i = 0; i < n; i++){
+        arr[i] = i + 1; // Assign values after declaration
+    }
+}
+```
+
+
+
+#### 2. "VLAs can't be declared outside functions"
+
+- VLAs can only be declared within the scope of a function (i.e., they cannot be global or static).
+
+- **Explanation**: VLAs are designed to have their size determined at runtime, which means they must be declared within a function where the size can be dynamically determined.
+
+```C
+int main(){
+    int n = 5;
+    int arr[n]; // VLA declared inside a function
+    return 0;
+}
+
+// int arr[n]; // This is invalid, VLAs cannot be declared outside functions.
+```
+
+
+
+#### 3. "The length of an FLA is determined by an integer constant expression (ICE) or by an initializer"
+
+- The length of a Fixed Length Array (FLA) must be specified by an integer constant expression (ICE) or deduced from an initializer.
+  - **Explanation**: FLAs have a size that is known at compile time, either specified directly by an ICE or deduced from the number of elements in an initializer list.
+
+```C
+#define SIZE 10
+int arr1[SIZE]; //FLA with size determined by an ICE
+
+int arr2[] = {1, 2, 3, 4, 5}; // FLA with size determined by initializer (size is 5)
+```
+
+
+
+#### 4. "An Array-length specification must be strictly positive"
+
+- The length of an array must be a positive integer.
+
+- **Explanation**: Arrays in C cannot have a length of zero or a negative value. The length must be a positive integer.
+
+```C
+int arr[5]; // Valid
+// int arr[0]; // Invalid, array length must be positive
+
+// int arr[-1]; // Invalid, array length must be positive
+```
+
+- If the `[]` are left empty, the length of the array is determined from its initializer, if any:
+
+```C
+double E[] = {[3] = 42.0, [2] = 37.0};
+double F[] = {22.0, 17.0, 1, 0.5};
+```
+
+- Here, `E` and `F` both are of type `double[4]`.
+- Since such an initializer's structures can always be determined at compile time without necessarily knowing the values of the items, the array is still an **FLA**.
+
+```
+E[0] = double 0.0, E[1] = double 0.0,
+E[2] = double 37.0, E[3] = double 42.0
+
+F[0] = double 22.0, F[1] = double 17.0, F[2] = double 1.0, F[3] = double 0.5
+```
+
+
+
+#### 5. "An array with a length that is not an integer constant expression is a VLA"
+
+- If the length of an array is not an integer constant expression (ICE), it is considered a Variable Length Array (VLA).
+  - **Explanation**: VLAs have their size determined at runtime, which means their length is not a compile-time constant.
+
+```C
+void example(int n){
+    int arr[n]; // VLA, length is not an ICE
+}
+
+int main(){
+    int n = 5;
+    int arr[n]; //VLA, length is not an ICE
+    return 0;
+}
+```
+
+
+
+#### 6. "The length of an array `A` is `(sizeof A) / (sizeof A[0])`"
+
+- That is, it is the total size of the array object, divided by the size of any of the array elements.
+
+```C
+int main()
+{
+    int arr[] = {1, 2, 3, 4, 5, 6};
+
+    int size = sizeof(arr) / sizeof(arr[0]);
+
+    printf("Size: %d\n", size);
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Size: 6
+```
+
+
+
+#### Summary
+
+- **VLAs can't have initializers**: VLAs cannot be initialized at the time of declaration.
+- **VLAs can't be declared outside functions**: VLAs must be declared within the scope of a function.
+- **The length of an FLA is determined by an integer constant expression (ICE) or by an initializer**: FLAs have a size known at compile time, specified by an ICE or deduced from an initializer.
+- **An array-length specification must be strictly positive**: Array lengths must be positive integers.
+- **An array with a length that is not an integer constant expression is a VLA**: VLAs have their size determined at runtime, not at compile time.
+
+### Arrays as parameters
+

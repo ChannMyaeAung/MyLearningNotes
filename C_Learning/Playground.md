@@ -4680,7 +4680,108 @@ The bitwise AND operation compares each bit of two numbers and returns a new num
 chan@CMA:~/C_Programming/practice$ ./practice
 Enter the encoded number: 13
 Actual eggs in the coop: 3
+
 ```
+
+
+
+### 2nd Solution (Optimized)
+
+- The second solution uses Brian Kernighan's algorithm.
+- This algorithm works by repeatedly clearing the lowest set bit and incrementing the count until the number becomes zero.
+
+#### What a mentor on exercism said about my solution
+
+"Hi Chan,
+
+Great code! This code runs in *O(bits)*, where *bits* is the number of bits needed to represent `encoded_num` (the position of the left-most set bit).
+
+There is a trick to have this check take *O(set_bits)*, where *set_bits* is the number of bits set to 1.
+
+So for example, `0b1000000000000000` would require 16 iterations with your method, and only one with this alternative method.
+
+What you want is Brian Kernighan's (of K&R fame!) [algorithm to count bits](https://yuminlee2.medium.com/brian-kernighans-algorithm-count-set-bits-in-a-number-18ab05edca93#1844) :)"
+
+##### Brain Kernighan's algorithm
+
+- The idea is to **subtract** `n` **by 1** to **invert all the bits after the rightmost set bit** of `n` (including the rightmost set bit). 
+- Then **use** `n & (n-1)` **expression** to **clear the rightmost set bit**. The number of times we clear the rightmost set bit until the number becomes zero will be the set bit count.
+
+`practice.h`
+
+```C
+int eggs_count(int encoded_num);
+```
+
+`functions.c`
+
+```C
+int eggs_count(int encoded_num){
+    int count - 0;
+    // Loop thru each bit of the number
+    while(encoded_num > 0){
+        encoded_num &= (encoded_num - 1);
+        count++;
+    }
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    int encoded_num = 0;
+    printf("Enter the encoded number: ");
+    scanf("%d", &encoded_num);
+
+    printf("Actual eggs in the coop: %d\n", eggs_count(encoded_num));
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the encoded number: 13
+Actual eggs in the coop: 3
+```
+
+#### Explanation
+
+- "Clearing the lowest set bit" means turning the rightmost `1` bit in the binary representation of the number to `0`.
+
+#### How It Works
+
+1. **Binary Representation**: Consider the binary representation of the number.
+2. **Subtracting 1**: Subtracting `1`from the number flips all the bits after the rightmost `1` bit, including the rightmost `1` bit itself.
+3. **Bitwise AND**: Performing a bitwise AND operation between the original number and the result of the subtraction clears the rightmost `1` bit.
+
+#### Example
+
+Let's take an example with `encoded_num = 13` (binary `1101`):
+
+1. **Initial State**:
+   - `encoded_num = 13` (binary `1101`)
+2. **First Iteration**:
+   - `encoded_num - 1 = 12` (binary `1100`)
+   - `encoded_num &= (encoded_num - 1)`:
+     - `1101 & 1100 = 1100`
+   - `encoded_num` becomes `12` (binary `1100`)
+3. **Second Iteration**:
+   - `encoded_num - 1 = 11` (binary `1011`)
+   - `encoded_num &= (encoded_num - 1)`:
+     - `1100 & 1011 = 1000`
+   - `encoded_num` becomes `8` (binary `1000`)
+4. **Third Iteration**:
+   - `encoded_num - 1 = 7` (binary `0111`)
+   - `encoded_num &= (encoded_num - 1)`:
+     - `1000 & 0111 = 0000`
+   - `encoded_num` becomes `0` (binary `0000`)
+
+After each iteration, the rightmost `1` bit is cleared, and the loop continues until `encoded_num` becomes `0`, resulting `count` equal to `3` in this case.
 
 ---
 
