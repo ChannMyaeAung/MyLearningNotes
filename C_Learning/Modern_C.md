@@ -3439,3 +3439,204 @@ Size: 6
 
 ### Arrays as parameters
 
+1. **Decay to Pointers**:
+   - When we pass an array to a function, it decays to a pointer to its first element. This means the function receives a pointer, not the entire array.
+2. **Size Information**:
+   - The size of the array is not passed to the function. If we need the size, we must pass it explicitly as an additional parameter.
+3. **Modification**:
+   - Since the function receives a pointer to the array, any modifications to the array elements within the function will affect the original array.
+4. **Syntax**:
+   - You can declare the function parameter as either `int arr[]` or `int *arr`. Both are equivalent in the context of function parameters.
+
+#### "1.  The inner most dimension of an array parameter to a function is lost"
+
+- When we pass an array to a function in C, what is actually passed is a pointer to the first element of the array. 
+- This means that the size information of the innermost dimension is not available within the function. 
+- For example, if we pass a 2D array, the function will receive a pointer to the first element of the array, and it won't know the size of the innermost dimension.
+
+#### **"2. Don't use the sizeof operator on array parameters to functions"**:
+
+- Since array parameters decay to pointers when passed to functions, using the `sizeof` operator on these parameters will give you **the size of the pointer**, **not the size of the array**. 
+- This can lead to incorrect calculations and bugs. 
+- For example, if you pass an array `int arr[10]` to a function, `sizeof(arr)` inside the function will give you the size of the pointer, not the size of the array (which would be `10 * sizeof(int)`).
+
+#### **"3. Array parameters behave as if the array is passed by reference"**:
+
+- When we pass an array to a function, what is actually passed is a pointer to the first element of the array. 
+- This means that any changes made to the array elements within the function will affect the original array. 
+- This behavior is similar to passing by reference, where the function can modify the original data.
+
+#### Example
+
+```C
+#include <stdio.h>
+
+void modifyArray(int arr[], int size) {
+    // The size of arr is not known here, sizeof(arr) would give the size of the pointer
+    for (int i = 0; i < size; i++) {
+        arr[i] = i * 2; // Modifying the original array
+    }
+}
+
+int main() {
+    int myArray[5] = {1, 2, 3, 4, 5};
+    modifyArray(myArray, 5);
+
+    // Printing the modified array
+    for (int i = 0; i < 5; i++) {
+        printf("%d\n", myArray[i]);
+    }
+    return 0;
+}
+```
+
+In this example:
+
+- The `modifyArray` function receives a pointer to the first element of `myArray`.
+- The `sizeof(arr)` inside `modifyArray` would give the size of the pointer, not the array.
+- Changes made to `arr` inside `modifyArray` affect `myArray` in `main`, demonstrating pass-by-reference-like behavior.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+0
+2
+4
+6
+8
+```
+
+#### Example 2
+
+```C
+void swap_double(double a[static 2])
+{
+    // Store the first element in a tmp variable;
+    double tmp = a[0];
+    // Assign the second element to the first element
+    a[0] = a[1];
+    // Assign the tmp variable (original first element) to the second element
+    a[1] = tmp;
+}
+
+int main()
+{
+    // Initialize an array of two doubles
+    double A[2] = {1.0, 2.0};
+
+    // Call the function to swap the elements of the array
+    swap_double(A);
+
+    // Print the swapped elements
+    printf("A[0] = %g, A[1] = %g\n", A[0], A[1]);
+    return 0;
+}
+```
+
+In this example:
+
+- The function `swap_double` takes an array of two doubles as a parameter and swaps their values.
+- The `static 2` in the parameter declaration indicates that the function expects an array of at least two elements. 
+- This is a hint to the compiler for optimization and does not affect the runtime behavior.
+- Here, `swap_double(A)` will act directly on array `A` and not on a copy. Therefore, the program will swap the values of the two elements of `A`.
+
+---
+
+
+
+## Strings are special
+
+- There is a special kind of array that we have encountered several times and that, in contrast to other arrays, even has literals: **strings**.
+- In C, the term "string" specifically refers to a sequence of characters terminated by a null character (`'\0'`). 
+- This null character is what distinguishes a string from a mere array of characters. 
+
+#### "A string is a 0-terminated array of `char`".
+
+- A string like "hello" always has one more element than is visible, which contains the value 0, so here the array has length 6.
+
+- Like all arrays, strings can't be assigned to, but they can be initialized from string literals:
+
+  ```C
+  char jay0[] = "jay";
+  char jay1[] = {"jay"};
+  char jay2[] = {'j', 'a', 'y', 0};
+  char jay3[] = {'j', 'a', 'y'};
+  ```
+
+- These are all equivalent declarations. Be aware that not all arrays of `char` are strings, such as
+
+```C
+char jay4[3] = {'j', 'a', 'y'};
+char jay5[3] = "jay";
+```
+
+- These both cut off after the 'y' character and so are not 0-terminated.
+
+|      | [0]      | [1]      | [2]      | [3]       |
+| ---- | -------- | -------- | -------- | --------- |
+| jay0 | char 'j' | char 'a' | char 'y' | char '\0' |
+| jay1 | char 'j' | char 'a' | char 'y' | char '\0' |
+| jay2 | char 'j' | char 'a' | char 'y' | char '\0' |
+| jay3 | char 'j' | char 'a' | char 'y' | char '\0' |
+| jay4 | char 'j' | char 'a' | char 'y' |           |
+| jay5 | char 'j' | char 'a' | char 'y' |           |
+
+
+
+**Null-Terminated Strings**:
+
+- A string in C is an array of characters that ends with a null character (`'\0'`). 
+- This null character indicates the end of the string.
+- Example:
+
+```C
+char str[] = "Hello"; // This is a string because it is null-terminated.
+```
+
+**Character Arrays**:
+
+- An array of characters is simply a collection of characters stored in contiguous memory locations. It does not necessarily have to be null-terminated.
+- Example:
+
+```C
+char arr[] = {'H', 'e', 'l', 'l', 'o'}; // This is not a string because it is not null-terminated.
+```
+
+**Implications**:
+
+- Functions that operate on strings (like `strlen`, `strcpy`, `printf` with `%s`, etc.) expect the input to be null-terminated. 
+- If we pass a character array that is not null-terminated to these functions, it can lead to undefined behavior because the functions will continue reading memory until they encounter a null character.
+- Example:
+
+```C
+char arr[] = {'H', 'e', 'l', 'l', 'o'};
+printf("%s\n", arr); // Undefined behavior because arr is not null-terminated.
+```
+
+
+
+#### Example
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    // This is a string (null-terminated)
+    char str[] = "Hello";
+    printf("String: %s\n", str); // Prints "Hello"
+    printf("Length of string: %zu\n", strlen(str)); // Prints 5
+
+    // This is a character array, not a string
+    char arr[] = {'H', 'e', 'l', 'l', 'o'};
+    printf("Character array: %s\n", arr); // Undefined behavior
+    printf("Length of character array: %zu\n", strlen(arr)); // Undefined behavior
+
+    return 0;
+}
+```
+
+In this example:
+
+- `str` is a string because it is null-terminated.
+- `arr` is a character array but not a string because it lacks the null terminator.
+- Using `strlen` or `printf`with `%s` on `arr` leads to undefined behavior because these functions expect a null-terminated string.

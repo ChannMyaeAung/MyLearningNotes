@@ -4825,20 +4825,114 @@ Here are some examples:
 `practice.h`
 
 ```C
+void two_fer(char *buffer, const char *name);
 ```
 
 `functions.c`
 
 ```C
+void two_fer(char *buffer, const char *name)
+{
+    if (name == NULL || strlen(name) == 0)
+    {
+        sprintf(buffer, "One for you, one for me.\n");
+    }
+    else
+    {
+        sprintf(buffer, "One for %s, one for me.\n", name);
+    }
+}
 ```
 
 `practice.c`
 
 ```C
+int main()
+{
+    char name[80];
+
+    // buffer to store the result of two_fer
+    char buffer[100];
+    printf("Enter the name of the person: ");
+
+    fgets(name, sizeof(name), stdin);
+
+    // Remove newline character from fgets
+    name[strcspn(name, "\n")] = '\0';
+
+    two_fer(buffer, name);
+    printf("%s", buffer);
+    return 0;
+}
 ```
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the name of the person: 
+One for you, one for me.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the name of the person: Do-yun
+One for Do-yun, one for me.
 ```
+
+---
+
+
+
+## Raindrops
+
+### Instruction
+
+Raindrops is a slightly more complex version of the FizzBuzz challenge, a classic interview question.
+
+Your task is to convert a number into its corresponding raindrop sounds.
+
+If a given number:
+
+- is divisible by 3, add "Pling" to the result.
+- is divisible by 5, add "Plang" to the result.
+- is divisible by 7, add "Plong" to the result.
+- **is not** divisible by 3, 5, or 7, the result should be the number as a string.
+
+### Examples
+
+- 28 is divisible by 7, but not 3 or 5, so the result would be `"Plong"`.
+- 30 is divisible by 3 and 5, but not 7, so the result would be `"PlingPlang"`.
+- 34 is not divisible by 3, 5, or 7, so the result would be `"34"`.
+
+```
+A common way to test if one number is evenly divisible by another is to compare the remainder or modulus to zero. Most languages provide operators or functions for one (or both) of these.
+```
+
+
+
+### Solution
+
+`practice.h`
+
+```C
+
+```
+
+`functions.c`
+
+```C
+
+```
+
+`practice.c`
+
+```C
+
+```
+
+`Output`
+
+```sh
+
+```
+
+---
 
