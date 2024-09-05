@@ -4877,6 +4877,67 @@ Enter the name of the person: Do-yun
 One for Do-yun, one for me.
 ```
 
+
+
+### Solution 2 (Better and Modified)
+
+#### What my mentor said
+
+Hi Chan!
+
+The code looks perfect as it is, congrats!
+
+Using `sprintf()` is frowned upon, as nothing prevents you from writing beyond the buffer limits, and `snprintf()` is preferred. For that, you'd need the size of the buffer, though, which you are not being given, so there's nothing you can do here (just be aware of this when writing your own code!).
+
+`practice.h`
+
+```C
+void two_fer(char *buffer, size_t buffer_size, const char *name);
+```
+
+`functions.c`
+
+```C
+void two_fer(char *buffer, size_t buffer_size, const char *name){
+    if(name == NULL || strlen(name) == 0){
+        // Use snprintf to ensure we do not write beyong the buffer limits
+        snprintf(buffer, buffer_size, "One for you, one for me.\n");
+    }else{
+        snprintf(buffer, buffer_size, "One for %s, one for me.\n", name);
+    }
+}
+```
+
+`practice.c`
+
+```C
+int main(){
+    char name[80];
+    char buffer[80];
+    
+    printf("Enter the name of the person: ");
+    fgets(name, sizeof(name), stdin);
+    
+    name[strcspn(name, "\n")] = '\0';
+    
+    two_fer(buffer, sizeof(buffer), name);
+    printf("%s", buffer);
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the name of the person: Do-yun
+One for Do-yun, one for me.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter the name of the person: 
+One for you, one for me.
+```
+
+
+
 ---
 
 

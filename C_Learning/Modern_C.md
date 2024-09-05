@@ -3635,8 +3635,229 @@ int main() {
 }
 ```
 
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+String: Hello
+Length of string: 5
+Character array: HelloHello
+Length of character array: 10
+```
+
+
+
 In this example:
 
 - `str` is a string because it is null-terminated.
 - `arr` is a character array but not a string because it lacks the null terminator.
 - Using `strlen` or `printf`with `%s` on `arr` leads to undefined behavior because these functions expect a null-terminated string.
+- `char arr[] = {'H', 'e', 'l', 'l', 'o'};` is not null-terminated.
+- `printf("Character array: %s\n", arr);` prints "HelloHello". prints `"Hello"` followed by whatever additional characters happen to be in memory after `'o'`. This is why we see `"HelloHello"`; the `printf` function continues reading past the end of `arr` until it encounters a null terminator.
+- `printf("Length of character array: %zu\n", strlen(arr));` prints 10 which is incorrect and may vary depending on what is in memory. This is because `strlen` also continues reading memory until it finds a null character, counting all characters it encounters.
+
+**Key Points**
+
+- **Undefined Behavior**: Since `arr` is not null-terminated, using `strlen` or `printf` with `%s` on it results in undefined behavior. The code is relying on the presence of a null terminator somewhere in memory, which can lead to unpredictable results.
+
+- **Correct Approach**: To avoid undefined behavior and ensure proper string handling, always include a null terminator in character arrays that are used as strings. For example:
+
+  ```C
+  char arr[] = {'H', 'e', 'l', 'l', 'o', '\0'};
+  ```
+
+- **Memory Handling**: The extra characters being printed after `"Hello"` are just whatever happens to be in memory at that location, which is why we're seeing unexpected results.
+
+- **Undefined Behavior (General)**: The term "undefined behavior" means that the C standard does not define what should happen in this situation. The program may crash, produce incorrect results, or appear to work correctly. The behavior can vary between different compilers, compiler versions, and even different runs of the same program.
+
+##### Correct Approach
+
+```C
+int main()
+{
+    char str[] = "Hello";
+    printf("String: %s\n", str);
+    printf("Length of string: %zu\n", strlen(str));
+
+    // Corrected character array to be null-terminated
+    char arr[] = {'H', 'e', 'l', 'l', 'o', '\0'};
+    printf("Character array: %s\n", arr);
+    printf("Length of character array: %zu\n", strlen(arr));
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+String: Hello
+Length of string: 5
+Character array: Hello
+Length of character array: 5
+```
+
+#### `mem` & `str` 
+
+- In C, `mem` and `str` are common prefixes used in the names of standard library functions that operate on memory and strings, respectively. 
+- Here’s a brief overview of some of these functions:
+
+##### Memory Functions (`mem`)
+
+These functions operate on raw memory blocks, treating them as arrays of bytes:
+
+1. **`memcpy`**:
+   - Copies `n` bytes from memory area `src` to memory area `dest`.
+   - Prototype: `void *memcpy(void *dest, const void *src, size_t n);`
+2. **`memmove`**:
+   - Similar to `memcpy`, but handles overlapping memory areas correctly.
+   - Prototype: `void *memmove(void *dest, const void *src, size_t n);`
+3. **`memset`**:
+   - Fills the first `n` bytes of the memory area pointed to by `s` with the constant byte `c`.
+   - Prototype: `void *memset(void *s, int c, size_t n);`
+4. **`memcmp`**:
+   - Compares the first `n` bytes of the memory areas `s1` and `s2`.
+   - Prototype: `int memcmp(const void *s1, const void *s2, size_t n);`
+
+##### String Functions (`str`)
+
+These functions operate on null-terminated strings:
+
+1. **`strcpy`**:
+   - Copies the string pointed to by `src` to `dest`.
+   - Prototype: `char *strcpy(char *dest, const char *src);`
+2. **`strncpy`**:
+   - Copies up to `n` characters from the string pointed to by `src` to `dest`.
+   - Prototype: `char *strncpy(char *dest, const char *src, size_t n);`
+3. **`strcat`**:
+   - Appends the string pointed to by `src` to the end of the string pointed to by `dest`.
+   - Prototype: `char *strcat(char *dest, const char *src);`
+4. **`strncat`**:
+   - Appends up to `n` characters from the string pointed to by `src` to the end of the string pointed to by `dest`.
+   - Prototype: `char *strncat(char *dest, const char *src, size_t n);`
+5. **`strlen`**:
+   - Computes the length of the string `s`.
+   - Prototype: `size_t strlen(const char *s);`
+6. **`strcmp`**:
+   - Compares the string `s1` to the string `s2`.
+   - Prototype: `int strcmp(const char *s1, const char *s2);`
+7. **`strncmp`**:
+   - Compares up to `n` characters of the string `s1` to the string `s2`.
+   - Prototype: `int strncmp(const char *s1, const char *s2, size_t n);`
+8. **`strchr`**:
+   - Locates the first occurrence of `c` in the string `s`.
+   - Prototype: `char *strchr(const char *s, int c);`
+9. **`strrchr`**:
+   - Locates the last occurrence of `c` in the string `s`.
+   - Prototype: `char *strrchr(const char *s, int c);`
+10. **`strstr`**:
+    - Finds the first occurrence of the substring `needle` in the string `haystack`.
+    - Prototype: `char *strstr(const char *haystack, const char *needle);`
+
+#### Example Usage
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char src[] = "Hello, World!";
+    char dest[50];
+
+    // Using strcpy to copy a string
+    strcpy(dest, src);
+    printf("Copied string: %s\n", dest);
+
+    // Using strcat to concatenate strings
+    strcat(dest, " How are you?");
+    printf("Concatenated string: %s\n", dest);
+
+    // Using memset to set memory
+    memset(dest, '*', 5);
+    dest[5] = '\0'; // Null-terminate the string
+    printf("Memory set string: %s\n", dest);
+	printf("dest: %s\n", dest);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Copied string: Hello, World!
+Concatenated string: Hello, World! How are you?
+Memory set string: *****
+dest: *****
+```
+
+###### Notes
+
+- **`memset`**: Fills a block of memory with a specified value.
+
+- `memset(dest, '*', 5);` sets the first 5 bytes of `dest` to the character `'*'`.
+- The string is then null-terminated at the 6th position to ensure it is a valid C string.
+
+
+
+#### Example Usage 2
+
+`practice.h`
+
+```C
+enum{
+    ERROR_CODE = -1
+};
+```
+
+`practice.c`
+
+```C
+int main(int argc, char *argv[argc + 1]{
+    // Check if there is at least one command-line argument provided
+    if(argc < 2){
+        printf("Please provide a program name as an argument\n");
+        return ERROR_CODE;
+    }
+    
+    // Calculate the length of the first command-line argument (argv[1])
+    size_t const len = strlen(argv[1]);
+    
+    // Create a character array 'name' with enough space to hold the string and the null terminator
+    char name[len + 1];
+    
+    // Copy the string from argv[1] to the 'name' array
+    memcpy(name, argv[1], len);
+    
+     // Null-terminate the copied string
+    name[len] = '\0';
+    
+    // Compare the copied string with the original string
+    if(!strcmp(name, argv[1])){
+        printf("program name \"%s\ successfully copied\n , name");
+    }else{
+        printf("copying %s leads to different string %s\n", argv[1], name);
+    }
+})
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Please provide a program name as an argument
+chan@CMA:~/C_Programming/practice$ ./practice Chan
+program name "Chan" successfully copied
+chan@CMA:~/C_Programming/practice$ ./practice Chan Myae Aung
+program name "Chan" successfully copied
+chan@CMA:~/C_Programming/practice$ ./practice ChanMyae
+program name "ChanMyae" successfully copied
+
+```
+
+In this example:
+
+- `int argc`: The number of command-line arguments.
+- `char *argv[argc + 1]`: An array of strings representing the command-line arguments. The `+ 1` accounts for the null terminator of the array.
+- `strlen(argv[1])` calculates the length of the first command-line argument (excluding the null terminator).
+- `memcpy(name, argv[1], len)` copies `len` bytes from `argv[1]` to `name`.
+- Adds a null terminator to the end of the copied string `name` to make it a valid C string.
+- `strcmp(name, argv[1])` compares the copied string with the original string.
+
+##### Key notes
+
+- `memcpy(target, source, len)` can be used to copy one array to another. These have to be known to be distinct arrays. The number of `char` s to be copied must be given as a third argument `len`.
+- `memcmp(s0, s1, len)` compares two arrays in lexicographic order. That is, it first scans the initial segments of the two arrays that happen to be equal and then returns the difference between the two characters that are distinct. If no differing elements are found up to `len`, 0 is returned.
+- 
