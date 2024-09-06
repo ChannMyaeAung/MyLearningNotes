@@ -3828,7 +3828,7 @@ int main(int argc, char *argv[argc + 1]{
     
     // Compare the copied string with the original string
     if(!strcmp(name, argv[1])){
-        printf("program name \"%s\ successfully copied\n , name");
+        printf("program name \"%s\ successfully copied\n" , name);
     }else{
         printf("copying %s leads to different string %s\n", argv[1], name);
     }
@@ -3855,9 +3855,321 @@ In this example:
 - `memcpy(name, argv[1], len)` copies `len` bytes from `argv[1]` to `name`.
 - Adds a null terminator to the end of the copied string `name` to make it a valid C string.
 - `strcmp(name, argv[1])` compares the copied string with the original string.
+  - If they are identical, it prints a success message.
+  - If they are different, it prints an error message.
 
 ##### Key notes
 
 - `memcpy(target, source, len)` can be used to copy one array to another. These have to be known to be distinct arrays. The number of `char` s to be copied must be given as a third argument `len`.
 - `memcmp(s0, s1, len)` compares two arrays in lexicographic order. That is, it first scans the initial segments of the two arrays that happen to be equal and then returns the difference between the two characters that are distinct. If no differing elements are found up to `len`, 0 is returned.
-- 
+- `memchr(s, c, len)` searches array `s` for the first appearance of character `c`.
+- Difference Between `memcmp` and `strcmp`:
+- **`memcmp`**:
+  - Compares the first `n` bytes of two memory areas.
+  - Returns an integer less than, equal to, or greater than zero if the first `n` bytes of `s1` are found to be less than, equal to, or greater than the first `n` bytes of `s2`, respectively.
+  - Suitable for comparing binary data or non-null-terminated strings.
+- **`strcmp`**:
+  - Compares two null-terminated strings.
+  - Returns an integer less than, equal to, or greater than zero if `s1` is found to be less than, equal to, or greater than `s2`, respectively.
+  - Stops comparison at the first null terminator.
+
+#### Example Usage of `memcmp`
+
+```C
+int main()
+{
+    char buffer1[] = "Hello, World!";
+    char buffer2[] = "Hello, World!";
+    char buffer3[] = "Hello, C Programming!";
+
+    // Compare buffer1 and buffer2
+    if (memcmp(buffer1, buffer2, strlen(buffer1)) == 0)
+    {
+        printf("buffer1 and buffer2 are identical.\n");
+    }
+    else
+    {
+        printf("buffer1 and buffer2 are different.\n");
+    }
+
+    // Compare buffer1 and buffer3
+    if (memcmp(buffer1, buffer3, strlen(buffer1)) == 0)
+    {
+        printf("buffer1 and buffer3 are identical.\n");
+    }
+    else
+    {
+        printf("buffer1 and buffer3 are different.\n");
+    }
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+buffer1 and buffer2 are identical.
+buffer1 and buffer3 are different.
+```
+
+In this example,
+
+- `buffer1` and `buffer2` are identical because they contain the same string `"Hello, World!"`.
+
+- **Comparison of `buffer1` and `buffer2`**:
+
+  - Both `buffer1` and `buffer2` contain the string `"Hello, World!"`.
+  - `memcmp(buffer1, buffer2, strlen(buffer1))` compares the first `strlen(buffer1)` bytes of `buffer1` and `buffer2`.
+  - Since both buffers contain the same string, the comparison returns `0` , indicating they are identical.
+
+- **Comparison of `buffer1`and `buffer3`**:
+
+  - `buffer3` contains the string `"Hello, C Programming!"`.
+
+  - `memcmp(buffer1, buffer3, strlen(buffer1))` compares the first `strlen(buffer1)`bytes of `buffer1` and `buffer3`.
+
+  - Since `buffer3` has a different string, the comparison returns a non-zero value, indicating they are different.
+
+    
+
+    
+
+##### Summary
+
+- `memcmp` is used for comparing a specified number of bytes in memory ,not the memory addresses themselves, suitable for binary data. It compares the actual content of the memory areas byte by byte.
+- `strcmp` is used for comparing null-terminated strings.
+
+
+
+#### Example Usage of `memchr`
+
+```C
+void *memchr(const void *s, int c, size_t n);
+```
+
+- **Parameters**:
+  - `s`: Pointer to the memory area to be scanned.
+  - `c`: Character to be located. It is passed as an `int`, but it is internally converted to `unsigned char`.
+  - `n`: Number of bytes to be analyzed.
+- The `memchr` function scans the initial `n` bytes of the memory area pointed to by `s` for the first instance of `c`. Both `c` and the bytes of the memory area pointed to by `s` are interpreted as `unsigned char`.
+- **Return Value**:
+  - Returns a pointer to the matching byte, or `NULL` if the character does not occur in the given memory area.
+
+```C
+int main(){
+    char buffer[] = "Hello, World!";
+    char ch = 'W';
+    char *ptr = NULL;
+    
+    // Find the first occurrence of 'W' in buffer
+    ptr = memchr(buffer, ch, strlen(buffer));
+    
+    if(ptr != NULL){
+        printf("Character '%c' found at position %ld\n", ch, ptr - buffer);
+    }else{
+        printf("Character '%c' not found.\n", ch);
+    }
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Character 'W' found at position 7
+```
+
+In this example:
+
+- Finding Character `W` in `buffer`:
+  - `memchr(buffer, ch, strlen(buffer))` searches for the first occurrence of `'W'` in the buffer.
+  - If found, it returns a pointer to the character within the buffer.
+  - If not found, it returns `NULL`.
+- Why Subtract `ptr`from `buffer`:
+  - **`ptr`**: This is a pointer to the first occurrence of the character `'W'` in the `buffer`.
+  - **`buffer`**: This is a pointer to the start of the `buffer`.
+  - When we subtract `ptr` from `buffer`, we are calculating the offset (or index) of the character `'W'` within the `buffer`. This is done by pointer arithmetic, which gives the position of the character relative to the start of the `buffer`.
+
+##### Summary
+
+- `memchr` is used to find the first occurrence of a character in a memory area.
+- Subtracting `ptr` from `buffer` gives the position of the found character within the `buffer`.
+- This technique is useful for determining the index of a character in a string or memory block.
+
+
+
+#### Bullet Points between memory functions and string functions
+
+- `strlen(s)` returns the length of the string `s`. 
+  - This is simply the position of the first 0 character and not the length of the array. 
+  - It is our duty to ensure that `s` is indeed a string: that is 0-terminated.
+- `strcpy(target, source)` works similarly to `memcpy`. 
+  - It only copies up to the string length of the `source` and therefore it doesn't need a `len` parameter.
+  - Again, `source` must be 0-terminated.
+  - Also, `target` must be big enough to hold the copy.
+- `strcmp(s0, s1)` compares two arrays in lexicographic order, similar to `memcmp` but may not take some language specialities into account.
+  - The comparison stops at the first 0 character that is encountered in either `s0` or `s1` . 
+  - Again, both parameters have to be 0-terminated.
+- `strcoll(s0, s1)` compares two arrays in lexicographic order, respecting language-specific environment settings.
+- `strchr(s, c)` is similar to `memch` , only the string `s` must be 0-terminated.
+- `strspn(s0, s1)` returns the length of the initial segment in `s0` that consists of characters that also appear in `s1`.
+- `strcspn(s0, s1)` returns the length of the initial segment in `s0` that consists of characters that do not appear in `s1`.
+
+
+
+### Explanation of `strspn` and `strcspn`
+
+```C
+size_t strspn(const char *s, const char *accept);
+size_t strcspn(const char *s, const char *reject);
+```
+
+- **`strspn`**: Calculates the length of the initial segment of `s` which consists entirely of characters in `accept`.
+- **`strcspn`**: Calculates the length of the initial segment of `s` which consists entirely of characters not in `reject`.
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    const char *str1 = "abcde312$#@";
+    const char *accept = "abcde";
+    const char *reject = "1234567890";
+
+    // strspn example
+    size_t span = strspn(str1, accept);
+    printf("The initial segment of '%s' containing only characters from '%s' is %zu characters long.\n", str1, accept, span);
+
+    // strcspn example
+    size_t cspan = strcspn(str1, reject);
+    printf("The initial segment of '%s' containing no characters from '%s' is %zu characters long.\n", str1, reject, cspan);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+The initial segment of 'abcde312$#@' containing only characters from 'abcde' is 5 characters long.
+The initial segment of 'abcde312$#@' containing no characters from '1234567890' is 5 characters long.
+
+```
+
+##### Differences
+
+- **`strspn`**:
+  - Calculates the length of the initial segment of `s` which consists entirely of characters in `accept`.
+  - Stops at the first character not in `accept`.
+- **`strcspn`**:
+  - Calculates the length of the initial segment of `s` which consists entirely of characters not in `reject`.
+  - Stops at the first character in `reject`.
+
+##### Detailed Steps
+
+1. **Initialization:**
+
+   ```C
+   const char *str1 = "abcde312$#@";
+   const char *accept = "abcde";
+   const char *reject = "1234567890";
+   ```
+
+   - `str1` is the string to be analyzed.
+   - `accept` contains the characters to be accepted by `strspn`.
+   - `reject` contains the characters to be rejected by `strcspn`.
+
+2. **Using `strspn`**:
+
+   ```C
+   size_t span = strspn(str1, accept);
+   printf("The initial segment of '%s' containing only characters from '%s' is %zu characters long.\n", str1, accept, span);
+   ```
+
+   - `strspn(str1, accept)` calculates the length of the initial segment of `str1` which consists entirely of characters in `accept`.
+   - The result is `5` because the first 5 characters of `str1` (`"abcde"`) are all in `accept`.
+
+3. **Using `strcspn`**:
+
+   ```C
+   size_t cspan = strcspn(str1, reject);
+   printf("The initial segment of '%s' containing no characters from '%s' is %zu characters long.\n", str1, reject, cspan);
+   ```
+
+   - `strcspn(str1, reject)` calculates the length of the initial segment of `str1` which consists entirely of characters not in `reject`.
+   - The result is `5` because the first 5 characters of `str1` (`"abcde"`) do not contain any characters from `reject`.
+
+##### Summary
+
+- `strspn` and `strcspn` are used to calculate the length of the initial segment of a string based on character inclusion or exclusion.
+- `strspn` stops at the first character not in the `accept` set.
+- `strcspn` stops at the first character in the `reject` set.
+
+
+
+#### "Using a string function with a non-string has undefined behavior."
+
+- In C, string functions such as `strspn`, `strcspn`, `strlen`, `strcpy`, etc., are designed to operate on null-terminated strings. 
+- A null-terminated string is an array of characters that ends with a null character (`'\0'`). 
+- This null character signals the end of the string.
+- **Undefined behavior** occurs when the code executes in a way that is unpredictable and not specified by the C standard. This can lead to various issues, including crashes, incorrect results, or security vulnerabilities.
+
+##### Why Non-Strings Cause Undefined Behavior
+
+1. **Lack of Null Terminator**:
+   - If a character array is not null-terminated, string functions will continue reading memory beyond the intended array boundary until they encounter a null character. This can lead to accessing invalid memory locations, causing crashes or other unpredictable behavior.
+2. **Memory Access Violations**:
+   - Accessing memory outside the bounds of an array can lead to segmentation faults or other memory access violations.
+3. **Incorrect Results**:
+   - Without a null terminator, string functions may produce incorrect results because they rely on the null character to determine the end of the string.
+
+**Incorrect Usage**
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char non_string[] = {'a', 'b', 'c', 'd', 'e'}; // No null terminator
+    const char *accept = "abcde";
+
+    // Using strspn with a non-string
+    size_t span = strspn(non_string, accept);
+    printf("The initial segment length is %zu\n", span);
+
+    return 0;
+}
+```
+
+**Potential Issues**
+
+- Undefined Behavior:
+  - The `strspn` function expects a null-terminated string. 
+  - Since `non_string` is not null-terminated, `strspn` will continue reading memory beyond the array until it encounters a null character, leading to undefined behavior.
+
+**Correct Usage**
+
+- To avoid undefined behavior, always ensure that character arrays used with string functions are null-terminated:
+
+```C
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char valid_string[] = "abcde"; // Null terminator is present
+    const char *accept = "abcde";
+
+    // Using strspn with a valid string
+    size_t span = strspn(valid_string, accept);
+    printf("The initial segment length is %zu\n", span);
+
+    return 0;
+}
+```
+
+
+
+##### Summary
+
+- **String Functions**: Designed to operate on null-terminated strings.
+- **Undefined Behavior**: Occurs when using string functions with non-strings (arrays without null terminators).
+- **Avoiding Issues**: Ensure character arrays are null-terminated when using string functions to prevent undefined behavior.
