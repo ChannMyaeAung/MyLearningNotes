@@ -4392,7 +4392,7 @@ int convert(const char *binary);
 `functions.c`
 
 ```C
-int convert(const chaar *binary){
+int convert(const char *binary){
     int result = 0;
     for(int i = 0; binary[i] != '\0'; i++){
         if(binary[i] == '1'){
@@ -4717,12 +4717,13 @@ int eggs_count(int encoded_num);
 
 ```C
 int eggs_count(int encoded_num){
-    int count - 0;
+    int count = 0;
     // Loop thru each bit of the number
     while(encoded_num > 0){
         encoded_num &= (encoded_num - 1);
         count++;
     }
+    return count;
 }
 ```
 

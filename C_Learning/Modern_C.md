@@ -4173,3 +4173,196 @@ int main() {
 - **String Functions**: Designed to operate on null-terminated strings.
 - **Undefined Behavior**: Occurs when using string functions with non-strings (arrays without null terminators).
 - **Avoiding Issues**: Ensure character arrays are null-terminated when using string functions to prevent undefined behavior.
+- In real life, common symptoms for such misuse may be:
+  - Long times for `strlen` or similar scanning functions because they don't encounter a 0-character.
+  - Segmentation violations because such functions try to access elements after the boundary of the array object.
+  - Seemingly random corruption of data because the functions write data in places where they are not supposed to.
+- In other words, we should be careful and make sure all our strings are really strings.
+- If we know the length of the character array, but we do not know if it is 0-terminated, `memchr` and pointer arithmetic can be used as a safe replacement for `strlen`.
+- If a character array is not known to be a string, it is better to copy it by using `memcpy`.
+
+
+
+### Pointers as opaque types
+
+- The main property of pointers is that they do not directly contain the information that we are interested in: rather, they  refer, or point, to the data.
+
+```C
+char const* const p2string = "some text";
+```
+
+It can be visualized like this:
+
+| p2string | char const* const |
+| -------- | ----------------- |
+|          | &#8595;           |
+|          | "some text"       |
+
+
+
+#### "1. Pointers are opaque objects"
+
+- **Meaning**: Pointers are abstract references to memory locations. The actual memory address they hold is not directly manipulated or interpreted by the programmer.
+
+- **Example**:
+
+  ```C
+  int *ptr; // ptr is a pointer to an integer, but its actual address is opaque to the programmer.
+  ```
+
+
+
+#### "2. Pointers are valid, null, or indeterminate."
+
+- **Valid Pointer**: Points to a valid memory location.
+- **Null Pointer**: Points to no memory location (typically represented by `NULL`).
+- **Indeterminate Pointer**: Uninitialized or invalid pointer, leading to undefined behavior if dereferenced.
+- So, the really "bad" state of a pointer is indeterminate, since this state is not observable.
+
+```C
+int *valid_ptr = malloc(sizeof(int)); // Valid pointer
+int *null_ptr = NULL; // Null pointer
+int *indeterminate_ptr; // Indeterminate pointer
+```
+
+
+
+#### "3. Initialization or assignment with 0 makes a pointer null"
+
+- **Meaning**: Assigning `0` or `NULL` to a pointer sets it to a null pointer, which means it points to no valid memory location.
+
+- **Example**:
+
+  ```C
+  int *ptr = 0; // ptr is a null pointer
+  int *ptr2 = NULL; // ptr2 is also a null pointer
+  ```
+
+
+
+#### "4. In logical expressions, pointers evaluate to false if they are null"
+
+- **Meaning**: In conditional statements, null pointers are treated as `false`, while non-null pointers are treated as `true`.
+
+- **Example**:
+
+  ```C
+  int *ptr = NULL;
+  if (!ptr) {
+      printf("Pointer is null.\n"); // This will be printed
+  }
+  ```
+
+
+
+#### "5. Indeterminate pointers lead to undefined behavior"
+
+- **Meaning**: Using pointers that have not been initialized or have been invalidated (e.g., after freeing memory) can cause unpredictable behavior.
+
+- **Example**:
+
+  ```C
+  int *ptr; // Indeterminate pointer
+  *ptr = 10; // Undefined behavior
+  ```
+
+  
+
+#### "6. Always initialize pointers"
+
+- **Meaning**: To avoid undefined behavior, always initialize pointers to a valid memory location or `NULL`.
+
+- **Example**:
+
+  ```C
+  int *ptr = NULL; // Safe initialization
+  int *valid_ptr = malloc(sizeof(int)); // Valid initialization
+  ```
+
+---
+
+
+
+## Structures
+
+- Arrays combine several objects of the same base type into a larger object.
+- If we have to combine objects of different type, the, structures introduced by the keyword `struct` come into play.
+- C structures allow for a more systematic approach by giving names to so-called **members (or field)** in an aggregate:
+
+```C
+struct birdStruct{
+    char const* jay;
+    char const* magpie;
+    char const* raven;
+    char const* chough;
+};
+
+struct birdStruct const aName = {
+    .chough = "Henry",
+    .raven = "Lissy",
+    .magpie = "Frau",
+    .jay = "Joe",
+};
+```
+
+- So, instead of declaring four elements that are bound together in an array, here we name the different members and declare types for them.
+- Such declaration of a structure type only explains the type: it is not yet the declaration of an object of that type and even less a definition for such an object.
+- Then we declare and define a variable called `aName` of the new type.
+- In the initializer and in later usage, the individual members are designated using a notation with a dot (.).
+- Instead of `bird[raven]`, for the array, we use `aName.raven` for the structure.
+- Note that the individual members again only refer to the strings.
+- For example, the member `aName.magpie` refers to an entity "Frau" that is located outside the box and is not considered part of the`struct` itself.
+
+
+
+**Example Scenario 2**
+
+- Calendar time is a complicated way of counting, in years, month, days, minutes and seconds.
+- The different time periods such as months or years can have different lengths, and so on. 
+
+The use of this array would be ambiguous: would we store the year in element[0] or [5]?
+
+- To avoid ambiguities, we could again use our trick with an `enum`.
+- But the C standard has chosen a different way.
+- In `time.h`, it uses a `struct` that looks similar to the following:
+
+```C
+struct tm{
+  int tm_sec; // Seconds after the minute [0, 60]
+  int tm_min; // Minutes after the hour [0, 59]
+  int tm_hour; // Hours since midnight [0, 23]
+  int tm_mday; // Day of the month [1, 31]
+  int tm_mon; // Months since January [0, 11]
+  int tm_year; // Years since 1900 
+  int tm_wday; // Days since Sunday [0, 6]
+  int tm_yday; // Days since January [0. 365]
+  int tm_isdst; // Daylight Saving Time flag
+};
+```
+
+- This `struct` has **named members**, such as `tm_sec` for the seconds and `tm_year` for the year.
+- Encoding a date such as the date of this writing
+
+```sh
+chan@CMA:~/C_Programming/practice$ LC_TIME=C date -u
+Sat Sep  7 15:11:23 UTC 2024
+```
+
+- **`LC_TIME=C`**: Sets the locale for date and time formatting to the default "C" locale, which is a standard POSIX locale. This ensures that the date and time are displayed in a consistent, language-independent format.
+- **`date -u`**: Displays the current date and time in Coordinated Universal Time (UTC).
+
+is relatively simple:
+
+```C
+struct tm today = {
+    .tm_year = 2024 - 1900,
+    .tm_mon = 9 - 1,
+    .tm_mday = 7,
+    .tm_hour = 15,
+    .tm_min = 11,
+    .tm_sec = 47,
+}
+```
+
+- This creates a variable of type `struct` `tm` and initializes members with the appropriate values.
+- The order or position of the members in the structure usually is not important:  using the name of the member preceded with a dot `.` suffices to specify where the corresponding data should go.
