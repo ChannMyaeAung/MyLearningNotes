@@ -5087,15 +5087,191 @@ Most programming languages feature (pseudo-)random generators, but few programmi
 `practice.h`
 
 ```C
+typedef struct {
+    int strength;
+    int dexterity;
+    int constitution;
+    int intelligence;
+    int wisdom;
+    int charisma;
+    int hitpoints;
+} dnd_character_t;
+
+int ability(void);
+int modifier(int score);
+dnd_character_t make_dnd_character(void);
 ```
 
 `functions.c`
 
 ```C
+// Functions to generate an abilty score by rolling 4 dices
+int ability(void){
+    int dice[4];
+    int sum = 0, min = 7; // 7 is higher than the max roll (6)
+    
+    // Roll 4 dice
+    for(int i = 0; i < 4; i++){
+        // Generate random number between 1 and 6
+        dice[i] = rand() % 6 + 1; 
+        sum += dice[i];
+        
+        // Track the smallest dice and set that to "min"
+        if(dice[i] < min){
+            min = dice[i];
+        }
+    }
+    
+    // Discard the smallest dice by subtracting it from the total sum
+    return sum - min;
+}
+
+int modifier(int score){
+    return round((score - 10) / 2);
+}
+
+dnd_character_t make_dnd_character(void){
+    dnd_character_t character;
+    
+    // Generate scores for each ability
+    character.strength = ability();
+    printf("\n");
+    character.dexterity = ability();
+    printf("\n");
+    character.constitution = ability();
+    printf("\n");
+    character.intelligence = ability();
+    printf("\n");
+    character.wisdom = ability();
+    printf("\n");
+    character.charisma = ability();
+    printf("\n");
+  
+    // Calculate hitpoints (10 + constitution)
+    character.hitpoints = 10 + modifier(character.constitution);
+    
+    return character;
+}
 ```
+
+- **`dice[4]`**: Array to store the results of rolling four dice.
+
+- **`sum`**: Variable to store the sum of all dice rolls.
+
+- **`min`**: Variable to store the smallest dice roll, initialized to 7 (since the maximum roll is 6).
+
+- The loop iterates four times, simulating the roll of four dice.
+
+- `rand() % 6 + 1` generates a random number between 1 and 6.
+
+- `sum += dice[i]` adds the current dice roll to the sum.
+
+- `if (dice[i] < min)`updates the `min` variable if the current dice roll is smaller than the current `min`.
+
+- Why `sum - min` Yields the Sum Excluding the Smallest Roll
+
+  - **Sum of All Rolls**: `sum`contains the total of all four dice rolls.
+  - **Smallest Roll**: `min` contains the smallest value among the four dice rolls.
+
+  - By subtracting the smallest roll (`min`) from the total sum (`sum`), we effectively get the sum of the remaining three dice rolls. 
+
+- Consider the dice rolls: `2, 5, 4, 2`
+
+  - **Sum**: `2 + 5 + 4 + 2 = 13`
+  - **Smallest Roll (`min`)**: `2`
+  - **Sum Excluding the Smallest Roll**: `13 - 2 = 11`
 
 `practice.c`
 
 ```C
+int main(){
+    // Seed the random number generator
+    srand(time(NULL));
+    
+    // Generate a random character
+    dnd_character_t character = make_dnd_character();
+    
+    // Output the character's stats
+    printf("Strength: %d\n", character.strength);
+    printf("Dexterity: %d\n", character.dexterity);
+    printf("Constitution: %d\n", character.constitution);
+    printf("Intelligence: %d\n", character.intelligence);
+    printf("Wisdom: %d\n", character.wisdom);
+    printf("Charisma: %d\n", character.charisma);
+    printf("Hitpoints: %d\n", character.hitpoints);
+
+    return 0;
+}
 ```
+
+#### Explanation:
+
+- **`ability()`**: Rolls four 6-sided dice, sums the highest three rolls, and returns the result.
+
+- **`modifier()`**: Calculates the ability modifier by using the formula `(score - 10) / 2` and returns the rounded down result.
+
+- **`make_dnd_character()`**: This function generates all six ability scores using the `ability()` function, calculates the hitpoints based on the constitution modifier, and returns a `dnd_character_t` structure.
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+dice[0] = 6
+dice[1] = 4
+dice[2] = 2
+dice[3] = 3
+
+dice[0] = 1
+dice[1] = 1
+dice[2] = 2
+dice[3] = 4
+
+dice[0] = 6
+dice[1] = 2
+dice[2] = 1
+dice[3] = 4
+
+dice[0] = 5
+dice[1] = 2
+dice[2] = 2
+dice[3] = 5
+
+dice[0] = 1
+dice[1] = 3
+dice[2] = 3
+dice[3] = 4
+
+dice[0] = 5
+dice[1] = 3
+dice[2] = 6
+dice[3] = 1
+
+Strength: 13
+Dexterity: 7
+Constitution: 12
+Intelligence: 12
+Wisdom: 10
+Charisma: 14
+Hitpoints: 11
+```
+
+#### Additional Note
+
+The purpose of calling `srand(time(NULL))` in the `main` function is to seed the random number generator, which is used by `rand()` to produce pseudo-random numbers.
+
+Here’s why it’s important:
+
+- **`rand()`** generates a sequence of pseudo-random numbers based on an initial value called the "seed." If the seed is the same every time the program runs, `rand()` will produce the same sequence of numbers.
+- **`srand(time(NULL))`** seeds the random number generator with the current time (in seconds). Since time constantly changes, it ensures that the sequence of numbers generated by `rand()` is different each time we run the program.
+
+Without `srand(time(NULL))`, the program would always generate the same "random" results each time we run it, because `rand()` would start with the same default seed.
+
+Example:
+
+- Without `srand(time(NULL))`, we might get the same ability scores every time we run the program.
+- With `srand(time(NULL))`, the ability scores will be different on each run, making the character generation truly random.
+
+In summary, `srand(time(NULL))` makes sure that the random numbers are different each time the program is executed.
+
+---
 

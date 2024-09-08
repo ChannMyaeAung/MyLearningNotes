@@ -4366,3 +4366,206 @@ struct tm today = {
 
 - This creates a variable of type `struct` `tm` and initializes members with the appropriate values.
 - The order or position of the members in the structure usually is not important:  using the name of the member preceded with a dot `.` suffices to specify where the corresponding data should go.
+- A proper `struct` type creates an additional level of abstraction. 
+- This `struct` `tm` is a proper type in C's type system.
+- Accessing the members of the structure is simple:
+
+```C
+printf("this year is %d, next year will be %d\n", today.tm_year+1900, today.tm_year+1900+1);
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+this year is 2024, next year will be 2025
+```
+
+- There are three other members in `struct tm` that we didn't even mention in our initializer list: `tm_wday`, `tm_yday`, and `tm_isdst`.
+- Since we didn't mention them, they are automatically set to 0.
+
+
+
+#### "A `struct` initializer must initialize at least one member"
+
+- When we use a designated initializer for a `struct`, we must initialize at least one member of the `struct`. 
+- We cannot have an empty initializer list.
+
+```C
+struct example {
+    int a;
+    float b;
+    char c;
+};
+
+// Valid initializer
+struct example ex1 = { .a = 5 };
+
+// Invalid initializer (will cause a compilation error)
+struct example ex2 = { };
+```
+
+- In the invalid example, `ex2` does not initialize any member, which is not allowed.
+
+
+
+#### "`Struct` parameters are passed by value"
+
+- When we pass a `struct` to a function in C, the entire struct is copied, and the function receives its own copy of the `struct`. 
+- This means that changes made to the `struct` inside the function do not affect the original `struct` outside the function.
+
+```C
+#include <stdio.h>
+
+struct example {
+    int a;
+    float b;
+    char c;
+};
+
+void modifyStruct(struct example ex) {
+    ex.a = 10; // This change will not affect the original struct
+}
+
+int main() {
+    struct example ex = { .a = 5, .b = 3.14, .c = 'x' };
+    modifyStruct(ex);
+    printf("ex.a = %d\n", ex.a); // Output will be 5, not 10
+    return 0;
+}
+```
+
+- In this example, `modifyStruct` receives a copy of `ex`. 
+- Modifying `ex.a` inside `modifyStruct` does not change the original `ex` in `main`. 
+- It only modifies the member of the parameter of the function `ex`.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+ex.a = 5
+```
+
+
+
+#### "Structures can be assigned with = but not compared with == or !=."
+
+- In C, we can assign one struct to another using the `=` operator. 
+- This copies all the members from one struct to the corresponding members of another struct.
+
+```C
+struct example {
+    int a;
+    float b;
+    char c;
+};
+
+int main() {
+    struct example ex1 = { .a = 5, .b = 3.14, .c = 'x' };
+    struct example ex2;
+
+    ex2 = ex1; // All members of ex1 are copied to ex2
+
+    printf("ex2.a = %d, ex2.b = %.2f, ex2.c = %c\n", ex2.a, ex2.b, ex2.c);
+    return 0;
+}
+```
+
+- In this example, `ex2` will have the same values as `ex1` after the assignment.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+ex2.a = 5, ex2.b = 3.14, ex2.c = x
+
+```
+
+
+
+##### Comparison with `==` or `!=`
+
+- However, we cannot directly compare two structs using the `==` or `!=` operators. 
+- This is because these operators are not defined for struct types in C. 
+- To compare structs, we need to compare each member individually.
+
+```C
+#include <stdio.h>
+#include <stdbool.h>
+
+struct example {
+    int a;
+    float b;
+    char c;
+};
+
+bool areStructsEqual(struct example ex1, struct example ex2) {
+    return (ex1.a == ex2.a) && (ex1.b == ex2.b) && (ex1.c == ex2.c);
+}
+
+int main() {
+    struct example ex1 = { .a = 5, .b = 3.14, .c = 'x' };
+    struct example ex2 = { .a = 5, .b = 3.14, .c = 'x' };
+
+    if (areStructsEqual(ex1, ex2)) {
+        printf("Structs are equal\n");
+    } else {
+        printf("Structs are not equal\n");
+    }
+
+    return 0;
+}
+```
+
+- In this example, the `areStructsEqual` function compares each member of the structs to determine if they are equal.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Structs are equal
+```
+
+
+
+#### "A structure layout is an important design decision."
+
+- The layout of a struct, i.e., the order and types of its members, can significantly impact the performance and memory usage of our program. 
+- Here are some considerations:
+
+##### Memory Alignment and Padding
+
+- **Alignment**: Different data types have different alignment requirements. For example, an `int` might need to be aligned on a 4-byte boundary.
+- **Padding**: The compiler may insert padding bytes between members to satisfy alignment requirements, which can lead to wasted memory.
+
+```C
+struct example1 {
+    char c;
+    int a;
+    float b;
+};
+
+struct example2 {
+    int a;
+    float b;
+    char c;
+};
+```
+
+In `example1`, there might be padding bytes between `c` and `a` to align `a` on a 4-byte boundary. In `example2`, the members are already aligned, potentially reducing the size of the struct.
+
+##### Performance Considerations
+
+- **Cache Efficiency**: Structs that are frequently accessed should be designed to fit within cache lines to improve performance.
+
+- **Access Patterns**: Grouping related members together can improve data locality and access speed.
+
+- **Example**:
+
+  ```C
+  struct example {
+      int id;
+      char name[50];
+      float salary;
+  };
+  ```
+
+- In this example, if `id` and `salary` are frequently accessed together, placing them close to each other can improve cache efficiency.
+
+##### Summary
+
+- **Assignment**: Structs can be assigned using `=`, which copies all members.
+- **Comparison**: Structs cannot be compared using `==` or `!=`; we must compare each member individually.
+- **Layout Design**: The layout of a struct affects memory alignment, padding, and performance. Proper design can optimize memory usage and access speed.
