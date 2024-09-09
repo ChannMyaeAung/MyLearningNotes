@@ -4522,6 +4522,15 @@ Structs are equal
 
 #### "A structure layout is an important design decision."
 
+- Another use of `struct` is to group objects of different types together in one larger enclosing object.
+
+```C
+struct timespec{
+    time_t tv_sec; // Whole seconds >= 0
+    long tv_nsec; // Nanoseconds [0, 999999999]
+};
+```
+
 - The layout of a struct, i.e., the order and types of its members, can significantly impact the performance and memory usage of our program. 
 - Here are some considerations:
 
@@ -4569,3 +4578,274 @@ In `example1`, there might be padding bytes between `c` and `a` to align `a` on 
 - **Assignment**: Structs can be assigned using `=`, which copies all members.
 - **Comparison**: Structs cannot be compared using `==` or `!=`; we must compare each member individually.
 - **Layout Design**: The layout of a struct affects memory alignment, padding, and performance. Proper design can optimize memory usage and access speed.
+
+
+
+### More About `Structs`
+
+- Any data type other than a Variable Length Array(VLA) is allowed as a member in a structure.
+- So, structures can be nested in the sense that a member of a `struct` can again be of another `struct` type, and the smaller enclosed structure may even be declared inside the larger one.
+
+```C
+struct person{
+    char name[256];
+    struct stardate{
+        struct tm date;
+        struct timespec precision;
+    } bdate;
+};
+```
+
+- A `struct` itself (`person`) defines no new scope for a `struct` (`stardate`) that is defined within the { } of the outermost `struct` declaration.
+
+
+
+#### "All `struct` declarations in a nested declaration have the same scope of visibility."
+
+- In C, the scope of a `struct` declaration is determined by where it is declared. 
+- When we talk about nested declarations, we are usually referring to `struct` declarations within other `structs`, functions, or blocks. 
+- The key point is that all `struct` declarations within the same block or function have the same scope of visibility.
+
+```C
+#include <stdio.h>
+
+struct Outer {
+    int a;
+    struct Inner {
+        int b;
+    } inner;
+};
+
+void function() {
+    struct Outer outer;
+    outer.a = 10;
+    outer.inner.b = 20;
+
+    printf("Outer a: %d\n", outer.a);
+    printf("Inner b: %d\n", outer.inner.b);
+}
+
+int main() {
+    function();
+    return 0;
+}
+```
+
+##### Explanation:
+
+1. **Outer `struct` Declaration**:
+   - `struct Outer` is declared at the global scope, so it is visible throughout the entire file.
+2. **Nested `struct` Declaration**:
+   - `struct Inner` is declared within `struct Outer`. This means `struct Inner` is only visible within the scope of `struct Outer`.
+3. **Scope of Visibility**:
+   - Within the `function`, we can access both `struct Outer` and `struct Inner` because `struct Inner` is nested within `struct Outer`.
+
+##### Key Points:
+
+- **Global Scope**: A `struct` declared outside of any function or block has global scope and is visible throughout the entire file.
+- **Block Scope**: A `struct` declared within a function or block is only visible within that function or block.
+- **Nested Declarations**: When a `struct` is declared within another `struct`, it is only visible within the scope of the outer `struct`.
+
+#### Example with Block Scope:
+
+```C
+#include <stdio.h>
+
+void function() {
+    struct Local {
+        int x;
+    };
+
+    struct Local local;
+    local.x = 5;
+    printf("Local x: %d\n", local.x);
+}
+
+int main() {
+    // struct Local is not visible here
+    // struct Local local; // This would cause a compilation error
+
+    function();
+    return 0;
+}
+```
+
+##### Explanation:
+
+- Local `struct` Declaration:
+  - `struct Local` is declared within the `function`. It is only visible within the scope of `function`.
+  - Attempting to declare a variable of type `struct Local` outside of `function` will result in a compilation error because `struct Local` is not visible in the `main` function.
+
+##### Summary:
+
+- **Scope of Visibility**: The scope of a `struct` declaration is determined by where it is declared. All `struct` declarations within the same block or function have the same scope of visibility.
+- **Nested Declarations**: When a `struct` is declared within another `struct`, it is only visible within the scope of the outer `struct`.
+- **Global vs. Local Scope**: A `struct` declared at the global scope is visible throughout the file, while a `struct` declared within a function or block is only visible within that function or block.
+
+---
+
+## New names for types : type aliases
+
+- There is a general tool that can help us avoid the incomprehensible error throw by the compiler when we forget the `struct` keyword, by giving a symbolic name to an otherwise existing type: `typedef`.
+- In C, type aliases allow us to create new names for existing types. This can make our code more readable and easier to maintain. Type aliases are created using the `typedef` keyword.
+
+**Syntax**:
+
+```C
+typedef existing_type new_type_name;
+```
+
+````C
+#include <stdio.h>
+
+// Create a type alias for an existing type
+typedef unsigned long ulong;
+
+int main() {
+    ulong largeNumber = 1234567890;
+    printf("Large number: %lu\n", largeNumber);
+    return 0;
+}
+````
+
+In this example:
+
+- `typedef unsigned long ulong;` creates a type alias `ulong` for the type `unsigned long`.
+- We can now use `ulong` as a type in our code.
+
+##### Type Aliases for Structs:
+
+Type aliases are particularly useful for structs, as they can simplify the syntax for declaring variables of that struct type.
+
+**Without Type Alias:**
+
+```C
+struct Point {
+    int x;
+    int y;
+};
+
+int main() {
+    struct Point p1;
+    p1.x = 10;
+    p1.y = 20;
+    printf("Point: (%d, %d)\n", p1.x, p1.y);
+    return 0;
+}
+```
+
+
+
+**With Type Alias:**
+
+```C
+#include <stdio.h>
+
+// Create a type alias for the struct
+typedef struct {
+    int x;
+    int y;
+} Point;
+
+int main() {
+    Point p1;
+    p1.x = 10;
+    p1.y = 20;
+    printf("Point: (%d, %d)\n", p1.x, p1.y);
+    return 0;
+}
+```
+
+In this example:
+
+- `typedef struct { int x; int y; } Point;` creates a type alias `Point` for the anonymous struct.
+- You can now use `Point` as a type without needing to use the `struct` keyword.
+
+Using `typedef`, a type can have several names, and we can even reuse the **tag name** that we used in the structure declaration:
+
+```C
+typedef struct birdStruct birdStructure;
+typedef struct birdStruct birdStruct;
+```
+
+- Then, `struct birdStruct, birdStruct` , and `birdStructure` can all be used interchangeably. 
+
+```C
+typedef struct birdStruct birdStruct;
+struct birdStruct{
+    ...
+};
+```
+
+- We can precede the proper `struct` declaration by a **typedef** using exactly the same name.
+- This works because in the combination of `struct` with a following name, the **tag** is always valid, a **forward declaration** of the structure.
+
+##### Type Aliases for Function Pointers:
+
+Type aliases can also simplify the syntax for function pointers.
+
+**Without Type Alias:**
+
+```C
+#include <stdio.h>
+
+void printMessage() {
+    printf("Hello, World!\n");
+}
+
+int main() {
+    void (*funcPtr)() = printMessage;
+    funcPtr();
+    return 0;
+}
+```
+
+
+
+**With Type Alias:**
+
+```C
+#include <stdio.h>
+
+// Create a type alias for the function pointer
+typedef void (*FuncPtr)();
+
+void printMessage() {
+    printf("Hello, World!\n");
+}
+
+int main() {
+    FuncPtr funcPtr = printMessage;
+    funcPtr();
+    return 0;
+}
+```
+
+In this example:
+
+- `typedef void (*FuncPtr)();` creates a type alias `FuncPtr` for a function pointer that points to functions returning `void` and taking no arguments.
+- We can now use `FuncPtr` as a type for function pointers.
+
+##### Summary:
+
+- **Type Aliases**: Created using the `typedef` keyword to give new names to existing types.
+- **Improved Readability**: Makes code more readable and easier to maintain.
+- **Structs and Function Pointers**: Particularly useful for simplifying the syntax of structs and function pointers.
+
+Type aliases are a powerful feature in C that can help us write cleaner and more maintainable code.
+
+
+
+## Summary
+
+- Arrays combine several values of the same base type into one object.
+- Pointers refer to other objects, are null or are indeterminate.
+- Structures combine values of different base types into one object.
+- `typedef` provide new names for existing types.
+
+---
+
+
+
+## Functions
+

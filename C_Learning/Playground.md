@@ -5127,7 +5127,7 @@ int ability(void){
 }
 
 int modifier(int score){
-    return round((score - 10) / 2);
+    return floor((score - 10) / 2.0);
 }
 
 dnd_character_t make_dnd_character(void){
@@ -5274,4 +5274,65 @@ Example:
 In summary, `srand(time(NULL))` makes sure that the random numbers are different each time the program is executed.
 
 ---
+
+## Perfect Numbers
+
+### Instructions
+
+Determine if a number is perfect, abundant, or deficient based on Nicomachus' (60 - 120 CE) classification scheme for positive integers.
+
+The Greek mathematician [Nicomachus](https://en.wikipedia.org/wiki/Nicomachus) devised a classification scheme for positive integers, identifying each as belonging uniquely to the categories of **perfect**, **abundant**, or **deficient** based on their [aliquot sum](https://en.wikipedia.org/wiki/Aliquot_sum). The aliquot sum is defined as the sum of the factors of a number not including the number itself. For example, the aliquot sum of 15 is (1 + 3 + 5) = 9
+
+- Perfect
+
+  : aliquot sum = number
+
+  - 6 is a perfect number because (1 + 2 + 3) = 6
+  - 28 is a perfect number because (1 + 2 + 4 + 7 + 14) = 28
+
+- Abundant
+
+  : aliquot sum > number
+
+  - 12 is an abundant number because (1 + 2 + 3 + 4 + 6) = 16
+  - 24 is an abundant number because (1 + 2 + 3 + 4 + 6 + 8 + 12) = 36
+
+- Deficient
+
+  : aliquot sum < number
+
+  - 8 is a deficient number because (1 + 2 + 4) = 7
+  - Prime numbers are deficient
+
+Implement a way to determine whether a given number is **perfect**. Depending on your language track, you may also need to implement a way to determine whether a given number is **abundant** or **deficient**.
+
+------
+
+### Source
+
+[Taken from Chapter 2 of Functional Thinking by Neal Ford.![The link opens in a new window or tab](https://assets.exercism.org/assets/icons/external-link-49b422d65245eaf4cb29a072e85d73b5c6b8aa04.svg)](https://www.oreilly.com/library/view/functional-thinking/9781449365509/)
+
+
+
+### Solution
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+```C
+```
+
+`Output`
+
+```C
+```
 
