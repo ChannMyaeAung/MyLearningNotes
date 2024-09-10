@@ -4518,7 +4518,182 @@ chan@CMA:~/C_Programming/test$ ./final
 Structs are equal
 ```
 
+##### A Sample program manipulating `struct tm`
 
+```C 
+bool leapyear(unsigned year)
+{
+    // All years that are divisible by 4 are leap years, unless they start a new century, provided they are not divisible by 400.
+    return (!(year % 4) && (year % 100)) || !(year % 400);
+}
+
+#define DAYS_BEFORE                                  \
+    (int const[12])                                  \
+    {                                                \
+        [0] = 0, [1] = 31, [2] = 59, [3] = 90,       \
+        [4] = 120, [5] = 151, [6] = 181, [7] = 212,  \
+        [8] = 243, [9] = 273, [10] = 304, [11] = 334 \
+    }
+
+struct tm time_set_yday(struct tm t)
+{
+    // tm_mdays starts at 1.
+    t.tm_yday += DAYS_BEFORE[t.tm_mon] + t.tm_mday - 1;
+    // Takes care of leap years
+    if ((t.tm_mon > 1) && leapyear(t.tm_year + 1900))
+    {
+        ++t.tm_yday;
+    }
+    return t;
+}
+
+int main()
+{
+    struct tm today =
+        {
+            .tm_year = 2024 - 1900,
+            .tm_mon = 9 - 1,
+            .tm_mday = 7,
+            .tm_hour = 15,
+            .tm_min = 11,
+            .tm_sec = 47,
+        };
+    printf("this year is %d, next year will be %d\n", today.tm_year + 1900, today.tm_year + 1900 + 1);
+    today = time_set_yday(today);
+    printf("day of the year is %d\n", today.tm_yday);
+    return 0;
+}
+```
+
+###### Explanation of the sample program:
+
+- `bool leapyear(unsigned year)`: This function takes an unsigned integer `year`] as an argument and returns a boolean value (`true` or `false`).
+
+- **Leap Year Rule**:
+
+  - A year is a leap year if:
+    - It is divisible by 4, **and**
+    - It is not divisible by 100, **unless**
+    - It is also divisible by 400.
+
+- ```C
+  return !(year % 4) && (year % 100) || !(year % 400);
+  ```
+
+- This return statement uses logical operators to implement the leap year rule.
+
+  - `!(year % 4)`: Checks if the year is divisible by 4. If `year % 4` is 0, `!(year % 4)` is `true`.
+  - `(year % 100)`: Checks if the year is not divisible by 100. If `year % 100` is not 0, `(year % 100)` is `true`.
+  - `!(year % 400)`: Checks if the year is divisible by 400. If `year % 400` is 0, `!(year % 400)` is `true`.
+
+  **Logical Expression Breakdown:**
+
+  - `!(year % 4) && (year % 100)`: This part checks if the year is divisible by 4 and not divisible by 100.
+  - `!(year % 400)`: This part checks if the year is divisible by 400.
+
+  **Combined Logic:**
+
+  - The expression`!(year % 4) && (year % 100) || !(year % 400)`can be understood as:
+
+    - A year is a leap year if it is divisible by 4 and not divisible by 100, **or** it is divisible by 400.
+
+    **Example:**
+
+    - **Year 2000**:
+      - `!(2000 % 4)` is `true` (2000 is divisible by 4).
+      - `(2000 % 100)` is `false` (2000 is divisible by 100).
+      - `!(2000 % 400)` is `true` (2000 is divisible by 400).
+      - The expression evaluates to `true`, so 2000 is a leap year.
+    - **Year 1900**:
+      - `!(1900 % 4)` is `true` (1900 is divisible by 4).
+      - `(1900 % 100)` is `false` (1900 is divisible by 100).
+      - `!(1900 % 400)` is `false` (1900 is not divisible by 400).
+      - The expression evaluates to `false`, so 1900 is not a leap year.
+    - **Year 2004**:
+      - `!(2004 % 4)` is `true` (2004 is divisible by 4).
+      - `(2004 % 100)` is `true` (2004 is not divisible by 100).
+      - `!(2004 % 400)` is `false` (2004 is not divisible by 400).
+      - The expression evaluates to `true`, so 2004 is a leap year.
+
+- The `DAYS_BEFORE` macro in our code is an array that provides the cumulative number of days before the start of each month in a non-leap year. 
+
+- It is used to calculate the day of the year (`tm_yday`) given a specific date (month and day).
+
+  - **Array Elements:** 
+  - The array contains 12 elements, each representing the cumulative number of days before the start of each month in a non-leap year.
+    - `[0] = 0`: January (0 days before January)
+    - `[1] = 31`: February (31 days before February)
+    - `[2] = 59`: March (59 days before March)
+    - `[3] = 90`: April (90 days before April)
+    - `[4] = 120`: May (120 days before May)
+    - `[5] = 151`: June (151 days before June)
+    - `[6] = 181`: July (181 days before July)
+    - `[7] = 212`: August (212 days before August)
+    - `[8] = 243`: September (243 days before September)
+    - `[9] = 273`: October (273 days before October)
+    - `[10] = 304`: November (304 days before November)
+    - `[11] = 334`: December (334 days before December)
+
+  
+
+  Explanation of `time_set_yday`:
+
+  1. **Calculate Day of the Year**:
+
+     - `t.tm_yday += DAYS_BEFORE[t.tm_mon] + t.tm_mday - 1;`
+       - `DAYS_BEFORE[t.tm_mon]`: Gets the cumulative days before the given month.
+       - `t.tm_mday - 1`: Adds the days in the current month up to the given day (subtracting 1 because `tm_mday` starts at 1).
+
+  2. **Adjust for Leap Year**:
+
+     - `if ((t.tm_mon > 1) && leapyear(t.tm_year + 1900)) { ++t.tm_yday; }`
+       - If the month is after February and the year is a leap year, add 1 to `tm_yday` to account for the extra day in February.
+
+  3. **Example Calculation:**
+
+     For September 7, 2024:
+
+     - `t.tm_mon = 8` (September, 0-based index)
+     - `t.tm_mday = 7`
+
+     **Calculation:**
+
+     ```C
+     t.tm_yday = DAYS_BEFORE[8] + 7 - 1 = 243 + 7 - 1 = 249;
+     if ((8 > 1) && leapyear(2024)) {
+         ++t.tm_yday; // 249 + 1 = 250
+     }
+     ```
+
+     - So, September 7, 2024, is the 250th day of the year.
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+this year is 2024, next year will be 2025
+day of the year is 250
+```
+
+- The output `day of the year is 250` means that the date you provided (September 7, 2024) is the 250th day of the year 2024.
+
+- **Explanation:**
+
+  1. **Date Provided**:
+     - Year: 2024
+     - Month: September (9th month)
+     - Day: 7th
+  2. **Leap Year Calculation**:
+     - 2024 is a leap year because it is divisible by 4 and not divisible by 100, or it is divisible by 400.
+  3. **Days Before Each Month**:
+     - The `DAYS_BEFORE` macro provides the cumulative number of days before the start of each month in a non-leap year:
+  4. **Calculation of Day of the Year**:
+     - For September 7, 2024:
+       - Days before September in a non-leap year: `243` (from `DAYS_BEFORE[8]`)
+       - Days in September up to the 7th: `7`
+       - Since 2024 is a leap year and September is after February, we add 1 more day for the leap year adjustment.
+
+  
 
 #### "A structure layout is an important design decision."
 
@@ -4845,7 +5020,176 @@ Type aliases are a powerful feature in C that can help us write cleaner and more
 
 ---
 
-
-
 ## Functions
 
+- Functions avoid code repetition. In particular, they avoid easily introduced copy-and-paste errors and spare the effort of editing in multiple places if we modify a piece of functionality.
+- Thereby, functions increase readability and maintainability.
+- Use of functions decreases compilation times. A given code snippet that we encapsulate in a function is compiled only once, not at each point where it is used.
+- Functions simplify future code reuse. Once we have extracted code into a function that provides certain functionality, it can easily be applied in other places that we did not even think of when implementing the function.
+- Functions provide clear interfaces. Function arguments and return types clearly specify the origin and type of data that flows into and out of a computation. 
+- Additionally, functions allow us to specify invariants for a computation: pre- and post- conditions.
+- Functions provide a natural way to formulate algorithms that use a "stack" of intermediate values.
+- In addition to functions, C has other means of **unconditional transfer of control**, which are mostly used to handle error conditions or other forms of exceptions from the usual control flow:
+  - `exit`, `_Exit`, `quick_exit`, and `abort` terminate the program execution.
+  - `goto` transfers control within a function body.
+  - `setjmp` and `longjump` can be used to return unconditionally to a calling context.
+  - Certain events in the execution environment or calls to the function `raise` may raise signals that pass control to a specialized function, a signal handler.
+
+```C
+bool leapyear(unsigned year);
+```
+
+- Alternatively, we could even omit the name of the parameter and/or add the storage specifier `extern`.
+
+```C
+extern bool leapyear(unsigned);
+```
+
+- Important for such a declaration is that the compiler sees the types of the argument(s) and the return type, so here the prototype of the function is "function receiving an `unsigned` and returning a `bool`."
+- There are two special conventions that use the keyword `void`:
+  - If the function is to be called with no parameter, the list is replaced by the keyword `void`, like `main`.
+  - If the function doesn't return a value, the return type is given as `void`.
+- Such a prototype helps the compiler in places where the function is to be called. It only has to know about the parameters the function expects.
+
+```C
+extern double fbar(double);
+
+double fbar2 = fbar(2) / 2;
+```
+
+- Here, the call `fbar(2)` is not directly compatible with the expectation of function `fbar`: it wants a `double` but receives a `signed int`. 
+
+- But since the calling code knows this, it can convert the `signed int` argument 2 to the double value `2.0` before calling the function.
+
+- The same holds for the use of the return value in an expression: the caller knows that the return type is `double`, so floating-point division is applied for the result expression.
+
+  
+
+  
+
+#### "All functions must have prototypes."
+
+- A function prototype is a declaration of a function that specifies the function's name, return type, and parameters (if any) without providing the function body. 
+- Prototypes are important because they allow the compiler to check for correct usage of functions before their actual definitions.
+- In the implementation of a function, we must watch that we provide return values for all functions that have **a non-void return type.**
+- There can be several return statements in a function.
+
+```C
+#include <stdio.h>
+
+// Function prototype
+int add(int a, int b);
+
+int main() {
+    int result = add(3, 4);
+    printf("Result: %d\n", result);
+    return 0;
+}
+
+// Function definition
+int add(int a, int b) {
+    return a + b;
+}
+```
+
+In this example:
+
+- The function prototype `int add(int a, int b);` declares the `add` function before it is used in `main`.
+- This ensures that the compiler knows about the `add` function's existence and its signature, allowing it to check for correct usage.
+
+#### "Functions have only one entry but can have several returns"
+
+- A function in C has a single entry point, meaning it starts execution from the beginning of the function when called. 
+- However, a function can have multiple return statements, allowing it to exit from different points based on certain conditions.
+
+```C
+#include <stdio.h>
+
+int checkNumber(int num) {
+    if (num > 0) {
+        return 1; // Return if the number is positive
+    } else if (num < 0) {
+        return -1; // Return if the number is negative
+    } else {
+        return 0; // Return if the number is zero
+    }
+}
+
+int main() {
+    int result = checkNumber(5);
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+
+
+#### "A function return must be consistent with its type"
+
+- The return type of a function specifies the type of value the function is expected to return. 
+- The actual return value must match this type. 
+- If the return type is `int`, the function must return an integer value.
+- If the return type is `void`, the function should not return any value.
+
+```C
+#include <stdio.h>
+
+// Function with int return type
+int getNumber() {
+    return 42; // Correct return type
+}
+
+// Function with void return type
+void printMessage() {
+    printf("Hello, World!\n");
+    // No return statement needed
+}
+
+int main() {
+    int num = getNumber();
+    printf("Number: %d\n", num);
+    printMessage();
+    return 0;
+}
+```
+
+
+
+#### "Reaching the end of the `{}` block of a function is equivalent to a return statement without an expression"
+
+- In C, if a function reaches the end of its block (i.e., the closing `}` of the function body) without encountering a `return` statement, it is equivalent to having a `return` statement without an expression. 
+- This means the function will return control to the caller.
+
+```C
+#include <stdio.h>
+
+void exampleFunction() {
+    printf("This is an example function.\n");
+    // No explicit return statement
+}
+
+int main() {
+    exampleFunction();
+    return 0;
+}
+```
+
+In this example:
+
+- The `exampleFunction` reaches the end of its block without an explicit `return` statement.
+- This is equivalent to having a `return;` statement at the end of the function.
+
+#### "Reaching the end of the `{}` block of a function is only allowed for void functions."
+
+- In C, only functions with a `void` return type are allowed to reach the end of their block without an explicit `return` statement. 
+- For functions with a non-void return type (e.g., `int`, `float`, `char*`), reaching the end of the block without a `return` statement that returns a value is undefined behavior and will typically result in a compiler warning or error.
+
+
+
+##### Summary:
+
+- **Function Prototypes**: Ensure that the compiler knows about the function's existence and signature before its actual definition.
+- **Single Entry, Multiple Returns**: Functions start execution from a single entry point but can exit from multiple points using return statements.
+- **Consistent Return Type**: The return value of a function must match its declared return type to ensure type safety and correct program behavior.
+- **Reaching the end of a `{}` block**: For `void` functions, reaching the end of the block without an explicit `return` statement is equivalent to having a `return;` statement.
+- **Allowed for `void` functions**: Only `void` functions are allowed to reach the end of their block without an explicit `return` statement. Non-void functions must have a `return`statement that returns a value consistent with their return type.
