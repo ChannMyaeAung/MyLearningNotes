@@ -5193,3 +5193,56 @@ In this example:
 - **Consistent Return Type**: The return value of a function must match its declared return type to ensure type safety and correct program behavior.
 - **Reaching the end of a `{}` block**: For `void` functions, reaching the end of the block without an explicit `return` statement is equivalent to having a `return;` statement.
 - **Allowed for `void` functions**: Only `void` functions are allowed to reach the end of their block without an explicit `return` statement. Non-void functions must have a `return`statement that returns a value consistent with their return type.
+
+### Main is special
+
+- Its prototype is enforced by the C standard, but it is implemented by the programmer.
+
+- Being such a pivot between the runtime system and the application, `main` has to obey some special rules.
+
+  - First, to suit different needs, it has several prototypes, one of which must be implemented. Two should always be possible:
+
+  - ```C
+    int main(void);
+    int main(int argc, char* argv[argc + 1]);
+    ```
+
+- Then, any C platform may provide other interfaces. Two variations are relatively common:
+
+  - On some embedded platforms where `main` is not expected to return to the runtime system, the return type may be `void`.
+  - On many platforms, a third parameter can give access to the "environment".
+
+- We should not rely on the existence of such other forms.
+
+- If we want to write portable code, we must stick to the two "official" forms.
+
+- For these, the return value of `int` gives an indication to the runtime system if the execution was successful.
+
+- All command-line arguments are transferred as strings.
+
+- Of the arguments to `main`, `argv[0]` holds the name of the program invocation.
+
+  - The first element of the `argv` array (`argv[0]`) is the name of the program as it was invoked from the command line. 
+  - This can include the path to the executable if it was specified.
+  - If we run the program with the command `./program arg1 arg2`, `argv[0]` will be `./program`.
+
+- Of the arguments to `main`, `argv[argc]` is 0.
+
+  - The `argv` array is guaranteed to have a null pointer (`0` or `NULL`) at the end. 
+  - This means that `argv[argc]` is always `0`. 
+  - This null pointer acts as a sentinel value to mark the end of the array of command-line arguments.
+  - If `argc` is 3 (for `./program arg1 arg2`), then `argv[3]` will be `0` (null pointer).
+
+
+
+### Recursion
+
+- An important feature of functions is encapsulation: local variables are only visible and alive until we leave the function, either via an explicit return or because execution falls out of the last enclosing brace of the function's block.
+- Their identifiers (names) don't conflict with other similar identifiers in other functions, and once we leave the function, all the mess we leave behind is clean up.
+- Whenever we call a function, even one we have called before, a new set of local variables (including function parameters) is created, and these are newly initialized.
+- This also holds if we newly call a function for which another call is still active in the hierarchy of calling functions.
+- A function that directly or indirectly calls itself is called **recursive** and the concept is called **recursion**.
+- Recursive functions are crucial for understanding C functions: they demonstrate and use primary features of the function call model and only fully functional with these features.
+
+
+
