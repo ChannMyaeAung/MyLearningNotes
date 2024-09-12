@@ -5246,3 +5246,135 @@ In this example:
 
 
 
+As a first example, we will look at an implementation of Euclid's algorithm to compute the greatest common divisor (gcd) of two numbers:
+
+#### Euclid's Algorithm
+
+- Euclid's algorithm is a classic example used to explain recursion. 
+- It is used to find the greatest common divisor (GCD) of two integers. 
+- The algorithm is based on the principle that the GCD of two numbers also divides their difference.
+- If `b` is 0, then the GCD is `a`.
+- Otherwise, the GCD of `a` and `b` is the same as the GCD of `b` and `a % b`.
+
+`practice.h`
+
+```C
+enum{
+    ERROR_CODE = -1
+};
+```
+
+`practice.c`
+
+```C
+int gcd(int a, int b){
+    if(a < 0 || b < 0){
+        return ERROR_CODE;
+    }
+    
+    // assert(a >= 0 && b >= 0); // ensures non-negative input
+    
+    if(b == 0){
+        return a;
+    }else{
+        return gcd(b, a % b);
+    }
+}
+
+int main(){
+    int num1, num2;
+    printf("Enter two integers: ");
+    scanf("%d %d", &num1, &num2);
+    
+    int result = gcd(num1, num2);
+    
+    // If we chose to use ERROR_CODE, we should handle the code to provide a meaningful message to the user, No need if we chose to use assert.
+    if(result == ERROR_CODE){
+        printf("Invalid input: Please enter non-negative integers.\n");
+        return 1;
+    }
+    
+    printf("The GCD of %d and %d is %d\n", num1, num2, result);
+    
+    return 0;
+}
+```
+
+`Output (with ERROR_CODE)`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter two integers: -48 - 18
+Invalid input: Please enter non-negative integers.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter two integers: 48 18
+The GCD of 48 and 18 is 6
+```
+
+`Output (with assert)`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter two integers: -8 -4
+practice: practice.c:19: int gcd(int, int): Assertion `a >= 0 && b >= 0' failed.
+Aborted (core dumped)
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter two integers: 48 18
+The GCD of 48 and 18 is 6
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter two integers: 0 9
+The GCD of 0 and 9 is 9
+
+```
+
+
+
+#### Explanation:
+
+1. **Base Case**:
+   - If `b` is 0, the function returns `a`. This is the base case of the recursion.
+2. **Recursive Case**:
+   - If `b` is not 0, the function calls itself with the arguments `b` and `a % b`. This reduces the problem size and moves towards the base case.
+
+#### Example Walkthrough:
+
+Let's walk through an example to find the GCD of 48 and 18.
+
+1. `gcd(48, 18)`:
+   - `b` is not 0, so it calls `gcd(18, 48 % 18)` which is `gcd(18, 12)`.
+2. `gcd(18, 12)`:
+   - `b` is not 0, so it calls `gcd(12, 18 % 12)` which is `gcd(12, 6)`.
+3. `gcd(12, 6)`:
+   - `b` is not 0, so it calls `gcd(6, 12 % 6)` which is `gcd(6, 0)`.
+4. `gcd(6, 0)`:
+   - `b` is 0, so it returns `6`.
+
+The GCD of 48 and 18 is 6.
+
+#### Things to Note
+
+##### Using `assert`:
+
+- **Purpose**: `assert` is used to catch programming errors during development. It checks conditions that should never fail if the program is correct.
+- **Behavior**: If the condition in the `assert` statement is false, the program will terminate and print an error message. This is useful for debugging.
+- **Scope**: Assertions are typically disabled in production builds by defining `NDEBUG`.
+
+##### Using Error Codes:
+
+- **Purpose**: Error codes are used to handle runtime errors gracefully. They allow the program to detect and respond to error conditions without terminating.
+- **Behavior**: If an error condition is detected, the function can return an error code (like `ERROR_CODE`) to indicate the failure. The calling code can then handle the error appropriately.
+- **Scope**: Error codes are always active and are used to handle expected error conditions during normal operation.
+
+##### When to Use Each:
+
+- **Use `assert`**: When we want to catch programming errors and invalid assumptions during development. These are conditions that should never occur if the program is correct.
+- **Use Error Codes**: When we need to handle runtime errors that can occur during normal operation, such as invalid user input or other external conditions.
+
+#### Summary:
+
+- **Recursion**: The function calls itself with smaller arguments until it reaches the base case.
+- **Base Case**: When `b` is 0, the function returns `a`.
+- **Recursive Case**: The function calls itself with `b` and `a % b`.

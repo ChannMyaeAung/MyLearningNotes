@@ -5328,6 +5328,9 @@ int modifier(int score){
         return floor(diff / 2.0);
     }
     return diff / 2;
+    // or use bitwise shift for division by 2
+    // often more efficient because it directly manipulates the bits
+    // return diff >> 1;
 }
 
 dnd_character_t make_dnd_character(void)
@@ -5449,24 +5452,15 @@ Determine if a number is perfect, abundant, or deficient based on Nicomachus' (6
 
 The Greek mathematician [Nicomachus](https://en.wikipedia.org/wiki/Nicomachus) devised a classification scheme for positive integers, identifying each as belonging uniquely to the categories of **perfect**, **abundant**, or **deficient** based on their [aliquot sum](https://en.wikipedia.org/wiki/Aliquot_sum). The aliquot sum is defined as the sum of the factors of a number not including the number itself. For example, the aliquot sum of 15 is (1 + 3 + 5) = 9
 
-- Perfect
-
-  : aliquot sum = number
-
-  - 6 is a perfect number because (1 + 2 + 3) = 6
+- **Perfect: aliquot sum = number**
+- 6 is a perfect number because (1 + 2 + 3) = 6
   - 28 is a perfect number because (1 + 2 + 4 + 7 + 14) = 28
 
-- Abundant
-
-  : aliquot sum > number
-
-  - 12 is an abundant number because (1 + 2 + 3 + 4 + 6) = 16
+- **Abundant: aliquot sum > number**
+- 12 is an abundant number because (1 + 2 + 3 + 4 + 6) = 16
   - 24 is an abundant number because (1 + 2 + 3 + 4 + 6 + 8 + 12) = 36
 
-- Deficient
-
-  : aliquot sum < number
-
+- **Deficient: aliquot sum < number**
   - 8 is a deficient number because (1 + 2 + 4) = 7
   - Prime numbers are deficient
 
@@ -5477,6 +5471,167 @@ Implement a way to determine whether a given number is **perfect**. Depending on
 ### Source
 
 [Taken from Chapter 2 of Functional Thinking by Neal Ford.![The link opens in a new window or tab](https://assets.exercism.org/assets/icons/external-link-49b422d65245eaf4cb29a072e85d73b5c6b8aa04.svg)](https://www.oreilly.com/library/view/functional-thinking/9781449365509/)
+
+
+
+### Solution
+
+- To determine whether a given number is perfect, abundant, or deficient, we need to calculate the aliquot sum (the sum of the divisors of the number excluding the number itself) and compare it to the number.
+
+#### Steps:
+
+1. Calculate the sum of divisors of the number, excluding the number itself.
+2. Compare the aliquot sum with the number:
+   - If aliquot sum equals the number, it's perfect.
+   - If aliquot sum is greater than the number, it's abundant.
+   - If aliquot sum is less than the number, it's deficient.
+
+`practice.h`
+
+```C
+typedef enum
+{
+    PERFECT_NUMBER = 1,
+    ABUNDANT_NUMBER = 2,
+    DEFICIENT_NUMBER = 3,
+    ERROR = -1,
+} kind;
+
+kind classify_number(int number);
+```
+
+`functions.c`
+
+```C
+kind classify_number(int number) {
+    if (number <= 0) {
+        return ERROR;  // Aliquot sums are only defined for positive integers.
+    }
+
+    int aliquot_sum = 0;
+
+    // Calculate aliquot sum (sum of divisors, excluding the number itself)
+    for (int i = 1; i <= number / 2; i++) {
+        if (number % i == 0) {
+            aliquot_sum += i;
+        }
+    }
+
+    // Classify the number based on its aliquot sum
+    if (aliquot_sum == number) {
+        return PERFECT_NUMBER;
+    } else if (aliquot_sum > number) {
+        return ABUNDANT_NUMBER;
+    } else {
+        return DEFICIENT_NUMBER;
+    }
+}
+
+```
+
+- The `for` loop iterates from 1 to `number / 2`. 
+- This is because a proper divisor of a number `n` is any positive integer less than `n` that divides `n` without leaving a remainder. 
+- The largest proper divisor of `n` is `n / 2`.
+- For example, the proper divisors of 28 are 1, 2, 4, 7, and 14. The largest proper divisor is 14, which is `28 / 2`.
+- **Efficiency**: By iterating only up to `number / 2`, the function avoids unnecessary checks and improves efficiency. Checking beyond `number / 2` would not yield any new proper divisors.
+
+`practice.c`
+
+```C
+int main() {
+    int number;
+    printf("Enter a positive integer: ");
+    scanf("%d", &number);
+
+    kind result = classify_number(number);
+
+    switch (result) {
+        case PERFECT_NUMBER:
+            printf("%d is a perfect number.\n", number);
+            break;
+        case ABUNDANT_NUMBER:
+            printf("%d is an abundant number.\n", number);
+            break;
+        case DEFICIENT_NUMBER:
+            printf("%d is a deficient number.\n", number);
+            break;
+        case ERROR:
+        default:
+            printf("Error: Please enter a positive integer.\n");
+            break;
+    }
+
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 6
+6 is a perfect number.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 28
+28 is a perfect number.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 12
+12 is an abundant number.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 24
+24 is an abundant number.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 8
+8 is a deficient number.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: 0
+Error: Please enter a positive integer.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a positive integer: -1
+Error: Please enter a positive integer.
+```
+
+---
+
+
+
+## High Scores Program
+
+### Instructions
+
+Manage a game player's High Score list.
+
+Your task is to build a high-score component of the classic Frogger game, one of the highest selling and most addictive games of all time, and a classic of the arcade era. Your task is to write methods that return the highest score from the list, the last added score and the three highest scores.
+
+The functions in this exercise accept an array containing one or more numbers, each representing one 'game score'.
+
+The player's game scores can be read from
+
+| `scores`                 |
+| :----------------------- |
+| `scores[0]`              |
+| `scores[1]`              |
+| ...                      |
+| `scores[scores_len - 1]` |
+
+`personal_top_three()` should write the player's top scores to
+
+| `output`    |
+| :---------- |
+| `output[0]` |
+| ...         |
+
+------
+
+### Source
+
+Tribute to the eighties' arcade game Frogger
 
 
 
@@ -5493,11 +5648,6 @@ Implement a way to determine whether a given number is **perfect**. Depending on
 ```
 
 `practice.c`
-
-```C
-```
-
-`Output`
 
 ```C
 ```
