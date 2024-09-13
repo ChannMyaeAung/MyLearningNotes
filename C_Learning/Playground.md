@@ -5595,7 +5595,220 @@ Error: Please enter a positive integer.
 chan@CMA:~/C_Programming/practice$ ./practice
 Enter a positive integer: -1
 Error: Please enter a positive integer.
+
 ```
+
+
+
+### Soultion (Optimized)
+
+#### What my mentor on exercism said about the above solution
+
+Hi, your solution is good but you could make it more efficient. The loop at line 9
+
+    for(int i = 1; i <= number / 2; i++){
+will iterate number / 2 times. Several of the tests use a number in the neighborhood of 33 million, so that is a lot of looping. If the numbers were even bigger, this approach might become too slow.
+
+One way to do better is to notice that divisors come in pairs: for every divisor d of number, there is a companion number / d (with the exceptional case that they can be equal if number is a perfect square). So you only need to look for divisors up to sqrt(number). For instance, you could change the loop to look like this:
+
+    for (int i = 1; i * i <= number; ++i) {
+        if (number % i == 0) {
+            aliquot_sum += i;
+            if (i != 1 && number / i != i) {
+                aliquot_sum += number / i;
+            }
+        }
+     }
+Now you will only loop a few thousand times on the big numbers instead of millions of times.
+
+It is possible to do even better by using some number theory. Mathematicians use sigma(n) to refer to the sum of all the divisors of n (this includes n itself, so the aliquot sum equals sigma(n) - n). sigma is a multiplicative function, which means that if n is the product of prime powers like p<sup>k</sup>, then sigma(n) is the product of factors like sigma(p<sup>k</sup>). For instance, sigma(48) = sigma(2<sup>4</sup>) * sigma(3<sup>1</sup>). There is also a simple formula for sigma(p<sup>k</sup>). It is 1 + p + p<sup>2</sup> + ... + p<sup>k</sup>= (p<sup>{k+1} - 1)</sup>/(p - 1)`. This leads to the following strategy:
+
+Find the biggest power of 2 that divides number, say `t`. Set sigma = 2<sup>t</sup> - 1.
+Now do the odd primes. Set p = 3. While p * p <= number, set pk = p. While p divides number, set number /= p and pk *= p. After dividing out all of the factors of p, set sigma *= (pk - 1)/(p - 1) and p += 2.
+After finishing step 2, number may have been reduced to its largest prime divisor, so add that in, e.g., if (number != 1) sigma *= number + 1;.
+This is a little more complicated, but the code is still pretty simple.
+
+I hope that these comments are helpful. Let me know if you have any questions.
+
+`practice.h`
+
+```C
+typedef enum
+{
+    PERFECT_NUMBER = 1,
+    ABUNDANT_NUMBER = 2,
+    DEFICIENT_NUMBER = 3,
+    ERROR = -1,
+} kind;
+
+kind classify_number(int number);
+```
+
+`functions.c`
+
+```C
+kind classify_number(int number)
+{
+    if (number <= 0)
+    {
+        return ERROR;
+    }
+
+    // 1 is a divisor of every number
+    int aliquot_sum = 1;
+
+    // Iterate up to the square root of the number
+    for (int i = 2; i * i <= number; i++)
+    {
+        if (number % i == 0)
+        {
+            aliquot_sum += i;
+            if (i != number / i)
+            {
+                aliquot_sum += number / i; // To handle the case when number is a perfect square.
+            }
+        }
+    }
+
+    if (aliquot_sum == number)
+    {
+        return PERFECT_NUMBER;
+    }
+    else if (aliquot_sum > number)
+    {
+        return ABUNDANT_NUMBER;
+    }
+    else
+    {
+        return DEFICIENT_NUMBER;
+    }
+}
+```
+
+- **Check for Invalid Input**:
+  - If the input number is less than or equal to 0, the function returns `ERROR`.
+- **Initialize Aliquot Sum**:
+  - The aliquot sum starts at 1 because 1 is a divisor of every positive integer.
+- **Iterate Up to the Square Root**:
+  - The loop runs from **2 to the square root of the input `number`**.
+  - For each divisor `i`, both `i` and `number / i` are added to the aliquot sum.
+  - For each `i`, it checks if `i` is a divisor of `number`. If `i` is a divisor, it adds both `i` and `number / i` to the `aliquot_sum`.
+  - If `i` is equal to `number / i` (i.e., the number is a perfect square), `i` is added only once.
+- **Classify the Number**:
+  - If the aliquot sum equals the number, it is a `PERFECT_NUMBER`.
+  - If the aliquot sum is greater than the number, it is an `ABUNDANT_NUMBER`.
+  - Otherwise, it is a `DEFICIENT_NUMBER`.
+- **Example Input:** `number = 28`
+
+Let's go through the loop with `number = 28`.
+
+1. **Initialization**:
+   - `i = 2`
+   - `aliquot_sum = 1` (since 1 is a divisor of every number)
+2. **First Iteration** (`i = 2`):
+   - Condition: `2 * 2 <= 28` (True)
+   - Check if `2` is a divisor of `28`: `28 % 2 == 0` (True)
+   - Add `2` to `aliquot_sum`: `aliquot_sum = 1 + 2 = 3`
+   - Check if `2` is not equal to `28 / 2`: `2 != 14` (True)
+   - Add `14` to `aliquot_sum`: `aliquot_sum = 3 + 14 = 17`
+3. **Second Iteration** (`i = 3`):
+   - Condition: `3 * 3 <= 28` (True)
+   - Check if `3` is a divisor of `28`: `28 % 3 == 0` (False)
+   - Skip to the next iteration
+4. **Third Iteration** (`i = 4`):
+   - Condition: `4 * 4 <= 28` (True)
+   - Check if `4` is a divisor of `28`: `28 % 4 == 0` (True)
+   - Add `4` to `aliquot_sum`: `aliquot_sum = 17 + 4 = 21`
+   - Check if `4` is not equal to `28 / 4`: `4 != 7` (True)
+   - Add `7` to `aliquot_sum`: `aliquot_sum = 21 + 7 = 28`
+5. **Fourth Iteration** (`i = 5`):
+   - Condition: `5 * 5 <= 28` (True)
+   - Check if `5` is a divisor of `28`: `28 % 5 == 0` (False)
+   - Skip to the next iteration
+6. **Fifth Iteration** (`i = 6`):
+   - Condition: `6 * 6 <= 28` (False)
+   - Exit the loop
+
+**Final Check**
+
+After the loop, the `aliquot_sum` is `28`.
+
+- Check if `aliquot_sum == number`: `28 == 28` (True)
+- Return `PERFECT_NUMBER`
+
+**Summary**
+
+- The `for` loop iterates from `2` to the square root of the input number.
+- For each `i`, it checks if `i` is a divisor of `number`.
+- If `i` is a divisor, it adds both `i` and `number / i` to the `aliquot_sum`.
+- The loop ensures that each divisor pair is considered only once.
+- For `number = 28`, the function correctly identifies it as a perfect number because the sum of its proper divisors (1, 2, 4, 7, 14) equals 28.
+
+`practice.c`
+
+```C
+int main()
+{
+    int number;
+    printf("Enter a number: ");
+    scanf("%d", &number);
+
+    kind result = classify_number(number);
+
+    switch (result)
+    {
+    case PERFECT_NUMBER:
+        printf("%d is a perfect number.\n", number);
+        break;
+    case ABUNDANT_NUMBER:
+        printf("%d is an abundant number.\n", number);
+        break;
+    case DEFICIENT_NUMBER:
+        printf("%d is a deficient number.\n", number);
+        break;
+    case ERROR:
+    default:
+        printf("Error: Please enter a positive integer.\n");
+        break;
+    }
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 6
+6 is a perfect number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 28
+28 is a perfect number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 12
+12 is an abundant number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 24
+24 is an abundant number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 8
+8 is a deficient number.nt
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 0
+Error: Please enter a positive integer.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: -1
+Error: Please enter a positive integer.
+
+```
+
+##### Summary
+
+- The `classify_number` function has been optimized to reduce the number of iterations by leveraging the properties of divisors and iterating only up to the square root of the number.
+- This optimization significantly improves performance for large input values.
+- The updated code maintains the same functionality while being more efficient.
 
 ---
 
