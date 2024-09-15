@@ -159,7 +159,7 @@ int main(){
 }
 ```
 
-### Code Breakdown:
+#### Code Breakdown:
 
 1. **Function Declaration**:
 
@@ -221,6 +221,244 @@ int main(){
    - `nextTerm` is calculated as the sum of `t1` and `t2`.
    - `t1` is then updated to the value of `t2`.
    - `t2` is updated to the value of `nextTerm`.
+
+#### Full Sample Optimized Fibonacci Program (1)
+
+`hello.h`
+
+```C
+enum{
+    ERROR_CODE = -1;
+}
+
+size_t fibCacheRec(size_t n, size_t cache[n]);
+```
+
+`hello.c`
+
+```C
+size_t fibCacheRec(size_t n, size_t cache[n]){
+     if (n <= 1)
+    {
+        return n;
+    }
+
+    if (cache[n] != 0)
+    {
+        return cache[n];
+    }
+
+    cache[n] = fibCacheRec(n - 1, cache) + fibCacheRec(n - 2, cache);
+    return cache[n];
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    size_t n;
+    printf("Enter a number: ");
+    scanf("%zu", &n);
+    
+    //allocate memory for the cache and initialize it to zero
+    size_t *cache = calloc(n + 1, sizeof(size_t));
+    if(cache == NULL){
+        fprintf(stderr, "Memory allocation failed\n");
+        return ERROR_CODE;
+    }
+    
+    // Compute the Fibonacci number
+    size_t result = fibCacheRec(n, cache);
+    printf("Fibonacci number %zu is %zu\n", n, result);
+    
+    // Free the allocated memory
+    free(cache);
+    
+    return 0;
+}
+```
+
+###### Explanation
+
+1. **Base Case**:
+   - If`n` is `0` or `1` , the function returns`n`directly. This is because the Fibonacci sequence is defined as:
+     - `fib(0) = 0`
+     - `fib(1) = 1`
+2. **Cache Check**:
+   - If `cache[n]` is not `0`, it means the Fibonacci number for `n` has already been computed and stored in the cache. The function returns the cached value to avoid redundant calculations.
+3. **Recursive Calculation**:
+   - If `cache[n]` is `0`, the function recursively calculates the Fibonacci number by summing the results of `fibCacheRec(n - 1, cache)` and `fibCacheRec(n - 2, cache)`.
+   - The result is then stored in `cache[n]` to be reused in future calls.
+
+###### Example: `fibCacheRec(2, cache)`
+
+Let's break down the recursive calls for `fibCacheRec(2, cache)`:
+
+1. **Initial Call**:
+   - `fibCacheRec(2, cache)` is called.
+   - `n` is `2`, which is greater than `1`, so the function proceeds to the next check.
+   - `cache[2]` is `0`, so the function makes two recursive calls: `fibCacheRec(1, cache)` and `fibCacheRec(0, cache)`.
+2. **First Recursive Call**:
+   - `fibCacheRec(1, cache)` is called.
+   - `n` is `1`, which is less than or equal to `1`, so the function returns `1`.
+3. **Second Recursive Call**:
+   - `fibCacheRec(0, cache)` is called.
+   - `n` is `0`, which is less than or equal to `1`, so the function returns `0`.
+4. **Combining Results**:
+   - The results of the two recursive calls are combined: `1 + 0 = 1`.
+   - This result is stored in `cache[2]`.
+5. **Return Value**:
+   - `fibCacheRec(2, cache)` returns `1`, which is the Fibonacci number for `2`.
+
+###### Summary
+
+- `fibCacheRec(2, cache)` makes two recursive calls: `fibCacheRec(1, cache)` and `fibCacheRec(0, cache)`.
+- `fibCacheRec(1, cache)` returns `1`.
+- `fibCacheRec(0, cache)` returns `0`.
+- The sum of these results is `1 + 0 = 1`, which is stored in `cache[2]` and returned.
+
+This process ensures that the Fibonacci number for `2` is correctly calculated and cached for future use.
+
+**Example Walk-through (Value 5)**
+
+When we call `fibCacheRec(5, cache)`, the function will recursively call itself to compute the Fibonacci number for 5. Here's how it works:
+
+1. **Initial Call**:
+   - `fibCacheRec(5, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[5]` is 0, it makes two recursive calls: `fibCacheRec(4, cache)` and `fibCacheRec(3, cache)`.
+2. **First Recursive Call**:
+   - `fibCacheRec(4, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[4]` is 0, it makes two recursive calls: `fibCacheRec(3, cache)` and `fibCacheRec(2, cache)`.
+3. **Second Recursive Call**:
+   - `fibCacheRec(3, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[3]` is 0, it makes two recursive calls: `fibCacheRec(2, cache)` and `fibCacheRec(1, cache)`.
+4. **Third Recursive Call**:
+   - `fibCacheRec(2, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[2]` is 0, it makes two recursive calls: `fibCacheRec(1, cache)` and `fibCacheRec(0, cache)`.
+5. **Base Cases**:
+   - `fibCacheRec(1, cache)` is called and returns 1 because `n` is 1.
+   - `fibCacheRec(0, cache)` is called and returns 0 because `n` is 0.
+
+###### Returning Values and Caching
+
+Now, let's see how the values are returned and cached:
+
+1. **fibCacheRec(2, cache)**:
+   - Returns `1 + 0 = 1` and stores it in `cache[2]`.
+2. **fibCacheRec(3, cache)**:
+   - Returns `1 (from cache[2]) + 1 = 2` and stores it in `cache[3]`.
+3. **fibCacheRec(4, cache)**:
+   - Returns `2 (from cache[3]) + 1 (from cache[2]) = 3` and stores it in `cache[4]`.
+4. **fibCacheRec(5, cache)**:
+   - Returns `3 (from cache[4]) + 2 (from cache[3]) = 5` and stores it in `cache[5]`.
+
+###### Summary
+
+- The function works by breaking down the problem into smaller subproblems and solving them recursively. 
+- It starts with the initial call `fibCacheRec(5, cache)` and makes recursive calls until it reaches the base cases. 
+- Then, it returns the values and caches them to avoid redundant calculations. 
+- The caching mechanism ensures that each Fibonacci number is computed only once and reused in subsequent calculations.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Enter a number: 5
+Fibonacci number 5 is 5
+```
+
+#### Full Sample Optimized Fibonacci Program (2)
+
+`hello.h`
+
+```C
+enum{
+    ERROR_CODe = -1,
+};
+
+void fib2rec(size_t n, size_t buf[2]);
+
+size_t fib2(size_t n);
+```
+
+`hello.c`
+
+```C
+void fib2rec(size_t n, size_t buf[2]){
+    if(n > 2){
+        size_t res = buf[0] + buf[1];
+        buf[1] = buf[0];
+        buf[0] = res;
+        fib2rec(n - 1, res);
+    }
+}
+
+size_t fib2(size_t n){
+    size_t res[2] = {1, 1};
+    fib2rec(n, res);
+    return res[0];
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    size_t n;
+    printf("Enter a number: ");
+    scanf("%zu", &n);
+    
+    // Compute the Fibonacci number using fib2
+    size_t result_fib2 = fib2(n);
+    printf("Fibonacci number %zu using fib2 is %zu\n", n, result_fib2);
+
+    return 0;
+}
+```
+
+###### Explanation of Sample Program 2:
+
+**Considering we use the input 5:**
+
+- **`fib2` Function**:
+  - Initializes a buffer array `res` with the first two Fibonacci numbers `[1, 1]`.
+  - Calls the `fib2rec` function with `n = 5` and the buffer array `res`.
+- **`fib2rec` Function**:
+  - First Call: `fib2rec(5, [1, 1])`
+    - Since `n > 2`, it calculates `res = 1 + 1 = 2`.
+    - Updates the buffer to `[2, 1]`.
+    - Recursively calls `fib2rec(4, [2, 1])`.
+  - Second Call: `fib2rec(4, [2, 1])`
+    - Since `n > 2`, it calculates `res = 2 + 1 = 3`.
+    - Updates the buffer to `[3, 2]`.
+    - Recursively calls `fib2rec(3, [3, 2])`.
+  - Third Call:  `fib2rec(3, [3, 2])`
+    - Since `n > 2`, it calculates `res = 3 + 2 = 5`.
+    - Updates the buffer to `[5, 3]`.
+    - Recursively calls `fib2rec(2, [5, 3])`.
+  - Fourth Call: `fib2rec(2, [5, 3])`
+    - Since `n <= 2`, the function returns without making further recursive calls.
+- **Return to `fib2` Function**:
+  - The `fib2rec` function has updated the buffer to `[5, 3]`.
+  - The `fib2` function returns `res[0]`, which is `5`.
+
+#### 3. **Output in `main.c`**
+
+- The `main` function receives the result `5` from the `fib2` function.
+- It prints: `Fibonacci number 5 using fib2 is 5`.
+
+###### Summary of Steps with Example Input `5`
+
+1. **User Input**: `5`
+2. **Fibonacci Calculation:**
+   - **Initial Buffer**: `[1, 1]`
+   - **First Call**: `fib2rec(5, [1, 1])` -> Buffer: `[2, 1]`
+   - **Second Call**: `fib2rec(4, [2, 1])` -> Buffer: `[3, 2]`
+   - **Third Call**: `fib2rec(3, [3, 2])` -> Buffer: `[5, 3]`
+   - **Fourth Call**: `fib2rec(2, [5, 3])` -> No change
+3. **Return Value**: `5`
+4. **Output**: `Fibonacci number 5 using fib2 is 5`
+
+This detailed explanation covers the entire process of computing the Fibonacci number for the input `5` using the provided code.
 
 ---
 
@@ -6118,4 +6356,52 @@ output = {400, 300, 250};
 ```
 
 ---
+
+## Pangram
+
+### Introduction
+
+You work for a company that sells fonts through their website. They'd like to show a different sentence each time someone views a font on their website. To give a comprehensive sense of the font, the random sentences should use **all** the letters in the English alphabet.
+
+They're running a competition to get suggestions for sentences that they can use. You're in charge of checking the submissions to see if they are valid.
+
+Note
+
+Pangram comes from Greek, παν γράμμα, pan gramma, which means "every letter".
+
+The best known English pangram is:
+
+> The quick brown fox jumps over the lazy dog.
+
+### Instructions
+
+Your task is to figure out if a sentence is a pangram.
+
+A pangram is a sentence using every letter of the alphabet at least once. It is case insensitive, so it doesn't matter if a letter is lower-case (e.g. `k`) or upper-case (e.g. `K`).
+
+For this exercise, a sentence is a pangram if it contains each of the 26 letters in the English alphabet.
+
+
+
+### Solution
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+```C
+```
+
+`Output`
+
+```sh
+```
 

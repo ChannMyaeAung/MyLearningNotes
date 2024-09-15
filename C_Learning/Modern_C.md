@@ -5651,7 +5651,7 @@ if (arr == NULL) {
 
 In the provided code snippet, `calloc` is used to allocate and initialize the cache array to zero, ensuring that all elements are zero-initialized before use. This is important for the Fibonacci calculation, as it relies on checking if elements in the cache are zero to determine if they have been computed yet.
 
-##### Full Sample Optimized Fibonacci Program
+##### Full Sample Optimized Fibonacci Program (1)
 
 `hello.h`
 
@@ -5797,6 +5797,106 @@ Fibonacci number 5 is 5
 
 
 
+##### Full Sample Optimized Fibonacci Program (2)
+
+`hello.h`
+
+```C
+enum{
+    ERROR_CODe = -1,
+};
+
+void fib2rec(size_t n, size_t buf[2]);
+
+size_t fib2(size_t n);
+```
+
+`hello.c`
+
+```C
+void fib2rec(size_t n, size_t buf[2]){
+    if(n > 2){
+        size_t res = buf[0] + buf[1];
+        buf[1] = buf[0];
+        buf[0] = res;
+        fib2rec(n - 1, res);
+    }
+}
+
+size_t fib2(size_t n){
+    size_t res[2] = {1, 1};
+    fib2rec(n, res);
+    return res[0];
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    size_t n;
+    printf("Enter a number: ");
+    scanf("%zu", &n);
+    
+    // Compute the Fibonacci number using fib2
+    size_t result_fib2 = fib2(n);
+    printf("Fibonacci number %zu using fib2 is %zu\n", n, result_fib2);
+
+    return 0;
+}
+```
+
+###### Explanation of Sample Program 2:
+
+**Considering we use the input 5:**
+
+- **`fib2` Function**:
+  - Initializes a buffer array `res` with the first two Fibonacci numbers `[1, 1]`.
+  - Calls the `fib2rec` function with `n = 5` and the buffer array `res`.
+- **`fib2rec` Function**:
+  - First Call: `fib2rec(5, [1, 1])`
+    - Since `n > 2`, it calculates `res = 1 + 1 = 2`.
+    - Updates the buffer to `[2, 1]`.
+    - Recursively calls `fib2rec(4, [2, 1])`.
+  - Second Call: `fib2rec(4, [2, 1])`
+    - Since `n > 2`, it calculates `res = 2 + 1 = 3`.
+    - Updates the buffer to `[3, 2]`.
+    - Recursively calls `fib2rec(3, [3, 2])`.
+  - Third Call:  `fib2rec(3, [3, 2])`
+    - Since `n > 2`, it calculates `res = 3 + 2 = 5`.
+    - Updates the buffer to `[5, 3]`.
+    - Recursively calls `fib2rec(2, [5, 3])`.
+  - Fourth Call: `fib2rec(2, [5, 3])`
+    - Since `n <= 2`, the function returns without making further recursive calls.
+- **Return to `fib2` Function**:
+  - The `fib2rec` function has updated the buffer to `[5, 3]`.
+  - The `fib2` function returns `res[0]`, which is `5`.
+
+#### 3. **Output in `main.c`**
+
+- The `main` function receives the result `5` from the `fib2` function.
+- It prints: `Fibonacci number 5 using fib2 is 5`.
+
+###### Summary of Steps with Example Input `5`
+
+1. **User Input**: `5`
+2. **Fibonacci Calculation:**
+   - **Initial Buffer**: `[1, 1]`
+   - **First Call**: `fib2rec(5, [1, 1])` -> Buffer: `[2, 1]`
+   - **Second Call**: `fib2rec(4, [2, 1])` -> Buffer: `[3, 2]`
+   - **Third Call**: `fib2rec(3, [3, 2])` -> Buffer: `[5, 3]`
+   - **Fourth Call**: `fib2rec(2, [5, 3])` -> No change
+3. **Return Value**: `5`
+4. **Output**: `Fibonacci number 5 using fib2 is 5`
+
+This detailed explanation covers the entire process of computing the Fibonacci number for the input `5` using the provided code.
+
 ##### Conclusion
 
 In the context of recursion in C, choosing the right algorithm is crucial. An inefficient recursive algorithm can lead to poor performance, while an optimized algorithm can dramatically enhance performance.
+
+### Summary
+
+- Functions have a prototype that determines how they can be called.
+- Terminating `main` and calling `exit` are the same.
+- Each function call has its own copy of local variables and can be called recursively.
