@@ -1321,3 +1321,56 @@ char *to_rna(const char *dna){
 - **Returns a Pointer**: The function returns a pointer to a `char`(`char *`), which is a common practice when dealing with strings in C.
 - `char *to_rna(const char *dna)` indicates that `to_rna` is a function that takes a `const char *` as an argument and returns a `char *`.
 - `to_rna` is a normal function that returns a pointer to a `char`. It is not a function pointer or a pointer function.
+
+---
+
+## `malloc` vs `calloc`
+
+- Both `calloc` and `malloc` are used for dynamic memory allocation in C, but they have some key differences:
+
+### `malloc`
+
+- **Syntax**: `void* malloc(size_t size);`
+- **Functionality**: Allocates a block of memory of the specified size (in bytes) but does not initialize the memory. The content of the allocated memory is indeterminate (it could contain garbage values).
+- **Use Case**: Ideal when we need to allocate memory and we plan to initialize it ourselves immediately after allocation.
+
+### `calloc`
+
+- **Syntax**: `void* calloc(size_t num, size_t size);`
+- **Functionality**: Allocates memory for an array of `num` elements, each of `size` bytes, and initializes all bytes in the allocated memory to zero.
+- **Use Case**: Ideal when we need to allocate and initialize memory to zero. This is particularly useful for arrays or structures where we want to ensure all elements are initially zero.
+
+### Example
+
+`malloc`
+
+```C
+int *arr = (int*)malloc(10 * sizeof(int));
+if (arr == NULL) {
+    // Handle allocation failure
+}
+// Initialize the array
+for (int i = 0; i < 10; i++) {
+    arr[i] = 0;
+}
+```
+
+`calloc`
+
+```C
+int *arr = (int*)calloc(10, sizeof(int));
+if (arr == NULL) {
+    // Handle allocation failure
+}
+// No need to initialize, as calloc already sets all elements to 0
+```
+
+### Summary
+
+- **`malloc`**: Use when you need to allocate memory quickly and will handle initialization yourself.
+- **`calloc`**: Use when you need zero-initialized memory, which can save you the step of manually setting the memory to zero.
+
+---
+
+
+

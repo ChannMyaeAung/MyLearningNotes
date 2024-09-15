@@ -5853,15 +5853,269 @@ Tribute to the eighties' arcade game Frogger
 `practice.h`
 
 ```C
+enum
+{
+    ERROR_CODE = -1
+};
+
+// Return the latest score.
+int32_t latest(const int32_t *scores, size_t scores_len);
+
+// Return the highest score.
+int32_t personal_best(const int32_t *scores, size_t scores_len);
+
+// Write the highest scores to `output` (in non-ascending order)
+// Return the number of scores written.
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output);
 ```
 
 `functions.c`
 
 ```C
+int32_t latest(const int32_t *scores, size_t scores_len)
+{
+    // The latest score is the last element in the scores array
+    return scores[scores_len - 1];
+}
+
+// Return the highest score.
+int32_t personal_best(const int32_t *scores, size_t scores_len)
+{
+    // Start with the first score as the highest
+    int32_t best = scores[0];
+    for (size_t i = 1; i < scores_len; ++i)
+    {
+        if (scores[i] > best)
+        {
+            // Update if a higher score is found
+            best = scores[i];
+        }
+    }
+    return best;
+}
+
+// Write the highest scores to `output` (in non-ascending order)
+// Return the number of scores written.
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output)
+{
+    // First copy the scores array to a local array for sorting
+    int32_t sorted_scores[scores_len];
+    for (size_t i = 0; i < scores_len; i++)
+    {
+        sorted_scores[i] = scores[i];
+    }
+
+    // Sort the scores in descending order (simple bubble sort for clarity)
+    for (size_t i = 0; i < scores_len - 1; i++)
+    {
+        for (size_t j = 0; j < scores_len - i - 1; j++)
+        {
+            if (sorted_scores[j] < sorted_scores[j + 1])
+            {
+                // Swap the elements if they are in the wrong order.
+                int32_t temp = sorted_scores[j];
+                sorted_scores[j] = sorted_scores[j + 1];
+                sorted_scores[j + 1] = temp;
+            }
+        }
+    }
+
+    // Copy the top three scores to the output array
+    size_t count = scores_len < 3 ? scores_len : 3;
+    for (size_t i = 0; i < count; i++)
+    {
+        output[i] = sorted_scores[i];
+    }
+
+    return count;
+}
 ```
+
+#### Explanation:
+
+1. **`latest()`**:
+   - Returns the latest score, which is the last element in the scores array.
+2. **`personal_best()`**:
+   - Iterates over the array to find the maximum score.
+3. **`personal_top_three()`**:
+   - First copies the scores array into a temporary array.
+   - Sorts the scores in descending order using bubble sort.
+   - Copies the top three (or fewer) scores into the output array and returns the number of scores written.
 
 `practice.c`
 
 ```C
+int main()
+{
+    int32_t scores[] = {100, 200, 300, 400, 250};
+
+    size_t scores_len = sizeof(scores) / sizeof(scores[0]);
+
+    // Test latest
+    printf("Latest score: %d\n", latest(scores, scores_len));
+
+    // Test personal_best
+    printf("Personal best: %d\n", personal_best(scores, scores_len));
+
+    // Test personal_top_three
+    int32_t top_three[3];
+    size_t top_len = personal_top_three(scores, scores_len, top_three);
+    printf("Top three scores: ");
+    for (size_t i = 0; i < top_len; i++)
+    {
+        printf("%d ", top_three[i]);
+    }
+    printf("\n");
+    return 0;
+}
 ```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Latest score: 250
+Personal best: 400
+Top three scores: 400 300 250 
+```
+
+#### Detailed Explanation on `personal_top_three` function:
+
+- The goal of the `personal_top_three()` function is to return the top three highest scores in **non-ascending** (descending) order from the player's scores list.
+
+```C
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output) {
+    // Step 1: Copy the scores to a temporary array for sorting
+    int32_t sorted_scores[scores_len];
+    for (size_t i = 0; i < scores_len; ++i) {
+        sorted_scores[i] = scores[i];
+    }
+```
+
+- We make a copy of the input `scores` array to a new array `sorted_scores`. 
+- This is done because we will be sorting the scores, and we don't want to modify the original array.
+
+```C
+    // Step 2: Sort the array in descending order (bubble sort in this case)
+    for (size_t i = 0; i < scores_len - 1; ++i) {
+        for (size_t j = 0; j < scores_len - i - 1; ++j) {
+            if (sorted_scores[j] < sorted_scores[j + 1]) {
+                // Swap elements if the current score is less than the next score
+                int32_t temp = sorted_scores[j];
+                sorted_scores[j] = sorted_scores[j + 1];
+                sorted_scores[j + 1] = temp;
+            }
+        }
+    }
+
+```
+
+- We use a **bubble sort** algorithm here to sort the `sorted_scores` array in **descending order**. 
+- In bubble sort, adjacent elements are compared and swapped if they're in the wrong order (in this case, if the first element is smaller than the second). 
+- This process is repeated until the entire array is sorted.
+
+```C
+    // Step 3: Copy the top three scores to the output array
+    size_t count = scores_len < 3 ? scores_len : 3;
+    for (size_t i = 0; i < count; ++i) {
+        output[i] = sorted_scores[i];
+    }
+
+    return count;
+}
+
+```
+
+- After sorting, we take the top three scores from the `sorted_scores` array and store them in the `output` array. 
+- The number of scores copied will be either 3 or less (if there are fewer than 3 scores). 
+- We return this count at the end of the function.
+
+##### Example Input
+
+Let's use the following example input:
+
+```C
+int32_t scores[] = {100, 200, 300, 400, 250};
+size_t scores_len = 5;
+int32_t output[3];
+```
+
+##### Step-by-Step Walkthrough
+
+1. **Copy Scores to Local Array**:
+
+   - The function first copies the `scores` array to a local array `sorted_scores`for sorting.
+
+   - After copying:
+
+     - ```C
+       sorted_scores = {100, 200, 300, 400, 250};
+       ```
+
+2. **Sort the Scores in Descending Order**:
+
+   - The function uses a simple bubble sort to sort the `sorted_scores` array in descending order.
+
+   - **First Pass:**
+
+     - Compare `100` and `200`: Swap.
+     - Compare `100` and `300`: Swap.
+     - Compare `100` and `400`: Swap.
+     - Compare `100` and `250`: Swap.
+     - Array after the first pass:
+
+     ```C
+     sorted_scores = {200, 300, 400, 250, 100};
+     ```
+
+   - **Second Pass**:
+
+     - Compare `200` and `300`: Swap.
+
+     - Compare `200` and `400`: Swap.
+
+     - Compare `200` and `250`: Swap.
+
+     - Array after the second pass:
+
+     - ```C
+       sorted_scores = {300, 400, 250, 200, 100};
+       ```
+
+   - **Third Pass**:
+
+     - Compare `300` and `400`: Swap.
+
+     - Compare `300` and `250`: No swap needed.
+
+     - Array after the third pass:
+
+     - ```C
+       sorted_scores = {400, 300, 250, 200, 100};
+       ```
+
+   - **Fourth Pass**:
+
+     - Compare `400` and `300`: No swap needed.
+
+     - Array after the fourth pass:
+
+     - ```C
+       sorted_scores = {400, 300, 250, 200, 100};
+       ```
+
+   - The array is now sorted in descending order.
+
+     
+
+3. **Copy the Top Three Scores to the Output Array**:
+
+   - The function copies the top three scores from `sorted_scores` to the `output` array.
+   - Since `scores_len` is 5, which is greater than 3, we copy the first three elements.
+
+```C
+output = {400, 300, 250};
+```
+
+---
 
