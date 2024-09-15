@@ -5667,7 +5667,18 @@ size_t fibCacheRec(size_t n, size_t cache[n]);
 
 ```C
 size_t fibCacheRec(size_t n, size_t cache[n]){
-    
+     if (n <= 1)
+    {
+        return n;
+    }
+
+    if (cache[n] != 0)
+    {
+        return cache[n];
+    }
+
+    cache[n] = fibCacheRec(n - 1, cache) + fibCacheRec(n - 2, cache);
+    return cache[n];
 }
 ```
 
@@ -5737,6 +5748,46 @@ Let's break down the recursive calls for `fibCacheRec(2, cache)`:
 - The sum of these results is `1 + 0 = 1`, which is stored in `cache[2]` and returned.
 
 This process ensures that the Fibonacci number for `2` is correctly calculated and cached for future use.
+
+**Example Walk-through (Value 5)**
+
+When we call `fibCacheRec(5, cache)`, the function will recursively call itself to compute the Fibonacci number for 5. Here's how it works:
+
+1. **Initial Call**:
+   - `fibCacheRec(5, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[5]` is 0, it makes two recursive calls: `fibCacheRec(4, cache)` and `fibCacheRec(3, cache)`.
+2. **First Recursive Call**:
+   - `fibCacheRec(4, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[4]` is 0, it makes two recursive calls: `fibCacheRec(3, cache)` and `fibCacheRec(2, cache)`.
+3. **Second Recursive Call**:
+   - `fibCacheRec(3, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[3]` is 0, it makes two recursive calls: `fibCacheRec(2, cache)` and `fibCacheRec(1, cache)`.
+4. **Third Recursive Call**:
+   - `fibCacheRec(2, cache)` is called.
+   - Since `n` is not less than or equal to 1 and `cache[2]` is 0, it makes two recursive calls: `fibCacheRec(1, cache)` and `fibCacheRec(0, cache)`.
+5. **Base Cases**:
+   - `fibCacheRec(1, cache)` is called and returns 1 because `n` is 1.
+   - `fibCacheRec(0, cache)` is called and returns 0 because `n` is 0.
+
+###### Returning Values and Caching
+
+Now, let's see how the values are returned and cached:
+
+1. **fibCacheRec(2, cache)**:
+   - Returns `1 + 0 = 1` and stores it in `cache[2]`.
+2. **fibCacheRec(3, cache)**:
+   - Returns `1 (from cache[2]) + 1 = 2` and stores it in `cache[3]`.
+3. **fibCacheRec(4, cache)**:
+   - Returns `2 (from cache[3]) + 1 (from cache[2]) = 3` and stores it in `cache[4]`.
+4. **fibCacheRec(5, cache)**:
+   - Returns `3 (from cache[4]) + 2 (from cache[3]) = 5` and stores it in `cache[5]`.
+
+###### Summary
+
+- The function works by breaking down the problem into smaller subproblems and solving them recursively. 
+- It starts with the initial call `fibCacheRec(5, cache)` and makes recursive calls until it reaches the base cases. 
+- Then, it returns the values and caches them to avoid redundant calculations. 
+- The caching mechanism ensures that each Fibonacci number is computed only once and reused in subsequent calculations.
 
 ```sh
 chan@CMA:~/C_Programming/test$ ./final
