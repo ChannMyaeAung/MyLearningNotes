@@ -205,3 +205,222 @@ It is 02:15:44 AM
 - `%r` - Time with AM/PM
 - The output reflects the time string generated and stored in the `time_string[]` buffer.
 - The time string appears after the general greeting.
+
+
+
+#### Writing the moon phase algorithm
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-09-19 01-33-14.png)
+
+- Regardless of the time, the moon has a current phase.
+- To determine the moon phase without looking outside or in a reference, we use an algorithm.
+- The degree of accuracy of the algorithm depends on a lot of things such as our location.
+
+```C
+int moon_phase(int year, int month, int day)
+{
+    int d, g, e;
+
+    d = day;
+    if (month == 2)
+    {
+        d += 31;
+    }
+    else if (month > 2)
+    {
+        d += 59 + (month - 3) * 30.6 + 0.5;
+    }
+
+    g = (year - 1900) % 19;
+    e = (11 * g + 29) % 30;
+
+    if (e == 25 || e == 24)
+    {
+        ++e;
+    }
+
+    return ((((e + d) * 6 + 5) % 177) / 22 & 7);
+}
+```
+
+##### Function Definition
+
+```C
+int moon_phase(int year, int month, int day)
+```
+
+- **Purpose**: This function calculates the moon phase for a given date.
+- Parameters:
+  - `year`: The year of the date.
+  - `month`: The month of the date.
+  - `day`: The day of the date.
+- **Return Value**: An integer representing the moon phase.
+
+##### Variable Declarations
+
+int d, g, e;
+
+- **d**: This variable will hold the day of the year.
+- **g**: This variable will hold the golden number of the year in the Metonic cycle.
+- **e**: This variable will hold an intermediate calculation used to determine the moon phase.
+
+### Calculate Day of the Year
+
+```C
+d = day;
+if (month == 2)
+{
+    d += 31;
+}
+else if (month > 2)
+{
+    d += 59 + (month - 3) * 30.6 + 0.5;
+}
+```
+
+- **d = day**: Initialize `d` with the day of the month.
+- **if (month == 2)**: If the month is February, add 31 to `d` to account for the days in January.
+- **else if (month > 2):** If the month is after February:
+  - **d += 59 + (month - 3) \* 30.6 + 0.5**: Add 59 to `d` to account for the days in January and February. Then, add the number of days in the months from March to the given month. The expression `(month - 3) * 30.6 + 0.5` approximates the number of days in these months.
+
+##### Calculate Golden Number and Epact
+
+```C
+g = (year - 1900) % 19;
+e = (11 * g + 29) % 30;
+```
+
+- **g = (year - 1900) % 19**: Calculate the golden number of the year in the Metonic cycle. The Metonic cycle is a period of 19 years after which the phases of the moon repeat on the same days of the year.
+- **e = (11 \* g + 29) % 30**: Calculate the epact, which is the age of the moon in days on January 1st of the given year.
+
+##### Adjust Epact for Special Cases
+
+```C
+if (e == 25 || e == 24)
+{
+    ++e;
+}
+```
+
+- **if (e == 25 || e == 24)**: If the epact is 24 or 25, increment it by 1. This adjustment is made to correct the epact for certain years.
+
+##### Calculate Moon Phase
+
+```C
+return ((((e + d) * 6 + 5) % 177) / 22 & 7);
+```
+
+- **(e + d)**: Add the epact to the day of the year.
+- **(e + d) \* 6 + 5**: Multiply the sum by 6 and add 5. This scales the value to fit within a certain range.
+- **((e + d) \* 6 + 5) % 177**: Take the result modulo 177 to wrap the value within a specific range.
+- **(((e + d) \* 6 + 5) % 177) / 22**: Divide the result by 22 to get a value between 0 and 7.
+- **(((e + d) \* 6 + 5) % 177) / 22 & 7**: Use bitwise AND with 7 to ensure the result is within the range 0 to 7, representing the moon phase.
+
+##### Summary
+
+- **0**: New Moon
+- **1**: Waxing Crescent
+- **2**: First Quarter
+- **3**: Waxing Gibbous
+- **4**: Full Moon
+- **5**: Waning Gibbous
+- **6**: Last Quarter
+- **7**: Waning Crescent
+
+This function uses a combination of calendar calculations and lunar cycle approximations to determine the moon phase for a given date.
+
+
+
+#### Adding the moon phase to our greeting program
+
+- We need to fetch time-based data, which the `moon_phase()` function requires to make its calculation.
+- We also need an array of strings to output the current moon phase text based on the value the function returns.
+
+```C
+int mp;
+```
+
+- Variable `mp` to hold the value returned from the `moon_phase()` function.
+
+`hello.h`
+
+```C
+int moon_phase(int year, int month, int day);
+```
+
+`hello.c`
+
+```C
+int moon_phase(int year, int month, int day)
+{
+    int d, g, e;
+
+    d = day;
+    if (month == 2)
+    {
+        d += 31;
+    }
+    else if (month > 2)
+    {
+        d += 59 + (month - 3) * 30.6 + 0.5;
+    }
+
+    g = (year - 1900) % 19;
+    e = (11 * g + 29) % 30;
+
+    if (e == 25 || e == 24)
+    {
+        ++e;
+    }
+
+    return ((((e + d) * 6 + 5) % 177) / 22 & 7);
+}
+```
+
+
+
+`main.c`
+
+```C
+
+char *phase[8] = {
+    "waxing crescent", "at first quarter", "waxing gibbous", "full", "waning gibbous", "at last quarter", "waning crescent", "new"};
+
+int main(int argc, char *argv[])
+{
+    time_t now;
+    struct tm *clock;
+    int mp;
+
+    char time_string[64];
+
+    time(&now);
+    clock = localtime(&now);
+
+    mp = moon_phase(clock->tm_year + 1900, clock->tm_mon, clock->tm_mday);
+
+    strftime(time_string, 64, "Today is %A, %B %d, %Y%nIt is %r%n", clock);
+
+    printf("Greetings");
+    if (argc > 1)
+    {
+        printf(", %s", argv[1]);
+    }
+
+    printf("!\n%s", time_string);
+    
+    printf("The moon is %s\n", phase[mp]);
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Greetings!
+Today is Thursday, September 19, 2024
+It is 01:56:15 AM
+The moon is waning gibbous
+```
+

@@ -6355,6 +6355,180 @@ int32_t output[3];
 output = {400, 300, 250};
 ```
 
+
+
+#### What my mentor on exercism said about my solution
+
+"Well done!
+
+I just have some suggestions:
+
+------
+
+Line 24 create a [variable-length array (VLA)](https://en.wikipedia.org/wiki/Variable-length_array) of the same length as the `scores`.
+
+How the compiler implements a VLA is not specified, a common approach is to do something similar as `alloca()`, use the call stack. But in practice the space on the stack is limited. If the length of the input is too large you get a [stack overflow](https://en.wikipedia.org/wiki/Stack_overflow). IIRC that has been an attack vector for some exploits.
+
+I strongly recommend only to use variable-length arrays if the size is limited and small. For a deeper dive into VLAs you might want to read [The (too) many pitfalls of VLA in C](https://blog.joren.ga/programming/vla-bad) by Jakub Łukasiewicz, [Legitimate Use of Variable Length Arrays](https://nullprogram.com/blog/2019/10/27/) by Chris Wellons, or [this rant](https://lkml.org/lkml/2018/3/7/621) by Linus Torvalds.
+
+You could allocate the `sorted_scores` dynamically with `malloc()` and `free()` it at the end.
+
+------
+
+Lines 29-39 sort the copy of the `scores` "manually", with an algorithm that looks like bubble sort.
+
+Please don't implement or even use bubble sort. For his famous book [The Art of Computer Programming](https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming) Donald Knuth researched various sorting algorithms and wrote about bubble sort: "*In short, the bubble sort seems to have nothing to recommend it, except a catchy name and the fact that it leads to some interesting theoretical problems*". There are very few valid use cases for bubble sort, in fact I only know one [very specific use case](https://softwareengineering.stackexchange.com/a/79902/126640).
+
+For a more in-depth discussion of the non-virtues of bubble sort you might want to read the section [Use](https://en.wikipedia.org/wiki/Bubble_sort#Use) on Wikipedia or [Bubble Sort: An Archaeological Algorithmic Analysis](https://users.cs.duke.edu/~ola/bubble/bubble.pdf) by Owen Astrachan.
+
+Instead you could use `qsort()`. It's the only sorting algorithm in the standard library, all C programmers know it, and it's typically implemented with algorithms that have a better runtime complexity. That would make the code much shorter and would express the intent much more clearly.
+
+If you ever really want to implement your own sorting algorithm you could try insertion sort for shorter sequences and merge sort for larger sequences. They are rather simple and reasonably fast. Or you could go wild and implement some other well-known sorting algorithm like quick sort, heap sort, or radix sort.
+But I would only recommend that if you have concrete proof that `qsort()` is too slow or if you want to get some experience with those specific algorithms.
+
+Or alternatively:
+
+------
+
+`personal_top_three()` creates a copy of the `scores`, sorts it, and copies the greatest three elements to the `output`.
+
+That works but it needs additional temporary memory for the copy of the scores and runs in O(n log n) (where `n` is `scores_len`).
+
+Instead you could consider iterating over the original `scores` once and for each score updating the `output` so that it contains the (up to) three greatest scores you've seen so far. That's a little bit more complex but still doable, it's asymptotically faster, and it won't need any additional memory."
+
+
+
+#### Optimized Solution One
+
+`practice.h`
+
+```C
+enum
+{
+    ERROR_CODE = -1
+};
+
+// Return the latest score.
+int32_t latest(const int32_t *scores, size_t scores_len);
+
+// Return the highest score.
+int32_t personal_best(const int32_t *scores, size_t scores_len);
+
+int compare_scores(const void *a, const void *b);
+
+// Write the highest scores to `output` (in non-ascending order)
+// Return the number of scores written.
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output);
+```
+
+`functions.c`
+
+```C
+int32_t latest(const int32_t *scores, size_t scores_len)
+{
+    // The latest score is the last element in the scores array
+    return scores[scores_len - 1];
+}
+
+// Return the highest score.
+int32_t personal_best(const int32_t *scores, size_t scores_len)
+{
+    // Start with the first score as the highest
+    int32_t best = scores[0];
+    for (size_t i = 1; i < scores_len; ++i)
+    {
+        if (scores[i] > best)
+        {
+            // Update if a higher score is found
+            best = scores[i];
+        }
+    }
+    return best;
+}
+
+// Comparison function for qsort (sort in descending order)
+int compare_scores(const void *a, const void *b)
+{
+    return (*(int32_t *)b - *(int32_t *)a);
+}
+
+// Write the highest scores to `output` (in non-ascending order)
+// Return the number of scores written.
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output)
+{
+    // Allocate memory for the sorted scores array
+    int32_t *sorted_scores = malloc(scores_len * sizeof(int32_t));
+
+    if (sorted_scores == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 0;
+    }
+
+    // Copy the scores array to the sorted_scores array
+    memcpy(sorted_scores, scores, scores_len * sizeof(int32_t));
+
+    // Sort the scores in descending order using qsort
+    qsort(sorted_scores, scores_len, sizeof(int32_t), compare_scores);
+
+    // Copy the top three scores to the output array
+    size_t count = scores_len < 3 ? scores_len : 3;
+
+    for (size_t i = 0; i < count; i++)
+    {
+        output[i] = sorted_scores[i];
+    }
+
+    // Free the allocated memory
+    free(sorted_scores);
+
+    return count;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    int32_t scores[] = {100, 200, 300, 400, 250};
+
+    size_t scores_len = sizeof(scores) / sizeof(scores[0]);
+
+    // Test latest
+    printf("Latest score: %d\n", latest(scores, scores_len));
+
+    // Test personal_best
+    printf("Personal best: %d\n", personal_best(scores, scores_len));
+
+    // Test personal_top_three
+    int32_t top_three[3];
+    size_t top_len = personal_top_three(scores, scores_len, top_three);
+    printf("Top three scores: ");
+    for (size_t i = 0; i < top_len; i++)
+    {
+        printf("%d ", top_three[i]);
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Latest score: 250
+Personal best: 400
+Top three scores: 400 300 250 
+```
+
+
+
+##### Summary of optimized solution one
+
+- We replaced the VLA with dynamic memory allocation using `malloc` and `free`.
+- We replaced the bubble sort with `qsort` for better performance and clarity.
+- The updated code is more efficient and safer, avoiding potential stack overflow issues with VLAs.
+
 ---
 
 ## Pangram
