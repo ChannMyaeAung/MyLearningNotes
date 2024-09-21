@@ -6048,6 +6048,99 @@ Error: Please enter a positive integer.
 - This optimization significantly improves performance for large input values.
 - The updated code maintains the same functionality while being more efficient.
 
+
+
+#### Solution 2 (Optimized)
+
+`practice.h`
+
+```C
+typedef enum
+{
+    PERFECT_NUMBER = 1,
+    ABUNDANT_NUMBER = 2,
+    DEFICIENT_NUMBER = 3,
+    ERROR = -1
+} kind;
+kind classify_number(int number);
+```
+
+`functions.c`
+
+```C
+kind classify_number(int number)
+{
+    if (number < 1)
+    {
+        return ERROR;
+    }
+
+    int f_sum = number > 1;
+    for (int i = 2; i < sqrt(number); i++)
+    {
+        if (!(number % i))
+        {
+            f_sum += i + number / i;
+        }
+    }
+
+    return f_sum < number ? DEFICIENT_NUMBER : f_sum > number ? ABUNDANT_NUMBER : PERFECT_NUMBER;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    int number;
+    printf("Enter a number: ");
+    scanf("%d", &number);
+
+    kind result = classify_number(number);
+
+    switch (result)
+    {
+    case PERFECT_NUMBER:
+        printf("%d is a perfect number.\n", number);
+        break;
+    case DEFICIENT_NUMBER:
+        printf("%d is a deficient number.\n", number);
+        break;
+    case ABUNDANT_NUMBER:
+        printf("%d is an abundant number.\n", number);
+        break;
+    case ERROR:
+    default:
+        printf("Error: Please enter a positive integer.\n");
+        break;
+    }
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 6
+6 is a perfect number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 28
+28 is a perfect number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 12
+12 is an abundant number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 24
+24 is an abundant number.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a number: 8
+8 is a deficient number.
+```
+
+
+
 ---
 
 

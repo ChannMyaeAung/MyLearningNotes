@@ -5900,3 +5900,8 @@ In the context of recursion in C, choosing the right algorithm is crucial. An in
 - Functions have a prototype that determines how they can be called.
 - Terminating `main` and calling `exit` are the same.
 - Each function call has its own copy of local variables and can be called recursively.
+
+---
+
+## C library functions
+
