@@ -1374,3 +1374,132 @@ if (arr == NULL) {
 
 
 
+## Dangling Pointers
+
+### Definition
+
+- A dangling pointer is a pointer which points to some non-existing memory location.
+- A **dangling pointer** in C refers to a pointer that points to memory that has been **freed** or **deallocated**, but the pointer itself has not been updated and still holds the old address. 
+- Accessing or dereferencing a dangling pointer can lead to undefined behavior, which can cause program crashes, memory corruption, or unexpected results.
+
+### Causes of Dangling Pointers:
+
+1. **Freeing Memory but Not Nullifying the Pointer**: 
+   - When you use `free()` to deallocate memory but don’t update the pointer to `NULL`, the pointer still holds the address of the deallocated memory. 
+   - This becomes a dangling pointer.
+
+```C
+int *ptr = (int*)malloc(sizeof(int));
+free(ptr); // Memory is freed
+// ptr is now dangling since it still holds the old address
+```
+
+2. **Returning Pointers to Local Variables**: 
+
+   - Returning a pointer to a local variable from a function can lead to a dangling pointer because local variables are destroyed when the function exits, and the memory they occupied is invalid.
+
+   ```C
+   int* ptr;
+   {
+       int temp = 42;
+       ptr = &temp; // Dangling pointer: temp goes out of scope after the block ends
+   }
+   
+   ```
+
+   ```C
+   int* fun(){
+       int num = 10;
+       return &num;
+   }
+   
+   int main(){
+       int *ptr = NULL;
+       ptr = fun();
+       printf("%d", *ptr);
+       return 0;
+   }
+   
+   // This will result in Segmentation fault which means we are trying to read or write to an illegal memory location.
+   
+   // num is local to fun() function.
+   // After fun() finishes its execution, the num variable will get vanished which means it will no longer exist.
+   // Which means memory has been deallocated.
+   // We are trying to return the address of the deallocated memory and we are simply returnign the address of non-existent memory.
+   ```
+
+   
+
+3. **Scope Issues**: If a pointer points to a variable that goes out of scope, the pointer becomes dangling because the variable no longer exists in memory.
+
+   ```C
+   int* ptr;
+   {
+       int temp = 42;
+       ptr = &temp; // Dangling pointer: temp goes out of scope after the block ends
+   }
+   ```
+
+### How to Prevent Dangling Pointers:
+
+- **Set pointers to `NULL`** after freeing memory: 
+
+  ```C
+  free(ptr);
+  ptr = NULL;  // Now it's not dangling; dereferencing NULL leads to a clear error
+  ```
+
+- **Avoid returning pointers to local variables** from functions.
+
+- Be careful when working with pointers to objects with limited scope.
+
+---
+
+## Possible Outcomes of Double-Freeing Memory
+
+- If we attempt to **double free** memory in C—meaning we try to free the same block of memory more than once—it can lead to **undefined behavior**. 
+- This means the behavior of our program is unpredictable, and the consequences can vary depending on the system, compiler, or runtime environment.
+
+1. **Program Crash (Segmentation Fault)**:
+   - In many cases, double freeing memory will result in a segmentation fault. 
+   - This happens because the program tries to free a block of memory that is no longer valid, causing the system to detect the illegal operation and terminate the program.
+2. **Memory Corruption**:
+   - Double freeing can corrupt the heap, the area of memory where dynamically allocated data is stored. 
+   - This could lead to memory management issues like corrupted pointers, making the program behave unexpectedly later on.
+3. **Security Vulnerabilities**:
+   - Double-free vulnerabilities can be exploited by attackers to perform **heap-based buffer overflow** attacks or to execute arbitrary code. 
+   - This is why avoiding double-free errors is crucial in security-critical applications.
+4. **Silent Failure**:
+   - In some cases, especially on certain systems or compilers, double freeing may not cause an immediate crash. 
+   - The program may continue to run without any obvious issues but with a potentially corrupted state, making debugging more difficult.
+
+### Example of a Double Free:
+
+```C
+int main(){
+    int *ptr = (int*)malloc(sizeof(int));
+    
+    // First free
+    free(ptr);
+    
+    // Attempting to free the same memory again
+    free(ptr); // Undefined behavior (double free)
+    
+    return 0;
+}
+```
+
+### How to Prevent Double Free:
+
+- Set pointers to `NULL` after freeing memory:
+
+  ```C
+  free(ptr);
+  ptr = NULL;  // Now, further free(ptr) calls will be safe, as freeing NULL is harmless.
+  ```
+
+  - In C, freeing a `NULL` pointer is a no-op (it does nothing), so this is a safe guard against double frees.
+
+- By ensuring that pointers are set to `NULL` after freeing memory and being cautious with memory management, we can avoid double-free errors and undefined behavior in our program.
+
+---

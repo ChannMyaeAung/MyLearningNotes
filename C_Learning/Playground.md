@@ -6141,6 +6141,140 @@ Enter a number: 8
 
 
 
+#### What my mentor further said about my solution
+
+"Your new version is much more efficient, but it has a small problem. If `number` is a perfect square, you are not adding the square root of `number` to the sum. If you try `classify_number(196)`, it will tell you that it is deficient when really it is abundant. The divisors 1, 2, 4, 7, 14, 28, 49 and 98 add up to 203."
+
+`functions.c`
+
+```C
+kind classify_number(int number)
+{
+    if (number < 1)
+    {
+        return ERROR;
+    }
+
+    int f_sum = number > 1;
+    int sqrt_num = (int)sqrt(number);
+    for (int i = 2; i <= sqrt_num; i++)
+    {
+        if (!(number % i))
+        {
+            f_sum += i;
+            if (i != number / i)
+            {
+                f_sum += number / i;
+            }
+        }
+    }
+
+    return f_sum < number ? DEFICIENT_NUMBER : f_sum > number ? ABUNDANT_NUMBER
+                                                              : PERFECT_NUMBER;
+}
+```
+
+##### Perfect Square
+
+- A perfect square is an integer that is the square of another integer. 
+- For example, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196, etc., are perfect squares because they can be expressed as (1<sup>2</sup>), (2<sup>2</sup>), (3<sup>2</sup>), (4<sup>2</sup>), (5<sup>2</sup>), (6<sup>2</sup>), (7<sup>2</sup>), (8<sup>2</sup>), (9<sup>2</sup>), (10<sup>2</sup>), (11<sup>2</sup>), (12<sup>2</sup>), (13<sup>2</sup>), (14<sup>2</sup>), respectively.
+
+##### Sample Walkthrough
+
+Let's walk through the `classify_number` function with an example input of `196`.
+
+```C
+int f_sum = number > 1;
+int sqrt_num = (int)sqrt(number);
+```
+
+- `f_sum` is initialized to 1 because `number > 1` is true.
+- `sqrt_num` is calculated as the integer square root of 196, which is 14.
+
+```C
+for (int i = 2; i <= sqrt_num; i++)
+{
+    if (!(number % i))
+    {
+        f_sum += i;
+        if (i != number / i)
+        {
+            f_sum += number / i;
+        }
+    }
+}
+```
+
+We iterate from 2 to 14 (inclusive) to find the divisors of 196.
+
+- For each `i`, if `196 % i == 0`, we add `i` and `196 / i` to `f_sum`.
+
+Let's go through each iteration:
+
+- **i = 2**:
+  - `196 % 2 == 0` (true)
+  - `f_sum += 2` → `f_sum = 3`
+  - `196 / 2 = 98` → `2 != 98`
+  - `f_sum += 98` → `f_sum = 101`
+- **i = 3**:
+  - `196 % 3 != 0` (false)
+  - No change to `f_sum`
+- **i = 4**:
+  - `196 % 4 == 0` (true)
+  - `f_sum += 4` → `f_sum = 105`
+  - `196 / 4 = 49` → `4 != 49`
+  - `f_sum += 49` → `f_sum = 154`
+- **i = 5**:
+  - `196 % 5 != 0` (false)
+  - No change to `f_sum`
+- **i = 6**:
+  - `196 % 6 != 0` (false)
+  - No change to `f_sum`
+- **i = 7**:
+  - `196 % 7 == 0` (true)
+  - `f_sum += 7` → `f_sum = 161`
+  - `196 / 7 = 28` → `7 != 28`
+  - `f_sum += 28` → `f_sum = 189`
+- **i = 8**:
+  - `196 % 8 != 0` (false)
+  - No change to `f_sum`
+- **i = 9**:
+  - `196 % 9 != 0` (false)
+  - No change to `f_sum`
+- **i = 10**:
+  - `196 % 10 != 0` (false)
+  - No change to `f_sum`
+- **i = 11**:
+  - `196 % 11 != 0` (false)
+  - No change to `f_sum`
+- **i = 12**:
+  - `196 % 12 != 0` (false)
+  - No change to `f_sum`
+- **i = 13**:
+  - `196 % 13 != 0` (false)
+  - No change to `f_sum`
+- **i = 14**:
+  - `196 % 14 == 0` (true)
+  - `f_sum += 14` → `f_sum = 203`
+  - `196 / 14 = 14`
+  - Since `i == number / i`, we do not add `14` again to avoid double-counting.
+
+**Classification**:
+
+```C
+return f_sum < number ? DEFICIENT_NUMBER : f_sum > number ? ABUNDANT_NUMBER : PERFECT_NUMBER;
+```
+
+- `f_sum` is 203, which is greater than 196.
+- Therefore, the function returns `ABUNDANT_NUMBER`.
+
+##### Summary
+
+- The function correctly identifies 196 as an abundant number because the sum of its divisors (excluding itself) is 203, which is greater than 196.
+- The function handles perfect squares correctly by not double-counting the square root.
+
+
+
 ---
 
 

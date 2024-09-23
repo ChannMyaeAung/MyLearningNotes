@@ -424,3 +424,112 @@ It is 01:56:15 AM
 The moon is waning gibbous
 ```
 
+
+
+#### Randomly reading a pithy phrase
+
+`pitchy.txt`
+
+```
+Politics exists so that uncoordinated people can play sports.
+Water alone doesn't get you clean. You must use soap. That's because dirt and crud loves soap and sticks to it really well. The water then washes away the soap, along with the dirt, and the result is that you are clean.
+You buy popcorn, soda, and candy so that you have something to eat before the movie starts.
+Just wait until Starbucks figures out that you can snort coffee.
+Nothing instills more doubt in the curious than the sign "Wet Paint."
+You might dislike texting, but it certainly does get annoying people to shut up.
+You know you have an eating problem when you finish a meal and think, "Boy! When can I do that again?"
+The middle of nowhere is equidistant from everywhere else.
+Marketing wizards are looking for the human equivalent of what a dog feels at the sound of a can opener.
+Having a pet ensures that you don't freak out over every noise in the house. Loud bang? It's the cat. So what if the cat is in the room with me. It's the cat.
+The true experience at an amusement park is waiting in lines.
+There is no logic in the computer industry.
+The car's manual calls it the "check engine" lamp, but I call it the "This is going to cost at least $200" light.
+You drive on a parkway and park on a driveway.
+Do I take a break from work to play a video game, or take a break from a video game to get work done?
+```
+
+
+
+```C
+int main()
+{
+    const char filename[] = "pithy.txt";
+    FILE *fp;
+
+    // The buffer is used to read text from the file; the size is a guess, set as defined constant BSIZE (line 4).
+    char buffer[BSIZE];
+    char *r, *entry;
+    int items = 0;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        exit(1);
+    }
+
+    // Loop as long as the file isn't empty
+    while (!feof(fp))
+    {
+        // The variable r ensures that fgets() doesn't mess up and read beyond the end of the file; if so, the loop stops
+        r = fgets(buffer, BSIZE, fp);
+
+        if (r == NULL)
+        {
+            break;
+        }
+
+        // Enough storage for the string, plus one for the null character
+        entry = (char *)malloc(sizeof(char) * strlen(buffer) + 1);
+
+        if (entry == NULL)
+        {
+            fprintf(stderr, "Unable to allocate memory\n");
+            exit(1);
+        }
+
+        strcpy(entry, buffer);
+        printf("%d: %s\n", items, entry);
+        items++;
+        // Outputs all the lines in the file
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+0: Politics exists so that uncoordinated people can play sports.
+
+1: Water alone doesn't get you clean. You must use soap. That's because dirt and crud loves soap and sticks to it really well. The water then washes away the soap, along with the dirt, and the result is that you are clean.
+
+2: You buy popcorn, soda, and candy so that you have something to eat before the movie starts.
+
+3: Just wait until Starbucks figures out that you can snort coffee.
+
+4: Nothing instills more doubt in the curious than the sign "Wet Paint."
+
+5: You might dislike texting, but it certainly does get annoying people to shut up.
+
+6: You know you have an eating problem when you finish a meal and think, "Boy! When can I do that again?"
+
+7: The middle of nowhere is equidistant from everywhere else.
+
+8: Marketing wizards are looking for the human equivalent of what a dog feels at the sound of a can opener.
+
+9: Having a pet ensures that you don't freak out over every noise in the house. Loud bang? It's the cat. So what if the cat is in the room with me. It's the cat.
+
+10: The true experience at an amusement park is waiting in lines.
+
+11: There is no logic in the computer industry.
+
+12: The car's manual calls it the "check engine" lamp, but I call it the "This is going to cost at least $200" light.
+
+13: You drive on a parkway and park on a driveway.
+
+14: Do I take a break from work to play a video game, or take a break from a video game to get work done?
+
+```
+
