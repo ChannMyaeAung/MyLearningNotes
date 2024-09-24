@@ -448,7 +448,11 @@ You drive on a parkway and park on a driveway.
 Do I take a break from work to play a video game, or take a break from a video game to get work done?
 ```
 
-
+- In C, `feof` is a function that checks whether the end-of-file indicator associated with a given file stream is set. It is defined in the `<stdio.h>` header file.
+- The `feof` function returns a non-zero value (true) if the end-of-file indicator is set for the specified stream.
+- It returns zero (false) otherwise.
+- The `feof` function is typically used in a loop to determine when the end of a file has been reached while reading from the file. 
+- However, it is important to note that `feof` only returns true after an attempt to read past the end of the file has been made. Therefore, it is often used in conjunction with other file reading functions like `fgets`, `fscanf`, or `fread`.
 
 ```C
 int main()
@@ -497,6 +501,7 @@ int main()
     fclose(fp);
     return 0;
 }
+
 ```
 
 ```sh
@@ -533,3 +538,130 @@ chan@CMA:~/C_Programming/practice$ ./practice
 
 ```
 
+
+
+- As the program sits now, it allocates a series of buffers to store the strings read.
+- Yet the addresses for these buffers are lost in memory.
+- To resolve this issue, a pointer-pointer is required.
+- The pointer-pointer, or address of a pointer, keeps track of all the string's memory locations.
+
+```C
+#define BSIZE 256
+
+int main(){
+    const char filename[] = "pithy.txt";
+    FILE *fp;
+    
+    // The buffer is used to read text from the file; the size is a guess, set as defined constant BSIZE (line 4).
+    char buffer[BSIZE];
+    char *r, *entry;
+    int items = 0;
+    int saying;
+    char **list_base;
+    
+    fp = fopen(filename, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Error opening file %s\n", filename);
+        exit(1);
+    }
+    
+    list_base = (char **)malloc(sizeof(char *) * 100);
+    
+    if(list_base == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    // Loop as long as the file isn't empty
+    while(!feof(fp)){
+        // The variable r ensures that fgets() doesn't mess up and read beyong the end of the file; if so, the loop stops
+        r = fgets(buffer, BSIZE, fp);
+        
+        if(r == NULL){
+            break;
+        }
+        
+        // Enough storage for the string, plus one for the null character
+        entry = (char *)malloc(sizeof(char) * strlen(buffer) + 1);
+        
+        if(entry == NULL){
+            fprintf(stderr, "Unable to allocate memory\n");
+            exit(1);
+        }
+        
+        // Copy the string from the buffer into the newly allocated memory pointed to by entry
+        strcpy(entry, buffer);
+        
+        // Stores the pointer entry in the array list_base at the position indicated by items.
+        *(list_base + items) = entry;
+        item++;
+        
+        // Every time items is exactly divisible by 100
+        // means the file read contains more than 100 lines of text, reallocate memory to prevent memory overflow
+        if(items % 100 == 0){
+            // Existing storage is increased by 100 pointer-size chunks.
+            lisst_base = (char **)realloc(list_base, sizeof(char *) * (items + 100));
+            if(list_base == NULL){
+                fprintf(stderr, "Unable to reallocate memory\n");
+                exit(1);
+            }
+        }
+    }
+    
+    fclose(fp);
+    
+    // Output a random line of text
+    srand((unsigned)time(NULL));
+    saying = rand() % (items - 1);
+    printf("%s", *(list_base + saying));
+}
+```
+
+1. **Line 67: `*(list_base + items) = entry;`**
+   - **Purpose**: This line stores the pointer `entry` in the array `list_base` at the position indicated by `items`.
+   - **Details:**
+     - `list_base` is a pointer to an array of character pointers (`char **`), which is used to store the lines read from the file.
+     - `items` is an integer that keeps track of the number of lines read so far.
+     - `*(list_base + items)` is equivalent to `list_base[items]`, which accesses the `items`-th element of the array.
+     - This line effectively stores the pointer to the copied string in the `items`-th position of `list_base`.
+2. **Line 68: `items++;`**
+   - **Purpose**: This line increments the `items` counter by 1.
+   - **Details:**
+     - After storing the pointer to the copied string in `list_base`, the `items` counter is incremented to reflect that another line has been read and stored.
+     - This ensures that the next line read from the file will be stored in the next position in the `list_base` array.
+
+Summary
+
+- **Line 66** copies the content of the `buffer` into the newly allocated memory pointed to by `entry`.
+- **Line 67** stores the pointer to the copied string in the `list_base` array at the position indicated by `items`.
+- **Line 68** increments the `items` counter to keep track of the number of lines read and stored.
+
+#### Purpose of `strcpy(entry, buffer)`
+
+- **Function**: Copies the string from `buffer` to the memory location pointed to by `entry`.
+- **Reason**: `entry` is a newly allocated memory block that will hold the string read from the file.
+
+#### Purpose of `*(list_base + items) = entry`
+
+- **Function**: Stores the pointer `entry` in the array `list_base` at the position indicated by `items`.
+- **Reason**: `list_base` is an array of pointers (`char **`) that keeps track of all the lines read from the file. By storing `entry` in `list_base`, you are effectively saving the location of the copied string so that you can access it later.
+
+#### Why Both are Needed
+
+1. **Copying the String**: `strcpy(entry, buffer)` ensures that the content of the buffer is copied to a new memory location (`entry`). This is necessary because `buffer` will be reused in the next iteration of the loop to read the next line from the file.
+2. **Storing the Pointer**: `*(list_base + items) = entry` (or equivalently `list_base[items] = entry`) stores the pointer to the newly copied string in the `list_base` array. This allows you to keep track of all the lines read from the file. Without this step, you would lose the reference to the copied string, and it would be impossible to access it later.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Nothing instills more doubt in the curious than the sign "Wet Paint."
+
+chan@CMA:~/C_Programming/practice$ ./practice
+You might dislike texting, but it certainly does get annoying people to shut up.
+
+chan@CMA:~/C_Programming/practice$ ./practice
+You know you have an eating problem when you finish a meal and think, "Boy! When can I do that again?"
+```
+
+---
+
+## 2. NATO output

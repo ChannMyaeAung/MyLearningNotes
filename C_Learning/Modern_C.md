@@ -5905,3 +5905,35 @@ In the context of recursion in C, choosing the right algorithm is crucial. An in
 
 ## C library functions
 
+#### "Check the return value of library functions for errors"
+
+```C
+if(puts("hello world") == EOF){
+    perror("can't output to terminal");
+    exit(EXIT_FAILURE);
+}
+```
+
+- Here we can see that `puts` falls into the category of functions that return a special value on error, `EOF`, "end-of-file".
+
+#### "Fail fast, fail early, and fail often."
+
+- C has one major state variable that tracks errors of C library functions: a dinosaur called `errno`.
+- The `perror` function uses this state under the hood, to provide its diagnostic.
+- If a function fails in a way that allows us to recover, we have to ensure that the error state also is reset; otherwise, the library functions or error checking might get confused.
+
+```C
+void puts_safe(char const s[static 1]){
+    static bool failed = false;
+    if(!failed && puts(s) == EOF){
+        perror("can't output to terminal: ");
+        failed = true;
+        errno = 0;
+    }
+}
+```
+
+
+
+### Input, output, and file manipulation
+

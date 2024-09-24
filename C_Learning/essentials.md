@@ -39,6 +39,103 @@ It's important to note that these conventions are not enforced by the C language
 
 In general, if you see a non-zero return value from a C program or function, you should consult the documentation or source code to determine what that specific value means in that context.
 
+### Memory Layout in C
+
+![C Board](https://cboard.cprogramming.com/attachments/c-programming/16282d1610305071-memory-layout-c-program-goes-into-ram-selection_006-png)
+
+Memory segmentation in C refers to the division of a program's memory into distinct sections, each serving a specific purpose. This is typically done by the operating system and the compiler to manage memory more efficiently. The common segments in C are:
+
+#### 1. **Text (Code) Segment**
+
+- **Purpose**: This segment contains the executable instructions (machine code) of the program, i.e., the compiled code that will be executed by the CPU.
+- **Characteristics:**
+  - Typically **read-only** to prevent accidental modification of instructions.
+  - Shared among processes that execute the same program (to save memory).
+
+Example:
+
+```C
+int main() {
+    printf("Hello, world!\n");  // The code for this function is in the text segment.
+    return 0;
+}
+```
+
+#### 2. **Data Segment**
+
+- **Purpose**: This segment stores **global** and **static** variables that are initialized with some value at the start of the program.
+- **Characteristics:**
+  - Divided into two parts:
+    - **Initialized Data Segment**: Stores global and static variables that are initialized.
+    - **Uninitialized Data Segment (BSS)**: Stores global and static variables that are declared but not initialized. These variables are initialized to zero by default.
+
+Example:
+
+```C
+int globalVar = 10;     // Stored in the initialized data segment.
+static int staticVar;   // Stored in the BSS segment (zero-initialized by default).
+```
+
+#### 3. **Heap Segment**
+
+- **Purpose**: The heap is used for **dynamically allocated memory** at runtime. Memory on the heap is allocated using functions like `malloc`, `calloc`, and `realloc` and needs to be manually freed using `free`.
+- **Characteristics:**
+  - Grows upward in memory (from lower to higher addresses).
+  - Must be managed explicitly by the programmer to avoid memory leaks.
+
+Example:
+
+```C
+int *ptr = (int *)malloc(sizeof(int));  // Memory allocated on the heap.
+*ptr = 20;
+free(ptr);  // Must free heap memory to avoid memory leaks.
+```
+
+#### 4. **Stack Segment**
+
+- **Purpose**: The stack is used for **local variables** and **function call management** (such as function parameters, return addresses, and local variables).
+- **Characteristics:**
+  - Grows downward in memory (from higher to lower addresses).
+  - Automatically managed (i.e., memory is automatically allocated and deallocated when a function is called and returns).
+  - Limited in size, and excessive use of stack memory (e.g., through deep recursion) can lead to a **stack overflow**.
+
+Example:
+
+```C
+void foo() {
+    int localVar = 5;  // Stored on the stack.
+}
+```
+
+### Diagram of Memory Segmentation:
+
+```
+High Memory Addresses
+---------------------
+|      Stack        | <---- Grows downward
+---------------------
+|       Heap        | <---- Grows upward
+---------------------
+| Uninitialized Data| (BSS segment)
+---------------------
+| Initialized Data  |
+---------------------
+|      Text         |
+---------------------
+Low Memory Addresses
+```
+
+#### Summary of Memory Segments:
+
+- **Text Segment**: Contains executable code, usually read-only.
+- **Data Segment:** Contains global and static variables.
+  - **Initialized Data**: Stores variables with initial values.
+  - **BSS**: Stores uninitialized global and static variables.
+- **Heap**: Used for dynamic memory allocation at runtime, managed manually.
+- **Stack**: Holds local variables, function parameters, and manages function calls, automatically managed by the system.
+
+Understanding these segments helps in managing memory efficiently, preventing issues like memory leaks, and avoiding stack overflows.
+
 ### `POSIX`
 
 In C programming, POSIX stands for "Portable Operating System Interface for Unix". It refers to a family of standards specified by the IEEE (Institute of Electrical and Electronics Engineers) that define the API (Application Programming Interface) for software compatible with Unix and Unix-like operating systems. These standards aim to ensure compatibility between different Unix systems, allowing software written for POSIX to be easily portable across various Unix platforms.
