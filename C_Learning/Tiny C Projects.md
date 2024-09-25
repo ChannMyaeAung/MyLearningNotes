@@ -925,7 +925,36 @@ int main()
 ```
 
 - Any alphabetic characters are detected by the `isalpha()` function.
+
 - If found, the letter is used as a reference into the `nato[]` array.
+
+- ```C
+  nato[ch - 'A']
+  ```
+
+  - `ch - 'A'` calculates the index for the `nato` array.
+  - For example, if `ch` is 'A', then `ch - 'A'` is `0`, so `nato[0]` is "Alfa".
+  - If `ch` is 'B', then `ch - 'A'` is `1`, so `nato[1]` is "Bravo".
+  - This works because the ASCII value of 'A' is 65, 'B' is 66, and so on. Subtracting 'A' (65) from any uppercase letter gives a zero-based index corresponding to that letter.
+  - Let's say the input is "ABZ":
+    - **First Character ('A')**:
+      - `toupper('A')` is 'A'.
+      - `isalpha('A')` is true.
+      - `ch - 'A'` is `0`.
+      - `nato[0]` is "Alfa".
+      - Output: "Alfa".
+    - **Second Character ('B')**:
+      - `toupper('B')` is 'B'.
+      - `isalpha('B')` is true.
+      - `ch - 'A'` is `1`.
+      - `nato[1]` is "Bravo".
+      - Output: "Bravo".
+    - **Third Character ('Z')**:
+      - `toupper('Z')` is 'Z'.
+      - `isalpha('Z')` is true.
+      - `ch - 'A'` is `25`.
+      - `nato[25]` is "Zulu".
+      - Output: "Zulu".
 
 **So, if we say "Howdy"**
 
@@ -936,6 +965,42 @@ Hotel Oscar Whiskey Delta Yankee
 ```
 
 - This basically means H for "Hotel", o for "Oscar", w for "Whiskey", d for "Delta", and y for "Yankee".
+- **First Character ('H')**:
+  - `toupper('H')` is 'H'.
+  - `isalpha('H')` is true.
+  - `ch - 'A'` is `7` (ASCII value of 'H' is 72, 'A' is 65, so 72 - 65 = 7).
+  - `nato[7]` is "Hotel".
+  - Output: "Hotel ".
+- **Second Character ('o')**:
+  - `toupper('o')` is 'O'.
+  - `isalpha('O')` is true.
+  - `ch - 'A'` is `14` (ASCII value of 'O' is 79, 'A' is 65, so 79 - 65 = 14).
+  - `nato[14]` is "Oscar".
+  - Output: "Oscar ".
+- **Third Character ('w')**:
+  - `toupper('w')` is 'W'.
+  - `isalpha('W')` is true.
+  - `ch - 'A'` is `22` (ASCII value of 'W' is 87, 'A' is 65, so 87 - 65 = 22).
+  - `nato[22]` is "Whiskey".
+  - Output: "Whiskey ".
+- **Fourth Character ('d')**:
+  - `toupper('d')` is 'D'.
+  - `isalpha('D')` is true.
+  - `ch - 'A'` is `3` (ASCII value of 'D' is 68, 'A' is 65, so 68 - 65 = 3).
+  - `nato[3]` is "Delta".
+  - Output: "Delta ".
+- **Fifth Character ('y')**:
+  - `toupper('y')` is 'Y'.
+  - `isalpha('Y')` is true.
+  - `ch - 'A'` is `24` (ASCII value of 'Y' is 89, 'A' is 65, so 89 - 65 = 24).
+  - `nato[24]` is "Yankee".
+  - Output: "Yankee ".
+- **Sixth Character ('\n')**:
+  - `toupper('\n')` is '\n'.
+  - `isalpha('\n')` is false.
+  - The loop continues to the next character.
+- **End of String**:
+  - The loop terminates when it encounters the null character (`\0`).
 
 **If we type a longer phrase such as "Hello, World!"**
 
