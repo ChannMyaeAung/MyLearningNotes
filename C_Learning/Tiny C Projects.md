@@ -593,6 +593,7 @@ int main(){
         strcpy(entry, buffer);
         
         // Stores the pointer entry in the array list_base at the position indicated by items.
+        // same as list_base[items] = entry;
         *(list_base + items) = entry;
         item++;
         
@@ -662,6 +663,286 @@ chan@CMA:~/C_Programming/practice$ ./practice
 You know you have an eating problem when you finish a meal and think, "Boy! When can I do that again?"
 ```
 
+### Important Note regarding the pithy program
+
+- The program doesn't release any memory directly. 
+- Normally, the end of a function would be dotted with `free()` statements, one for each memory chunk allocated.
+- Because the entire code dwells within the `main()` function, freeing memory isn't necessary.
+- The memory allocated is freed when the program quits.
+- Had the allocation taken place in a function, however, it's necessary to release the allocation or risk losing the memory chunk and potentially causing a memory overflow.
+- However, we should always explicitly free the memory allocated in our program even if it is in the `main` function.
+- While the operating system will reclaim the memory when the program exits, it is good practice to free all dynamically allocated memory to avoid memory leaks and to ensure that your program is well-behaved, especially in more complex applications where memory management is critical.
+
+```C
+#define BSIZE 256
+
+int main()
+{
+    const char filename[] = "pithy.txt";
+    FILE *fp;
+
+    // The buffer is used to read text from the file; the size is a guess, set as defined constant BSIZE (line 4).
+    char buffer[BSIZE];
+    char *r, *entry;
+    int items = 0;
+    int saying;
+    char **list_base;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        exit(1);
+    }
+
+    list_base = (char **)malloc(sizeof(char *) * 100);
+
+    if (list_base == NULL)
+    {
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+
+    // Loop as long as the file isn't empty
+    while (!feof(fp))
+    {
+        // The variable r ensures that fgets() doesn't mess up and read beyond the end of the file; if so, the loop stops
+        r = fgets(buffer, BSIZE, fp);
+
+        if (r == NULL)
+        {
+            break;
+        }
+
+        // Enough storage for the string, plus one for the null character
+        entry = (char *)malloc(sizeof(char) * strlen(buffer) + 1);
+
+        if (entry == NULL)
+        {
+            fprintf(stderr, "Unable to allocate memory\n");
+            exit(1);
+        }
+
+        // Copy the string from the buffer into the newly allocated memory pointed to by entry
+        strcpy(entry, buffer);
+
+        // Stores the pointer entry in the array list_base at the position indicated by items.
+        *(list_base + items) = entry;
+        items++;
+
+        // Every time items is exactly divisible by 100
+        // means the file read contains more than 100 lines of text, reallocate memory to prevent memory overflow
+        if (items % 100 == 0)
+        {
+            // Existing storage is increased by 100 pointer-size chunks.
+            list_base = (char **)realloc(list_base, sizeof(char *) * (items + 100));
+
+            if (list_base == NULL)
+            {
+                fprintf(stderr, "Unable to reallocate memory\n");
+                exit(1);
+            }
+        }
+    }
+    fclose(fp);
+
+    // Outputs a random line of text
+    srand((unsigned)time(NULL));
+    saying = rand() % (items - 1);
+    printf("%s", *(list_base + saying));
+
+    // Free the allocated memory
+    for (int i = 0; i < items; i++)
+    {
+        free(list_base[i]);
+    }
+
+    free(list_base);
+    return 0;
+}
+```
+
+
+
+### Similar Small Program
+
+```C
+int main(){
+    char *buffer = "Hello, World!";
+    char *entry = (char*)malloc(strlen(buffer) + 1);
+    // Outline: For each string in buffers, memory is allocated, the string is copied, and the pointer is stored in list_base.
+    strcpy(entry, buffer);
+    
+    
+    // Now entry points to a memory location containing "Hello, World!"
+    // But we need to store this pointer somewhere to access it later
+    char **list_base = (char**)malloc(10 * sizeof(char *));
+    int items = 0;
+    
+    list_base[items] = entry; // Store the pointer in the array
+    
+    items++;
+    
+    printf("%s", list_base[0]); // Prints "Hello, World!"
+    printf("%s", list_base[items]); // Prints (null)
+    
+    // Free allocated memory
+    // We don't need a loop to free the memory like the pithy program because we are only allocating and storing a single string.
+    free(entry);
+    free(list_base);
+    return 0;
+}
+```
+
+##### Explanation
+
+1. **Initialization**:
+   - `buffer` is initialized to `"Hello, World!"`.
+   - `entry` is allocated enough memory to hold the string in `buffer` plus the null terminator.
+   - `strcpy(entry, buffer)` copies the string from `buffer` to `entry`.
+2. **Array Allocation**:
+   - `list_base` is allocated memory for 10 pointers to `char`.
+   - `items` is initialized to 0.
+3. **Storing the Pointer**:
+   - `list_base[items] = entry;` stores the pointer `entry` in `list_base[0]`.
+   - `items` is incremented to 1.
+4. **Printing**:
+   - `printf("%s", list_base[0]);` prints the string pointed to by `list_base[0]`, which is `"Hello, World!"`.
+   - `printf("%s", list_base[items]);` prints the string pointed to by `list_base[1]`, which is `NULL` because `list_base[1]` has not been initialized.
+
+##### Why `list_base[items]` is `NULL`
+
+- After `items` is incremented to 1, `list_base[1]` is not assigned any value. Therefore, it contains `NULL` or an undefined value.
+- When you try to print `list_base[1]`, it prints `(null)` because it points to `NULL`.
+
+##### Important Notes
+
+If we have multiple strings like we did in the pithy program, the `list_base[items] = entry;` would be like this:
+
+let's say our entry will have the following strings:
+
+"Hello, World!", "John Doe", the last item is "Prince Ali"
+
+`n` here means the last element of entry.
+
+| list_base[0] (items = 0) | list_base[1] (items = 1) | list_base[n] (items  = n) |
+| ------------------------ | ------------------------ | ------------------------- |
+| memory chunk [0]         | memory chunk [1]         | memory chunk [n]          |
+| "Hello, World!"          | "John Doe"               | "Prince Ali"              |
+|                          |                          |                           |
+
+
+
+###### Memory Layout
+
+| Index (`items`) | `list_base` Pointer              | Memory Chunk Content |
+| --------------- | -------------------------------- | -------------------- |
+| 0               | `list_base[0]`                   | "Hello, World!"      |
+| 1               | `list_base[1]`                   | "John Doe"           |
+| 2               | `list_base[2]` or `list_base[n]` | "Prince Ali"         |
+
+
+
 ---
 
 ## 2. NATO output
+
+```C
+const char *nato[] = {
+    "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"
+};
+```
+
+- The array's notation, `*nato[]` , implies an array of pointers, which is how the compiler builds this construction in memory.
+- The array's data type is `char`, so the pointers reference character arrays - strings - stored in memory.
+- The `nato[]` array is filled with the memory locations of the strings as illustrated below.
+
+Figure: How an array of pointers references strings as they sit in memory
+
+```
+char *nato[] = {
+	0x404020, 0x404025, 0x40402b, 
+	...
+	0x4040b8, 0x4040bf
+}
+```
+
+```
+What the array stores
+
+Addresses		Strings in memory
+0x404020 --> "A" "l" "f" "a" "\0"
+0x404025 --> "B" "r" "a" "v" "o" "\0"
+0x40402b --> "C" "h" "a" "r" "l" "i" "e" "\0"
+...
+0x4040b8 --> "Y" "a" "n" "k" "e" "e" "\0"
+0x4040bf --> "Z" "u" "l" "u" "\0"
+```
+
+- The string `Alfa` (terminated with a null character, `\0`) is stored at address `0x404020`.
+- This memory location is stored in the `nato[]` array, not the string itself.
+- Yes, the string appears in the array's declaration, but it is stored elsewhere in memory at runtime.
+
+### Nato Translator Program
+
+```C
+int main()
+{
+    const char *nato[] = {
+        "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"};
+
+    char phrase[64];
+    char ch;
+    int i = 0;
+
+    printf("Enter a word or phrase: ");
+
+    // stores into location phrase 63 characters + null character from stdin, standard input.
+    fgets(phrase, 64, stdin);
+
+    // Loop until the null character is found in the string
+    while (phrase[i])
+    {
+        ch = toupper(phrase[i]);
+
+        // True when character ch is alphabetic
+        if (isalpha(ch))
+        {
+
+            // ch-'A' transforms the letters to values 0 through 25, matching the corresponding array element.
+            printf("%s ", nato[ch - 'A']);
+        }
+        i++;
+        if (i == 64)
+        {
+            break;
+        }
+    }
+
+    putchar('\n');
+    return 0;
+}
+```
+
+- Any alphabetic characters are detected by the `isalpha()` function.
+- If found, the letter is used as a reference into the `nato[]` array.
+
+**So, if we say "Howdy"**
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a word or phrase: Howdy
+Hotel Oscar Whiskey Delta Yankee 
+```
+
+- This basically means H for "Hotel", o for "Oscar", w for "Whiskey", d for "Delta", and y for "Yankee".
+
+**If we type a longer phrase such as "Hello, World!"**
+
+```sh 
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a word or phrase: Hello, World!
+Hotel Echo Lima Lima Oscar Whiskey Oscar Romeo Lima Delta
+```
+
+- As we can see , and ! are ignored because nonalpha characters are ignored in the code, no output for them is generated.
