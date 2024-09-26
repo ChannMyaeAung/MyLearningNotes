@@ -886,6 +886,8 @@ Addresses		Strings in memory
 ### Nato Translator Program
 
 ```C
+#include <stdio.h>
+#include <ctype.h>
 int main()
 {
     const char *nato[] = {
@@ -1011,3 +1013,217 @@ Hotel Echo Lima Lima Oscar Whiskey Oscar Romeo Lima Delta
 ```
 
 - As we can see , and ! are ignored because nonalpha characters are ignored in the code, no output for them is generated.
+
+### Reading and converting a file
+
+```C
+int main(int argc, char *argv[]){
+    	const char *nato[] = {
+        	"Alfa", "Bravo", "Charlie", "Delta", 			"Echo", "Foxtrot", "Golf", "Hotel", 			"India", "Juliett", "Kilo", "Lima", 			"Mike", "November", "Oscar", "Papa", 			"Quebec", "Romeo", "Sierra", "Tango", 			"Uniform", "Victor", "Whiskey", "X-ray", 			"Yankee", "Zulu"};
+    FILE *n;
+    int ch;
+    
+    if(argc < 2){
+        fprintf(stderr, "Please supply a text file argument\n");
+        exit(1);
+    }
+    
+    // Open the filename supplied at the command prompt, referenced as argv[1]
+    n = fopen(argv[1], "r");
+    if(n == NULL){
+        fprintf(stderr, "Unable to open %s\n", argv[1]);
+        exit(1);
+    }
+    
+    // Reads one character at a time from the file, storing it in variable ch. The EOF marks the ned of the file.
+    while((ch = fgetc(n)) != EOF){
+        // Process only text characters
+        if(isalpha(ch)){
+            // Uses the uppercase version of the character, minus the value of 'A' to index the nato[] array
+            printf("%s ", nato[toupper(ch) - 'A']);
+        }
+    }
+    
+    putchar('\n');
+    fclose(n);
+    return 0;
+    
+}
+```
+
+`Output` (Opening our pithy.txt)
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Please supply a text file argument
+
+chan@CMA:~/C_Programming/practice$ ./practice pithy.txt
+Papa Oscar Lima India Tango India Charlie Sierra Echo X-ray India Sierra Tango Sierra Sierra Oscar Tango Hotel Alfa Tango Uniform November Charlie Oscar Oscar Romeo Delta India November Alfa Tango Echo Delta Papa Echo Oscar Papa Lima Echo C......
+```
+
+### Converting NATO input to character output
+
+- We will be using `strtok()` function to parse words in a stream of text.
+- `strtok()` can be assumed to be translated as "string tokenizer".
+- The `strtok()` function parses a string into chunks based on one or more separator characters. Defined in `string.h` header file.
+
+```C
+char *strtok(char *str, const char *delim);
+```
+
+- The first argument `str` is the string to scan.
+- The second argument `delim` (delimiter) is a string containing the individual characters that can separate or delimit, the character chunks we want to parse.
+- The value returned is a `char` pointer referencing **the character chunk found.**
+
+```C
+match = strtok(string, " ");
+```
+
+- This statement scans characters held in buffer `string`, stopping when the space character is encountered.
+- The `char` pointer `match` holds the address of the word (or text chunk) found, terminated with a null character where the space or another delimiter would otherwise be.
+- The `NULL` constant is returned when nothing is found.
+- To continue scanning the same string, the first argument is replaced with the `NULL` constant:
+
+```C
+match = strtok(NULL, " ");
+```
+
+- The `NULL` argument informs the function to use the string passed earlier and continue the tokenizing operation.
+
+```C
+int main(){
+    char sometext[64];
+    char *match;
+    
+    printf("Type some text: ");
+    fgets(sometext, 64, stdin);
+    
+    // The initial call to strtok(), with the string to search.
+    match = strtok(sometext, " ");
+    
+    // Loop as long as the return value is not NULL
+    while(match){
+        printf("%s\n", match);
+        
+        // In the second  call to strtok(), NULL is used to keep searching the same string which is our sometext string.
+        match = strtok(NULL, " ");
+    }
+    
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Type some text: This is some text
+This
+is
+some
+text
+
+chan@CMA:~/C_Programming/practice$ ./practice
+Type some text: Hello, World!
+Hello,
+World!
+
+```
+
+- To avoid capturing the punctuation characters, we can set this delimiter string:
+
+```C
+match = strtok(sometext, " ,.!?:;\"'')
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Type some text: Hello, World!
+Hello
+World
+```
+
+
+
+`practice.h`
+
+```C
+char isterm(char *term);
+```
+
+
+
+`functions.c`
+
+```C
+char isterm(char *term)
+{
+    const char *nato[] = {
+        "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"};
+
+    int x;
+    const char *n, *t;
+
+    for (x = 0; x < 26; x++)
+    {
+        // Set pointer n to the current nato word
+        n = nato[x];
+        // Pointer t references the term passed.
+        t = term;
+
+        // Loop until the NATO term ends
+        while (*n != '\0')
+        {
+            // Logically converts each letter to uppercase and compares
+            if ((*n | 0x20) != (*t | 0x20))
+            {
+
+                // For no match, the loop breaks and the next term in nato[] is compared.
+                break;
+
+                // Increment through each letter
+                n++;
+                t++;
+            }
+        }
+
+        // When pointer n is the null character, the terms have matched.
+        if (*n == '\0')
+        {
+            // Returns the first letter of the NATO term
+            return (*nato[x]);
+        }
+    }
+    return ('\0');
+}
+```
+
+`practice.c` (Main)
+
+```C
+int main()
+{
+
+    char phrase[64];
+    char *match;
+    char ch;
+
+    printf("NATO word or phrase: ");
+    fgets(phrase, 64, stdin);
+
+    match = strtok(phrase, " ");
+    while (match)
+    {
+        ch = isterm(match);
+        if (ch != '\0')
+        {
+            putchar(ch);
+        }
+        match = strtok(NULL, " ");
+    }
+
+    putchar('\n');
+    return 0;
+}
+```
+
