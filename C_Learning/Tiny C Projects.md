@@ -1162,7 +1162,8 @@ char isterm(char *term)
         "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"};
 
     int x;
-    const char *n, *t;
+    const char *n;
+    char *t;
 
     for (x = 0; x < 26; x++)
     {
@@ -1180,11 +1181,10 @@ char isterm(char *term)
 
                 // For no match, the loop breaks and the next term in nato[] is compared.
                 break;
-
-                // Increment through each letter
-                n++;
-                t++;
             }
+            // Increment through each letter
+            n++;
+            t++;
         }
 
         // When pointer n is the null character, the terms have matched.
@@ -1197,6 +1197,22 @@ char isterm(char *term)
     return ('\0');
 }
 ```
+
+1. **`char isterm(char \*term)`**: Defines the `isterm` function that takes a string `term` and returns a character.
+2. **`const char *nato[] = { ... }`**: Declares an array of strings containing the NATO phonetic alphabet.
+3. **`int x;`**: Declares an integer `x` for looping through the NATO array.
+4. **`const char *n;`**: Declares a pointer `n` to iterate through the NATO words.
+5. **`char *t;`**: Declares a pointer `t` to iterate through the input term.
+6. **`for (x = 0; x < 26; x++)`**: Loops through each NATO word.
+7. **`n = nato[x];`**: Sets `n` to the current NATO word.
+8. **`t = term;`**: Sets `t` to the input term.
+9. **`while (*n != '\0')`**: Loops through each character of the NATO word.
+10. **`if ((*n | 0x20) != (*t | 0x20))`**: Compares characters case-insensitively.
+11. **`break;`**: Breaks the loop if characters don't match.
+12. **`n++; t++;`**: Moves to the next character in both strings.
+13. **`if (*n == '\0')`**: Checks if the end of the NATO word is reached.
+14. **`return (*nato[x]);`**: Returns the first letter of the matching NATO word.
+15. **`return ('\0');`**: Returns null character if no match is found.
 
 `practice.c` (Main)
 
@@ -1214,8 +1230,7 @@ int main()
     match = strtok(phrase, " ");
     while (match)
     {
-        ch = isterm(match);
-        if (ch != '\0')
+        if ((ch = isterm(match)) != '\0')
         {
             putchar(ch);
         }
@@ -1226,4 +1241,263 @@ int main()
     return 0;
 }
 ```
+
+1. **`char phrase[64];`**: Declares a character array `phrase` with a size of 64 to store the input string.
+2. **`char *match;`**: Declares a pointer `match` to hold tokens from the input string.
+3. **`char ch;`**: Declares a character variable `ch` to store the result from `isterm`.
+4. **`fgets(phrase, 64, stdin);`**: Reads a line of input from the standard input (keyboard) and stores it in `phrase`.
+5. **`match = strtok(phrase, " ");`**: Tokenizes the input string `phrase` using space as the delimiter and stores the first token in `match`.
+6. **`while (match)`**: Starts a loop that continues as long as `match` is not `NULL`.
+7. **`if ((ch = isterm(match)) != '\0')`**: Calls the `isterm` function with `match` and checks if the result is not the null character.
+8. **`putchar(ch);`**: If `isterm` returns a valid character, it prints that character.
+9. **`match = strtok(NULL, " ");`**: Gets the next token from the input string.
+10. **`putchar('\n');`**: Prints a newline character after the loop ends.
+
+
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+NATO word or phrase: india whiskey sierra bravo
+IWSB
+```
+
+##### Input: "india whiskey sierra bravo"
+
+1. Main Function Execution:
+   - The input string is read and tokenized into words: "india", "whiskey", "sierra", "bravo".
+   - Each word is passed to the `isterm` function.
+
+##### Processing "india":
+
+1. **Initialization**:
+   - `term` = "india"
+   - `x` starts at 0, iterating through the NATO phonetic alphabet.
+2. **First Iteration (x = 0)**:
+   - `n`= "Alfa"
+   - `t`= "india"
+   - Compare 'A' with 'i' (case-insensitive): no match, break.
+3. **Second Iteration (x = 1)**:
+   - `n` = "Bravo"
+   - `t` = "india"
+   - Compare 'B' with 'i': no match, break.
+4. **Continue Iterations**:
+   - This process continues until `x = 8`.
+5. **Ninth Iteration (x = 8)**:
+   - `n` = "India"
+   - `t` = "india"
+   - Compare 'I' with 'i': match.
+   - Compare 'n' with 'n': match.
+   - Compare 'd' with 'd': match.
+   - Compare 'i' with 'i': match.
+   - Compare 'a' with 'a': match.
+   - `n` reaches null character, return 'I'.
+
+##### Processing "whiskey":
+
+1. **Initialization**:
+   - `term` = "whiskey"
+   - `x` starts at 0.
+2. **Continue Iterations**:
+   - This process continues until `x = 22`.
+3. **Twenty-Third Iteration (x = 22)**:
+   - `n` = "Whiskey"
+   - `t` = "whiskey"
+   - Compare 'W' with 'w': match.
+   - Compare 'h' with 'h': match.
+   - Compare 'i' with 'i': match.
+   - Compare 's' with 's': match.
+   - Compare 'k' with 'k': match.
+   - Compare 'e' with 'e': match.
+   - Compare 'y' with 'y': match.
+   - `n` reaches null character, return 'W'.
+
+##### Processing "sierra":
+
+1. **Initialization**:
+   - `term` = "sierra"
+   - `x` starts at 0.
+2. **Continue Iterations**:
+   - This process continues until `x = 18`.
+3. **Nineteenth Iteration (x = 18)**:
+   - `n` = "Sierra"
+   - `t` = "sierra"
+   - Compare 'S' with 's': match.
+   - Compare 'i' with 'i': match.
+   - Compare 'e' with 'e': match.
+   - Compare 'r' with 'r': match.
+   - Compare 'r' with 'r': match.
+   - Compare 'a' with 'a': match.
+   - `n` reaches null character, return 'S'.
+
+##### Processing "bravo":
+
+1. **Initialization**:
+   - `term` = "bravo"
+   - `x` starts at 0.
+2. **Second Iteration (x = 1)**:
+   - `n` = "Bravo"
+   - `t` = "bravo"
+   - Compare 'B' with 'b': match.
+   - Compare 'r' with 'r': match.
+   - Compare 'a' with 'a': match.
+   - Compare 'v' with 'v': match.
+   - Compare 'o' with 'o': match.
+   - `n` reaches null character, return 'B'.
+
+##### Final Output:
+
+The main function collects the results from `isterm` and prints them:
+
+- "IWSB"
+
+This is the step-by-step process of how the input "india whiskey sierra bravo" is processed by the code.
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+NATO word or phrase: india tango whiskey oscar romeo kilo sierra
+ITWORKS
+
+```
+
+- An input sentence with no matching characters outputs a blank line. Mixed characters are output like this:
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+NATO word or phrase: Also starring Zulu as Kono
+Z
+```
+
+#### Reading NATO input from a file
+
+`practice.h`
+
+```C
+char isterm(char *term);
+```
+
+`functions.c`
+
+```C
+char isterm(char *term)
+{
+    const char *nato[] = {
+        "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"};
+
+    int x;
+    const char *n;
+    char *t;
+
+    for (x = 0; x < 26; x++)
+    {
+        // Set pointer n to the current nato word
+        n = nato[x];
+        // Pointer t references the term passed.
+        t = term;
+
+        // Loop until the NATO term ends
+        while (*n != '\0')
+        {
+            // Logically converts each letter to uppercase and compares
+            if ((*n | 0x20) != (*t | 0x20))
+            {
+
+                // For no match, the loop breaks and the next term in nato[] is compared.
+                break;
+            }
+            // Increment through each letter
+            n++;
+            t++;
+        }
+
+        // When pointer n is the null character, the terms have matched.
+        if (*n == '\0')
+        {
+
+            // Returns the first letter of the NATO term
+            return (*nato[x]);
+        }
+    }
+
+    return ('\0');
+}
+```
+
+- Explanations are above.
+
+`practice.c`
+
+```C
+int main(int argc, char *argv[])
+{
+
+    FILE *n;
+    char word[64];
+    int ch, offset;
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Please supply a text file arguments\n");
+        exit(1);
+    }
+
+    n = fopen(argv[1], "r");
+    if (n == NULL)
+    {
+        fprintf(stderr, "Unable to open '%s'\n", argv[1]);
+        exit(1);
+    }
+
+    offset = 0;
+    // Loop as long as the file has bytes to read
+    while ((ch = fgetc(n)) != EOF)
+    {
+        if (isalpha(ch))
+        {
+            // Stores the character to build the word
+            word[offset] = ch;
+            offset++;
+            // Checks for overflow; bails if so
+            if (offset >= 64)
+            {
+                fprintf(stderr, "Buffer overflow\n");
+                return (1);
+            }
+        }
+        // A nonalphabetic character is found, meaning the end of a word
+        else
+        {
+            // Confirm that the word[] buffer has some text in it
+            if (offset > 0)
+            {
+                // Cap the strings
+                word[offset] = '\0';
+
+                // Process the word, returning a valid character or the null character (doesn't print)
+                putchar(isterm(word));
+
+                // Resets the offset to store the next word
+                offset = 0;
+            }
+        }
+    }
+    putchar('\n');
+    fclose(n);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice functions.c
+ABCDEFGHIJKLMNOPQRSTUVWYZ
+```
+
+---
+
+## Caesarean cipher
 
