@@ -1208,11 +1208,26 @@ char isterm(char *term)
 8. **`t = term;`**: Sets `t` to the input term.
 9. **`while (*n != '\0')`**: Loops through each character of the NATO word.
 10. **`if ((*n | 0x20) != (*t | 0x20))`**: Compares characters case-insensitively.
+    - `*n | 0x20 ` and `*t | 0x20`:
+      - The bitwise OR operation with `0x20` converts uppercase alphabetic characters to their lowercase equivalents.
+      - In ASCII, the difference between uppercase and lowercase letters is the 6th bit (0x20). For example, the ASCII value of 'A' is 65 (0x41) and 'a' is 97 (0x61). The bitwise OR with `0x20` sets this bit, converting 'A' to 'a'.
+      - This operation does not affect lowercase letters or non-alphabetic characters.
 11. **`break;`**: Breaks the loop if characters don't match.
 12. **`n++; t++;`**: Moves to the next character in both strings.
 13. **`if (*n == '\0')`**: Checks if the end of the NATO word is reached.
 14. **`return (*nato[x]);`**: Returns the first letter of the matching NATO word.
 15. **`return ('\0');`**: Returns null character if no match is found.
+
+###### Comparison:
+
+- Bitwise OR with `0x20`:
+  - Faster as it involves a single bitwise operation.
+  - Works only for ASCII characters.
+  - Does not handle locale-specific case conversions.
+- `tolower`/`toupper`:
+  - More readable and explicit.
+  - Handles locale-specific case conversions.
+  - Slightly slower due to function call overhead.
 
 `practice.c` (Main)
 
@@ -1500,4 +1515,205 @@ ABCDEFGHIJKLMNOPQRSTUVWYZ
 ---
 
 ## Caesarean cipher
+
+- When `block buffering` mode is active, output doesn't appear until the buffer is full or when the program ends.
+- Even if a newline appears in the stream, block buffering stores the character in the stream.
+- Buffering for an I/O device is set by using the `setbuf()` function, defined in `stdio.h` header file.
+- This function overrides the terminal's default line buffering and establishes block buffering using a specific chunk of memory.
+- In effect, it disables line buffering for the given file handle ( or standard I/O device) and activates block buffering.
+
+```C
+int main()
+{
+    // A holding bin for standard output; BUFSIZ is defined in stdio.h
+    char buffer[BUFSIZ];
+    int a, b;
+
+    // Commit standard output to block buffering
+    setbuf(stdout, buffer);
+
+    printf("Type a letter: ");
+    // Read a single character from standard input
+    a = getchar();
+    printf("Type a letter: ");
+
+    // Read the next single character from standard input
+    b = getchar();
+
+    printf("a='%c', b = '%c'\n", a, b);
+
+    return 0;
+}
+```
+
+- If we run this program, we see no output, instead the `getchar()` function prompts for input, so the program waits.
+- The output is held back, stored in the character array `buffer`, waiting for text to fill the buffer or for the program to end.
+- If we type `ab` at the blinking cursor, only after the Enter key is pressed, does the program end and the buffer is flushed, revealing standard output:
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+ab
+Type a letter: Type a letter: a='a', b = 'b'
+```
+
+- Some C programmers use the `fflush()` function to force output or to clear the input stream which may be a workable solution but not the best.
+
+#### Writing a simple filter
+
+- Filters modify stream input and generate stream output.
+
+- The `getchar()` function reads a single character from standard input.
+
+- For most compilers, `getchar()` is a macro, equivalent to the `fgetc()` function:
+
+  - ```C
+    c = fgetc(stdin);
+    ```
+
+- The `fgetc()` function reads a single character (byte) from an open file handle. 
+
+- On the preceding line, `stdin` is used as the standard input device. 
+
+- The integer value returned is stored in the `int` variable `c`.
+
+- This variable must be declared of the integer data type, not character.
+
+- The reason is that important values, specifically the end-of-file (EOF) marker, are integer values.
+
+- Assigning the function's return value to a `char` variable means the EOF won't be interpreted properly.
+
+- The `putchar()` function sends a single character to standard output.
+
+- `putchar()` is often defined as a macro that expands to the `fputc()` function.
+
+- ```C
+  r = fputc(c, stdout);
+  ```
+
+- The `fputc()` function sends an integer value `c` to the open file handle represented by `stdout`.
+
+- The return value, `r` is the character written or EOF for an error.
+
+- As with `fgetc()`, both variables `r` and `c` must be integers.
+
+- In Linux, the EOF key is `Ctrl + D`.
+
+
+
+A program to modify the input so that all vowels are detected and replaced with an asterisk.
+
+```C
+int main()
+{
+    // I/O deals with integers, not characters.
+    int ch;
+
+    while ((ch = getchar()) != EOF)
+    {
+        switch (ch)
+        {
+        case 'a':
+        case 'A':
+        case 'e':
+        case 'E':
+        case 'i':
+        case 'I':
+        case 'o':
+        case 'O':
+        case 'u':
+        case 'U':
+            putchar('*');
+            break;
+        default:
+            putchar(ch);
+        }
+    }
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+hello
+h*ll*
+```
+
+- The program will keep prompting, we just have to press `Ctrl + D` to mark the EOF thus end the program.
+
+
+
+#### Exercise 4.1
+
+"Now that you have the basic filter skeleton in `io_filter.c`, you can perform your own
+modifications, testing your filter programming skills. Here is such a challenge you can
+code on your own: write a filter that converts lowercase characters to uppercase. The
+effect of such a filter is to generate output in ALL CAPS."
+
+`practice.c`
+
+```C
+int main(){
+    int ch;
+    
+    while((ch = getchar()) != EOF){
+        if(islower(ch)){
+            ch = toupper(ch);
+        }
+        putchar(ch);
+    }
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+heLlO
+HELLO
+chan@CMA:~/C_Programming/practice$ ./practice
+hey hey not bad
+HEY HEY NOT BAD
+```
+
+
+
+#### Exercise 4.2
+
+"Write a filter that randomizes character text, modifying standard input to generate
+output in either upper- or lowercase, regardless of the original character’s case."
+
+```C
+int main(){
+    int ch, r;
+    
+    // Seed the randomizer
+    srand((unsigned)time(NULL));
+    
+    while((ch = getchar()) != EOF){
+        // Generate a random value, 0 to 1
+        r = rand() % 2;
+        
+        // If r == 1, make the character uppercase
+        if(r){
+            putchar(toupper(ch));
+        }
+        // Otherwise, it is converted to lower
+        else{
+            putchar(tolower(ch));
+        }
+        
+        // touppper() and tolower() affect only letters.
+    }
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Could be worse, oh wait no it couldn't.
+couLd Be WORse, OH WaIT no iT COULdN'T.
+
+```
 
