@@ -1717,3 +1717,69 @@ couLd Be WORse, OH WaIT no iT COULdN'T.
 
 ```
 
+```sh
+chan@CMA:~/C_Programming/practice$ echo "Give me all your moeny" | ./practice
+gIvE mE aLl yoUr mOeny
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice < file.txt
+chan@CMA:~/C_Programming/practice$ echo "Give me all your moeny" | ./practice > file.txt
+```
+
+#### Rotating 13 characters
+
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-09-30 22-21-23.png)
+
+```C
+int main()
+{
+    int ch;
+    while ((ch = getchar()) != EOF)
+    {
+        // Only process alphabet characters
+        if (isalpha(ch))
+        {
+
+            // Searches for "A" thru "M" or "a" thru "m"
+            if (toupper(ch) >= 'A' && toupper(ch) <= 'M')
+            {
+                // Rotates(shift) up for the lower half of the alphabet
+                ch += 13;
+            }
+            else
+            {
+                // Otherwise, rotates (shift) down
+                ch -= 13;
+            }
+            putchar(ch);
+        }
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ echo "Hail, Caesar!" | ./practice
+UnvyPnrfne
+```
+
+- Because the `rot13` filter decodes and encodes the same text, we can put the program to the test through it twice.
+- In the command-line construction below, text is echoed through the program once and then again.
+- The result is the original text, thanks to the magic of the `rot13` process.
+
+```sh
+chan@CMA:~/C_Programming/practice$ echo "Hail, Caesar!" | ./practice | ./practice
+HailCaesar
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ echo "Why did Caesar cross the Rubicon?" | ./practice 
+JulqvqPnrfnepebffgurEhovpba
+```
+
+#### Devising a more Caesarean cipher
+

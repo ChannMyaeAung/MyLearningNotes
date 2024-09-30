@@ -6756,6 +6756,160 @@ Top three scores: 400 300 250
 - We replaced the bubble sort with `qsort` for better performance and clarity.
 - The updated code is more efficient and safer, avoiding potential stack overflow issues with VLAs.
 
+
+
+#### What my mentor further suggested
+
+"Looks good!
+
+Two more suggestions:
+
+------
+
+You've added the declaration of `compare_scores()` to the `.h` file.
+
+That's perfectly fine if you consider it part of the interface of your code and if you want it to be called from other `.c` files. But as a warning: If this were a library, your users would eventually start to use the function, depend on it and then you'd have to support it.
+
+In my view it's rather a "helper function", an implementation detail that others should not have to worry about. I'd suggest removing the declaration from the `.h` file and declaring/defining it as `static` in the `.c` file. That effectively "hides" the function from other translation units and it's a common technique for helper functions and global variables that should only be accessed from within their own `.c` file. It also communicates to the reader that this function is a helper function and not part of the interface.
+And in general I recommend keeping interfaces small. Usually that makes them easier to understand and the code easier to maintain.
+
+------
+
+Line 24 subtracts two scores to get a value that
+
+- smaller than `0` if `b` is smaller than `a`
+- `0` if `b` is equal to `a`
+- greater than `0` if `b` is greater than `a`.
+
+That works if the difference is within the bounds of an `int32_t`. But if not that results in an integer overflow which invokes undefined behavior. It depends on the range of the scores in our hypothetical game.
+
+*Personally* I like to write these comparison functions like this:
+
+```c
+int32_t val1 = *(int32_t *)a, val2 = *(int32_t *)b;
+return (val2 > val1) - (val2 < val2);  // for sorting in non-descending order
+```
+
+That will result in the values `-1`, `0` or `+1` without a potential overflow."
+
+`practice.h`
+
+```C
+int32_t latest(const int32_t *scores, size_t scores_len);
+
+int32_t personal_best(const int32_t *scores, size_t scores_len);
+
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output);
+```
+
+`functions.c`
+
+```C
+int32_t latest(const int32_t *scores, size_t scores_len)
+{
+    return scores[scores_len - 1];
+}
+
+int32_t personal_best(const int32_t *scores, size_t scores_len)
+{
+    int32_t best = scores[0];
+    for (size_t i = 1; i < scores_len; i++)
+    {
+        if (scores[i] > best)
+        {
+            best = scores[i];
+        }
+    }
+    return best;
+}
+
+static int compare_scores(const void *a, const void *b)
+{
+    int32_t val1 = *(const int32_t *)a;
+    int32_t val2 = *(const int32_t *)b;
+
+    // for sorting in non-descending order
+    return (val2 > val1) - (val2 < val1);
+}
+
+size_t personal_top_three(const int32_t *scores, size_t scores_len, int32_t *output)
+{
+    int32_t *sorted_scores = malloc(scores_len * sizeof(int32_t));
+
+    if (sorted_scores == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 0;
+    }
+
+    memcpy(sorted_scores, scores, scores_len * sizeof(int32_t));
+
+    qsort(sorted_scores, scores_len, sizeof(int32_t), compare_scores);
+
+    size_t count = scores_len < 3 ? scores_len : 3;
+
+    for (size_t i = 0; i < count; i++)
+    {
+        output[i] = sorted_scores[i];
+    }
+
+    free(sorted_scores);
+    sorted_scores = NULL;
+    return count;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    int32_t scores[] = {100, 200, 300, 400, 250};
+    size_t scores_len = sizeof(scores) / sizeof(scores[0]);
+
+    printf("Latest score: %d\n", latest(scores, scores_len));
+
+    printf("Personal best score: %d\n", personal_best(scores, scores_len));
+
+    int32_t top_three[3];
+    size_t top_len = personal_top_three(scores, scores_len, top_three);
+    printf("Top three scores: ");
+    for (size_t i = 0; i < top_len; i++)
+    {
+        printf("%d ", top_three[i]);
+    }
+    printf("\n");
+    return 0;
+}
+
+```
+
+##### Explanation:
+
+- `(val2 > val1)`:
+  - This expression evaluates to `1` if `val2` is greater than `val1`, and `0` otherwise.
+- `(val2 < val1)`:
+  - This expression evaluates to `1` if `val2` is less than `val1`, and `0` otherwise.
+- Subtraction:
+  - By subtracting these two expressions, you get:
+    - `1 - 0 = 1` if `val2` is greater than `val1` (indicating `val2` should come after `val1` in ascending order).
+    - `0 - 1 = -1` if `val2` is less than `val1` (indicating `val2` should come before `val1` in ascending order).
+    - `0 - 0 = 0` if `val2` is equal to `val1` (indicating they are equal).
+
+##### Comparison Result:
+
+- **`1`**: `val2`is greater than `val1`.
+- **`-1`**: `val2` is less than `val1`.
+- **`0`**: `val2`is equal to `val1`.
+
+##### Usage in `qsort`:
+
+This function is used by `qsort` to determine the order of elements. `qsort` expects a comparison function that returns:
+
+- A negative value if the first argument is less than the second.
+- Zero if the first argument is equal to the second.
+- A positive value if the first argument is greater than the second.
+
 ---
 
 ## Pangram
