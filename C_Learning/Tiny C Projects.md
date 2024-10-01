@@ -1783,3 +1783,58 @@ JulqvqPnrfnepebffgurEhovpba
 
 #### Devising a more Caesarean cipher
 
+![](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-01 22-01-21.png)
+
+- When a character is detected as out of range by the if statement, its value must be reduced by 26, wrapping it back to 'A' or 'a', depending on the letter's original case.
+- Due to the proximity of uppercase 'Z' to lowercase 'a', this if statement test works because this particular shift is only three characters.
+- From figure 4.7, we can see that the ASCII table sets only six characters between uppercase Z and lowercase a.
+- For larger character shifts, more complex testing must be performed.
+
+```C
+int main(){
+    int shift,ch;
+    
+    //Shifts from A to D which is done backward here because math
+    shift = 'D' - 'A';
+    
+    while((ch = getchar()) != EOF){
+        // Only process alphabet characters
+        if(isalpha(ch)){
+            // Shift the letter
+            ch += shift;
+            
+            // Determines whether the new character is out of range
+            if((ch > 'Z' && ch < 'a') || ch > 'z'){
+                // If so, adjusts its value back within range
+                ch -= 26;
+            }
+        }
+    }
+    
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Now is the time for all good men...
+Qrz lv wkh wlph iru doo jrrg phq...
+```
+
+- Unlike with a `rot13` filter, we can't run the same program twice to decode the A-to-D shift.
+- Instead, to decode the message, we must shift from D back to A.
+- Two changes are required to make this change.
+
+```C
+shift = 'A' - 'D';
+```
+
+- Second, the out-of-bounds testing must check the underside of the alphabet, so see whether a character's value has dipped below 'A' or 'a':
+
+```C
+if(ch < 'A' || (ch > 'Z' && ch < 'a')){
+    ch += 26;
+}
+```
+
