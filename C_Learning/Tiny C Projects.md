@@ -1838,3 +1838,238 @@ if(ch < 'A' || (ch > 'Z' && ch < 'a')){
 }
 ```
 
+- If the character wraps on the underside of the alphabet, its value is increased by 26, which wraps it back up to the Z end, correcting the overflow.
+
+
+
+```C
+int main(int argc, char *argv[])
+{
+    int shift, ch;
+    char a, b;
+
+    // If fewer than 3 arguments are provided, default shift is 13.
+    if (argc < 3)
+    {
+        shift = 13;
+    }
+    else
+    {
+        // Get the first characters of the second and third arguments
+        a = argv[2][0];
+        b = argv[1][0];
+
+        // Check if both characters are alphabetic
+        if (isalpha(a) && isalpha(b))
+        {
+            // Convert both to uppercase
+            a = toupper(a);
+            b = toupper(b);
+
+            // calculate the shift value
+            shift = a - b;
+
+            // Ensure the shift is within the range -25 to 25
+            if (shift < -25 || shift > 25)
+            {
+                shift = 13;
+            }
+        }
+        else
+        {
+            shift = 13;
+        }
+    }
+
+    // Read characters from standard input until EOF
+    while ((ch = getchar()) != EOF)
+    {
+        //If the character is an uppercase letter
+        if (isupper(ch))
+        {
+            // Shift the letter
+            ch += shift;
+
+            // Adjusts appropriately for overflow in either direction
+            // Adjust for overflow beyond 'Z'
+            if (ch > 'Z')
+                ch -= 26;
+            // Adjust for overflow below 'A'
+            if (ch < 'A')
+                ch += 26;
+            putchar(ch);
+        }
+        // If it is a lowercase letter
+        else if (islower(ch))
+        {
+            ch += shift;
+            if (ch > 'z')
+                ch -= 26;
+            if (ch < 'a')
+                ch += 26;
+            putchar(ch);
+        }
+        // If the character is not a letter, print it as is
+        else
+        {
+            putchar(ch);
+        }
+    }
+    printf("\n");
+    return 0;
+}
+
+```
+
+- **Shift Calculation**:
+  - If fewer than 3 arguments are provided, the shift is set to 13.
+  - If 3 or more arguments are provided, the first characters of the second and third arguments are used to calculate the shift.
+  - For example, if the arguments are `./practice A D`, `a` is 'D' and `b` is 'A'. The shift is calculated as `shift = 'D' - 'A' = 3`.
+- **Processing Each Character**:
+  - For each character read:
+    - If it is an uppercase letter (e.g., 'T'):
+      - The character is shifted by the calculated shift value.
+      - Adjustments are made if the shifted character goes beyond 'Z' or below 'A'.
+    - If it is a lowercase letter (e.g., 'h'):
+      - The character is shifted by the calculated shift value.
+      - Adjustments are made if the shifted character goes beyond 'z' or below 'a'.
+    - If it is not a letter (e.g., space ' '), it is printed as is.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice A R
+This is a test
+Kyzj zj r kvjk
+
+chan@CMA:~/C_Programming/practice$ ./practice R A
+Kyzj zj r kvjk
+This is a test
+
+```
+
+##### Example Run 1: `./practice A R`
+
+1. **Command-Line Arguments**:
+   - `argv[1] = "A"`
+   - `argv[2] = "R"`
+2. **Shift Calculation**:
+   - `a = 'R'`
+   - `b = 'A'`
+   - Convert both to uppercase (they are already uppercase).
+   - `shift = 'R' - 'A' = 82 - 65 = 17`
+3. **Input**: "This is a test"
+4. **Character Processing**:
+   - 'T' (uppercase):
+     - Shifted: 'T' + 17 = 'K' (adjusted for overflow)
+   - 'h' (lowercase):
+     - Shifted: 'h' + 17 = 'y'
+   - 'i' (lowercase):
+     - Shifted: 'i' + 17 = 'z'
+   - 's' (lowercase):
+     - Shifted: 's' + 17 = 'j'
+   - ' ' (space):
+     - Printed as is
+   - 'i' (lowercase):
+     - Shifted: 'i' + 17 = 'z'
+   - 's' (lowercase):
+     - Shifted: 's' + 17 = 'j'
+   - ' ' (space):
+     - Printed as is
+   - 'a' (lowercase):
+     - Shifted: 'a' + 17 = 'r'
+   - ' ' (space):
+     - Printed as is
+   - 't' (lowercase):
+     - Shifted: 't' + 17 = 'k'
+   - 'e' (lowercase):
+     - Shifted: 'e' + 17 = 'v'
+   - 's' (lowercase):
+     - Shifted: 's' + 17 = 'j'
+   - 't' (lowercase):
+     - Shifted: 't' + 17 = 'k'
+5. **Output**: "Kyzj zj r kvjk"
+
+##### Example Run 2: `./practice R A`
+
+1. **Command-Line Arguments**:
+   - `argv[1] = "R"`
+   - `argv[2] = "A"`
+2. **Shift Calculation**:
+   - `a = 'A'`
+   - `b = 'R'`
+   - Convert both to uppercase (they are already uppercase).
+   - `shift = 'A' - 'R' = 65 - 82 = -17`
+3. **Input**: "Kyzj zj r kvjk"
+4. **Character Processing**:
+   - 'K' (uppercase):
+     - Shifted: 'K' - 17 = 'T' (adjusted for underflow)
+   - 'y' (lowercase):
+     - Shifted: 'y' - 17 = 'h'
+   - 'z' (lowercase):
+     - Shifted: 'z' - 17 = 'i'
+   - 'j' (lowercase):
+     - Shifted: 'j' - 17 = 's'
+   - ' ' (space):
+     - Printed as is
+   - 'z' (lowercase):
+     - Shifted: 'z' - 17 = 'i'
+   - 'j' (lowercase):
+     - Shifted: 'j' - 17 = 's'
+   - ' ' (space):
+     - Printed as is
+   - 'r' (lowercase):
+     - Shifted: 'r' - 17 = 'a'
+   - ' ' (space):
+     - Printed as is
+   - 'k' (lowercase):
+     - Shifted: 'k' - 17 = 't'
+   - 'v' (lowercase):
+     - Shifted: 'v' - 17 = 'e'
+   - 'j' (lowercase):
+     - Shifted: 'j' - 17 = 's'
+   - 'k' (lowercase):
+     - Shifted: 'k' - 17 = 't'
+5. **Output**: "This is a test"
+
+##### Summary:
+
+- The program calculates the shift based on the difference between the first characters of the second and third command-line arguments.
+- It then reads input characters, shifts alphabetic characters by the calculated amount, and prints the modified characters.
+- Non-alphabetic characters are printed as is.
+- The shift value can be positive or negative, depending on the order of the command-line arguments.
+
+#### Building the hex output filter
+
+```C
+int main()
+{
+    int ch, wrap;
+
+    // Initialize the wrap to zero
+    wrap = 0;
+    while ((ch = getchar()) != EOF)
+    {
+        // Outputs character as two-digit hex byte, with a leading zero.
+        printf("%0.2X ", ch);
+        wrap += 3; // Each printf() output is 3 characters wide
+
+        // Assume that the terminal column width is 80
+        // 77 because 77 + 3 = 80
+        if (wrap > 77 || ch == '\n')
+        {
+            // Output a newline
+            putchar('\n');
+            // Reset the wrap value
+            wrap = 0;
+        }
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+This is a test
+54 68 69 73 20 69 73 20 61 20 74 65 73 74 0A
+```
+
