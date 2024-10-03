@@ -6940,23 +6940,177 @@ For this exercise, a sentence is a pangram if it contains each of the 26 letters
 
 ### Solution
 
+Here's a step-by-step approach to implement the function `is_pangram` in C:
+
+1. **Ignore non-letter characters**: We only care about the letters 'a' to 'z'.
+2. **Case insensitivity**: Convert uppercase letters to lowercase.
+3. **Track letter occurrences**: Use an array of size 26 to represent each letter of the alphabet, and mark a letter as found when it appears in the sentence.
+4. **Check if all letters are found**: Once all letters have been marked, the sentence is a pangram.
+
 `practice.h`
 
 ```C
+enum{
+    ERROR_CODE = -1
+};
+
+bool is_pangram(const char *sentence);
 ```
 
 `functions.c`
 
 ```C
+bool is_pangram(const char *sentence){
+    // Empty or null sentence cannot be a pangram
+    if(sentence == NULL || strlen(sentence) == 0){
+        return false;
+    }
+    
+    // Array to track each letter's occurrence
+    bool letters[26] = {false};
+    int index;
+    
+    // Iterate through each character in the sentence
+    for(int i = 0; sentence[i] != '\0'; i++){
+        // Check if the character is an alphabet
+        if(isalpha(sentence[i])){
+            // Normalize to index 0-25
+            index = tolower(sentence[i]) - 'a';
+            // Mark the letter as found
+            letters[index] = true;
+        }
+    }
+    
+    // Check if all letters are present
+    for(int i = 0; i < 26; i++){
+        if(!letter[i]){
+            // if any letter is missing, return false
+            return false;
+        }
+    }
+    
+    return true;
+}
 ```
 
 `practice.c`
 
 ```C
+int main(){
+    char *sentence = malloc(100 * sizeof(char));
+    
+    if(sentence == NULL){
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    
+    printf("Enter a sentence: ");
+    fgets(sentence, 100, stdin);
+    
+    if(is_pangram(sentence)){
+        printf("The sentence is a pangram.\n");
+    }else{
+        printf("The sentence is not a pangram.\n");
+    }
+    
+    free(sentence);
+    sentence = NULL; // Avoid dangling pointer
+    return 0;
+}
 ```
+
+The `is_pangram` function checks if a given sentence contains every letter of the English alphabet at least once. Here's a step-by-step explanation:
+
+1. **Initialization**:
+   - An array `letters` of size 26 is initialized to `false`. This array will track the occurrence of each letter in the alphabet.
+   - An integer `index` is declared to store the index of each letter in the `letters` array.
+2. **Iterate Through the Sentence**:
+   - The function iterates through each character in the input `sentence` until it encounters the null terminator (`'\0'`).
+3. **Check for Alphabet Characters**:
+   - For each character, it checks if the character is an alphabet letter using `isalpha`.
+   - If the character is an alphabet letter, it converts it to lowercase using `tolower` and calculates its index in the alphabet (0 for 'a', 1 for 'b', ..., 25 for 'z').
+4. **Mark the Letter as Found**:
+   - The corresponding index in the `letters` array is set to `true` to indicate that the letter has been found.
+5. **Check for All Letters**:
+   - After iterating through the sentence, the function checks if all elements in the `letters` array are `true`.
+   - If any element is `false`, it means that the corresponding letter is missing, and the function returns `false`.
+   - If all elements are `true`, the function returns `true`, indicating that the sentence is a pangram.
+
+##### Step-by-Step Process for Input "The quick brown fox jumps over the lazy dog" in `practice.c`
+
+1. **Memory Allocation**:
+   - The program allocates memory for a `char` array `sentence` of size 100 using `malloc`.
+2. **Check Memory Allocation**:
+   - It checks if the memory allocation was successful. If not, it prints an error message and exits.
+3. **Input Sentence**:
+   - The program prompts the user to enter a sentence and reads the input using `fgets`.
+4. **Call `is_pangram` Function**:
+   - The program calls the `is_pangram` function with the input sentence.
+5. **Process in `is_pangram` Function**:
+   - The function initializes the `letters` array to `false`.
+   - It iterates through each character in the sentence:
+     - 'T' is converted to 't' and marks `letters[19]` as `true`.
+     - 'h' marks `letters[7]` as `true`.
+     - 'e' marks `letters[4]` as `true`.
+     - Space is ignored.
+     - 'q' marks `letters[16]` as `true`.
+     - 'u' marks `letters[20]` as `true`.
+     - 'i' marks `letters[8]` as `true`.
+     - 'c' marks `letters[2]` as `true`.
+     - 'k' marks `letters[10]` as `true`.
+     - Space is ignored.
+     - 'b' marks `letters[1]` as `true`.
+     - 'r' marks `letters[17]` as `true`.
+     - 'o' marks `letters[14]` as `true`.
+     - 'w' marks `letters[22]` as `true`.
+     - 'n' marks `letters[13]` as `true`.
+     - Space is ignored.
+     - 'f' marks `letters[5]` as `true`.
+     - 'o' is already marked.
+     - 'x' marks `letters[23]` as `true`.
+     - Space is ignored.
+     - 'j' marks `letters[9]` as `true`.
+     - 'u' is already marked.
+     - 'm' marks `letters[12]` as `true`.
+     - 'p' marks `letters[15]` as `true`.
+     - 's' marks `letters[18]` as `true`.
+     - Space is ignored.
+     - 'o' is already marked.
+     - 'v' marks `letters[21]` as `true`.
+     - 'e' is already marked.
+     - 'r' is already marked.
+     - Space is ignored.
+     - 't' is already marked.
+     - 'h' is already marked.
+     - 'e' is already marked.
+     - Space is ignored.
+     - 'l' marks `letters[11]` as `true`.
+     - 'a' marks `letters[0]` as `true`.
+     - 'z' marks `letters[25]` as `true`.
+     - 'y' marks `letters[24]` as `true`.
+     - Space is ignored.
+     - 'd' marks `letters[3]` as `true`.
+     - 'o' is already marked.
+     - 'g' marks `letters[6]` as `true`.
+6. **Check All Letters**:
+   - The function checks if all elements in the `letters` array are `true`. Since all letters are present, it returns `true`.
+7. **Print Result**:
+   - The program prints "The sentence is a pangram."
+8. **Free Memory**:
+   - The program frees the allocated memory for `sentence` and sets the pointer to `NULL`.
+
+### Summary
+
+The program correctly identifies "The quick brown fox jumps over the lazy dog" as a pangram by checking the presence of each letter in the alphabet and prints the appropriate message.
 
 `Output`
 
 ```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a sentence: Hello
+The sentence is not a pangram.
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a sentence: The quick brown fox jumps over the lazy dog
+The sentence is a pangram.
 ```
 

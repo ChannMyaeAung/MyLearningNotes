@@ -2073,3 +2073,190 @@ This is a test
 54 68 69 73 20 69 73 20 61 20 74 65 73 74 0A
 ```
 
+
+
+#### Creating a NATO filter
+
+```c
+int main()
+{
+
+    const char *nato[] = {"Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"};
+
+    char ch;
+
+    while ((ch = getchar()) != EOF)
+    {
+        if (isalpha(ch))
+        {
+            // Translates a character into an offset within the nato[] array
+            printf("%s ", nato[toupper(ch) - 'A']);
+        }
+        // Output a newline when encountered to keep the output clean
+        if (ch == '\n')
+        {
+            putchar(ch);
+        }
+    }
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+hello
+Hotel Echo Lima Lima Oscar
+```
+
+
+
+#### Filtering words
+
+```C
+#define WORDSIZE 64
+
+int main(){
+    char word[WORDSIZE];
+    int ch, offset;
+    
+    // Initializes the offset value
+    offset = 0;
+    
+    while((ch = getchar()) != EOF){
+        // The isspace() returns TRUE for white space characters, marking the end of a word
+        if(isspace(ch)){
+            // Capping the string with null 
+            word[offset] = '\0';
+            // Ensures that the buffer has text in it to print
+            if(offset > 0){
+                // Output the buffer's content on a line by itself
+                printf("%s\n", word);
+            }
+            // Reset the offset
+            offset = 0;
+        }
+        // Printable characters are handled here, filling the buffer.
+        else{
+            // Stores the character
+            word[offset] = ch;
+            // Increment the offset
+            offset++;
+            
+            // Checks for potential overflow, a full buffer
+            if(offset == WORDSIZE - 1){
+                // Cap the string!
+                word[offset] = '\0';
+                // Output the word, dumping the buffer
+                printf("%s\n", word);
+                // reset the offset
+                offset = 0;
+            }
+        }
+    }
+    
+    printf("\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Is this still the Caesarean Cipher chapter?
+Is
+this
+still
+the
+Caesarean
+Cipher
+chapter?
+```
+
+##### Step-by-Step Process:
+
+1. **Initial State**:
+   - `word` buffer is empty.
+   - `offset` is 0.
+2. **Processing "Is"**:
+   - 'I' is stored in `word[0]`, `offset` becomes 1.
+   - 's' is stored in `word[1]`, `offset` becomes 2.
+   - Space ' ' is encountered:
+     - `word[2]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "Is".
+     - `offset` is reset to 0.
+3. **Processing "this"**:
+   - 't' is stored in `word[0]`, `offset`becomes 1.
+   - 'h' is stored in `word[1]`, `offset` becomes 2.
+   - 'i' is stored in `word[2]`, `offset` becomes 3.
+   - 's' is stored in `word[3]`, `offset` becomes 4.
+   - Space ' ' is encountered:
+     - `word[4]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "this".
+     - `offset` is reset to 0.
+4. **Processing "still"**:
+   - 's' is stored in `word[0]`, `offset` becomes 1.
+   - 't' is stored in `word[1]`, `offset` becomes 2.
+   - 'i' is stored in `word[2]`, `offset` becomes 3.
+   - 'l' is stored in `word[3]`, `offset` becomes 4.
+   - 'l' is stored in `word[4]`, `offset` becomes 5.
+   - Space ' ' is encountered:
+     - `word[5]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "still".
+     - `offset` is reset to 0.
+5. **Processing "the"**:
+   - 't' is stored in `word[0]`, `offset` becomes 1.
+   - 'h' is stored in `word[1]`, `offset` becomes 2.
+   - 'e' is stored in `word[2]`, `offset` becomes 3.
+   - Space ' ' is encountered:
+     - `word[3]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "the".
+     - `offset` is reset to 0.
+6. **Processing "Caesarean"**:
+   - 'C' is stored in `word[0]`, `offset` becomes 1.
+   - 'a' is stored in `word[1]`, `offset` becomes 2.
+   - 'e' is stored in `word[2]`, `offset` becomes 3.
+   - 's' is stored in `word[3]`, `offset` becomes 4.
+   - 'a' is stored in `word[4]`, `offset` becomes 5.
+   - 'r' is stored in `word[5]`, `offset` becomes 6.
+   - 'e' is stored in `word[6]`, `offset` becomes 7.
+   - 'a' is stored in `word[7]`, `offset` becomes 8.
+   - 'n' is stored in `word[8]`, `offset`becomes 9.
+   - Space ' ' is encountered:
+     - `word[9]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "Caesarean".
+     - `offset` is reset to 0.
+7. **Processing "Cipher"**:
+   - 'C' is stored in `word[0]`, `offset` becomes 1.
+   - 'i' is stored in `word[1]`, `offset` becomes 2.
+   - 'p' is stored in `word[2]`, `offset` becomes 3.
+   - 'h' is stored in `word[3]`, `offset` becomes 4.
+   - 'e' is stored in `word[4]`, `offset`becomes 5.
+   - 'r' is stored in `word[5]`, `offset` becomes 6.
+   - Space ' ' is encountered:
+     - `word[6]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "Cipher".
+     - `offset` is reset to 0.
+8. **Processing "chapter?"**:
+   - 'c' is stored in `word[0]`, `offset` becomes 1.
+   - 'h' is stored in `word[1]`, `offset` becomes 2.
+   - 'a' is stored in `word[2]`, `offset` becomes 3.
+   - 'p' is stored in `word[3]`, `offset` becomes 4.
+   - 't' is stored in `word[4]`, `offset` becomes 5.
+   - 'e' is stored in `word[5]`, `offset` becomes 6.
+   - 'r' is stored in `word[6]`, `offset` becomes 7.
+   - '?' is stored in `word[7]`, `offset` becomes 8.
+   - End of input:
+     - `word[8]` is set to `'\0'`.
+     - `printf("%s\n", word)` prints "chapter?".
+
+
+
+##### Notes
+
+- It is vital that all strings in C end with the null character, `\0`, especially when we build our own strings, as done in the above program, confirm that the string that's created is capped.
+- If not, we get an overflow and all kinds of ugly output and potentially bad things happening.
+
+---
+
+## Encoding and decoding
+
