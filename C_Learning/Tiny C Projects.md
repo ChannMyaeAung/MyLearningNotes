@@ -2260,3 +2260,270 @@ chapter?
 
 ## Encoding and decoding
 
+- To explore the concept of encoding and decoding, regardless of the thrills and dangers, we must:
+  - Appreciate how characters are represented on computers
+  - Learn various ASCII encoding tricks
+  - Play with character representation
+  - Translate plain text into hex bytes for data transfer
+  - Reverse translate hex bytes back into text (or data)
+  - Improve encoding techniques by adding checksums
+  - Explore the URL encoding method
+
+### The concept of plain text
+
+- The computer doesn't know text.
+- The `char` data type is merely a tiny integer, ranging in value from 0 through 255 (unsigned) or -128 to 127 (signed).
+- It's only the presentation of the `char` data type that makes it look like a character.
+
+### Understanding ASCII
+
+![Screenshot from 2024-10-05 20-45-17](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-05 20-45-17.png)
+
+- ASCII codes range from 0 through 127.
+- These are binary values 000-0000 through 111-1111.
+- For the C language `char` data type, these values are all positive whether the variable is signed or unsigned.
+
+### Simple Program that prints ASCII value of a character
+
+```C
+int main()
+{
+    // Allocate memory for the input
+    char *input = malloc(2 * sizeof(char));
+    if (input == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(1);
+    }
+    // Getting input from the user
+    printf("Enter a word: ");
+    if (fgets(input, 2, stdin) != NULL)
+    {
+        // Remove newline character if present
+        size_t len = strlen(input);
+        if (len > 0 && input[len - 1] == '\n')
+        {
+            input[len - 1] = '\0';
+        }
+    }
+    printf("ASCII code for %s is %d\n", input, input[0]);
+	
+    // Free the memory
+    free(input);
+    // Assign our input pointer to NULL to avoid dangling pointer
+    input = NULL;
+    return 0;
+}
+```
+
+### Implement the ASCII table as shown above
+
+```C
+int main()
+{
+    int x;
+
+    // output the header row, all columns or "sticks"
+    printf("Dec Oct Hex C \
+    Dec Oct Hex C \
+    Dec Oct Hex C \
+    Dec Oct Hex C\n");
+
+    // only need to process one stick, but use offsets to output the other three sticks
+    for (x = 0; x < 32; x++)
+    {
+        // printing values in decimal %d, octal %o, hex %x wtih a minimum field width of 3 characters
+        // first stick, don't output character values
+        printf("%3d %3o %3x - | ", x, x, x);
+        // each other stick in a 32, 64, 96 offset
+        printf(" %3d %3o %3x  %c | ", x + 32, x + 32, x + 32, x + 32);
+
+        printf(" %3d %3o %3x  %c | ", x + 64, x + 64, x + 64, x + 64);
+
+        printf(" %3d %3o %3x  %c \n", x + 96, x + 96, x + 96, x + 96);
+    }
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Dec Oct Hex C     Dec Oct Hex C     Dec Oct Hex C     Dec Oct Hex C
+  0   0   0 - |   32  40  20    |   64 100  40  @ |   96 140  60  ` 
+  1   1   1 - |   33  41  21  ! |   65 101  41  A |   97 141  61  a 
+  2   2   2 - |   34  42  22  " |   66 102  42  B |   98 142  62  b 
+  3   3   3 - |   35  43  23  # |   67 103  43  C |   99 143  63  c 
+  4   4   4 - |   36  44  24  $ |   68 104  44  D |  100 144  64  d 
+  5   5   5 - |   37  45  25  % |   69 105  45  E |  101 145  65  e 
+  6   6   6 - |   38  46  26  & |   70 106  46  F |  102 146  66  f 
+  7   7   7 - |   39  47  27  ' |   71 107  47  G |  103 147  67  g 
+  8  10   8 - |   40  50  28  ( |   72 110  48  H |  104 150  68  h 
+  9  11   9 - |   41  51  29  ) |   73 111  49  I |  105 151  69  i 
+ 10  12   a - |   42  52  2a  * |   74 112  4a  J |  106 152  6a  j 
+ 11  13   b - |   43  53  2b  + |   75 113  4b  K |  107 153  6b  k 
+ 12  14   c - |   44  54  2c  , |   76 114  4c  L |  108 154  6c  l 
+ 13  15   d - |   45  55  2d  - |   77 115  4d  M |  109 155  6d  m 
+ 14  16   e - |   46  56  2e  . |   78 116  4e  N |  110 156  6e  n 
+ 15  17   f - |   47  57  2f  / |   79 117  4f  O |  111 157  6f  o 
+ 16  20  10 - |   48  60  30  0 |   80 120  50  P |  112 160  70  p 
+ 17  21  11 - |   49  61  31  1 |   81 121  51  Q |  113 161  71  q 
+ 18  22  12 - |   50  62  32  2 |   82 122  52  R |  114 162  72  r 
+ 19  23  13 - |   51  63  33  3 |   83 123  53  S |  115 163  73  s 
+ 20  24  14 - |   52  64  34  4 |   84 124  54  T |  116 164  74  t 
+ 21  25  15 - |   53  65  35  5 |   85 125  55  U |  117 165  75  u 
+ 22  26  16 - |   54  66  36  6 |   86 126  56  V |  118 166  76  v 
+ 23  27  17 - |   55  67  37  7 |   87 127  57  W |  119 167  77  w 
+ 24  30  18 - |   56  70  38  8 |   88 130  58  X |  120 170  78  x 
+ 25  31  19 - |   57  71  39  9 |   89 131  59  Y |  121 171  79  y 
+ 26  32  1a - |   58  72  3a  : |   90 132  5a  Z |  122 172  7a  z 
+ 27  33  1b - |   59  73  3b  ; |   91 133  5b  [ |  123 173  7b  { 
+ 28  34  1c - |   60  74  3c  < |   92 134  5c  \ |  124 174  7c  | 
+ 29  35  1d - |   61  75  3d  = |   93 135  5d  ] |  125 175  7d  } 
+ 30  36  1e - |   62  76  3e  > |   94 136  5e  ^ |  126 176  7e  ~ 
+ 31  37  1f - |   63  77  3f  ? |   95 137  5f  _ |  127 177  7f 
+```
+
+#### Explaination:
+
+The loop iterates from 0 to 31. For each value of `x`, it prints the ASCII values and their corresponding characters in four columns:
+
+- **First Column**: Values from 0 to 31 (control characters, which are not printable, hence the `-`).  
+  - Control characters are non-printable characters in the ASCII table that are used to control the behavior of devices such as printers or display screens. 
+  - They are part of the ASCII standard and occupy the first 32 positions (0 to 31) in the ASCII table. 
+  - These characters do not represent printable symbols but instead perform specific control functions.
+- **Second Column**: Values from 32 to 63 (printable characters).
+- **Third Column**: Values from 64 to 95 (printable characters).
+- **Fourth Column**: Values from 96 to 127 (printable characters).
+
+#### Examples of Control Characters
+
+Here are some common control characters and their functions:
+
+1. **NUL (Null Character)**: ASCII code 0. Used to signify the end of a string in C and other programming languages.
+2. **SOH (Start of Header)**: ASCII code 1. Used to mark the beginning of a header in data transmission.
+3. **STX (Start of Text)**: ASCII code 2. Used to mark the beginning of the text in data transmission.
+4. **ETX (End of Text)**: ASCII code 3. Used to mark the end of the text in data transmission.
+5. **EOT (End of Transmission)**: ASCII code 4. Used to indicate the end of data transmission.
+6. **ENQ (Enquiry)**: ASCII code 5. Used to request a response from a remote station.
+7. **ACK (Acknowledge)**: ASCII code 6. Used to acknowledge receipt of a message.
+8. **BEL (Bell)**: ASCII code 7. Causes the device to emit a sound or "bell".
+9. **BS (Backspace)**: ASCII code 8. Moves the cursor one position back.
+10. **TAB (Horizontal Tab)**: ASCII code 9. Moves the cursor to the next tab stop.
+11. **LF (Line Feed)**: ASCII code 10. Moves the cursor to the next line.
+12. **VT (Vertical Tab)**: ASCII code 11. Moves the cursor to the next vertical tab stop.
+13. **FF (Form Feed)**: ASCII code 12. Moves the cursor to the top of the next page.
+14. **CR (Carriage Return)**: ASCII code 13. Moves the cursor to the beginning of the line.
+15. **SO (Shift Out)**: ASCII code 14. Switches to an alternate character set.
+16. **SI (Shift In)**: ASCII code 15. Switches back to the standard character set.
+17. **DLE (Data Link Escape)**: ASCII code 16. Used to change the meaning of the following characters.
+18. **DC1 (Device Control 1)**: ASCII code 17. Used for device control.
+19. **DC2 (Device Control 2)**: ASCII code 18. Used for device control.
+20. **DC3 (Device Control 3)**: ASCII code 19. Used for device control.
+21. **DC4 (Device Control 4)**: ASCII code 20. Used for device control.
+22. **NAK (Negative Acknowledge)**: ASCII code 21. Indicates a negative response to a message.
+23. **SYN (Synchronous Idle)**: ASCII code 22. Used to synchronize transmission.
+24. **ETB (End of Transmission Block)**: ASCII code 23. Indicates the end of a block of data.
+25. **CAN (Cancel)**: ASCII code 24. Indicates that the previous data should be discarded.
+26. **EM (End of Medium)**: ASCII code 25. Indicates the end of the medium.
+27. **SUB (Substitute)**: ASCII code 26. Used to replace a character that is invalid or unreadable.
+28. **ESC (Escape)**: ASCII code 27. Used to introduce an escape sequence.
+29. **FS (File Separator)**: ASCII code 28. Used to separate files.
+30. **GS (Group Separator)**: ASCII code 29. Used to separate groups of data.
+31. **RS (Record Separator)**: ASCII code 30. Used to separate records.
+32. **US (Unit Separator)**: ASCII code 31. Used to separate units of data.
+
+![Screenshot from 2024-10-05 22-46-49](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-05 22-46-49.png)
+
+![Screenshot from 2024-10-05 22-46-41](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-05 22-46-41.png)
+
+### Generating a noncharacter output
+
+`practice.h`
+
+```C
+char *binString(char a);
+```
+
+`functions.c`
+
+```C
+char *binString(char a)
+{
+    static char b[9];
+    int i;
+
+    i = 0;
+    // Loops for each bit in the 8-bit byte
+    while (i < 8)
+    {
+        // The ternary operator sets a 1 or 0 into the string, depending on the value of the far left bit in variable a.
+        b[i] = a & 0x80 ? '1' : '0';
+
+        // Variable a's value is shifted one bit position to the left.
+        a <<= 1;
+        i++;
+    }
+
+    // At this point, i is equal to 8, so the string is capped.
+    b[i] = '\0';
+
+    return b;
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    // Allocating memory
+    char *testChar = malloc(2 * sizeof(char));
+    if (testChar == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(1);
+    }
+    
+    // Prompting for input
+    printf("Enter a word: ");
+    if (fgets(testChar, 2, stdin) != NULL)
+    {
+        // Remove newline character
+        size_t len = strlen(testChar);
+        if (len > 0 && testChar[len - 1] == '\n')
+        {
+            testChar[len - 1] = '\0';
+        }
+    }
+    
+    char *binaryString = binString(testChar[0]);
+    printf("Binary representation of '%s' is %s\n", testChar, binaryString);
+    
+    // Free the allocated memory and assign it to NULL to avoid dangling pointer
+    free(testChar);
+    testChar = NULL;
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a word: A
+Binary representation of 'A' is 01000001
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a word: 1
+Binary representation of '1' is 00110001
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter a word: a
+Binary representation of 'a' is 01100001
+```
+
+1. **Character `'A'`**:
+   - ASCII code: 65
+   - Binary representation: `01000001`
+2. **Character `'1'`**:
+   - ASCII code: 49
+   - Binary representation: `00110001`
+3. **Character `'a'`**:
+   - ASCII code: 97
+   - Binary representation: `01100001`

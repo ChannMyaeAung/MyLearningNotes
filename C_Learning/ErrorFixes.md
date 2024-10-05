@@ -41,3 +41,13 @@ By adding `#define _XOPEN_SOURCE 700` at the beginning of our code, we instructe
 ### Conclusion
 
 Defining `_XOPEN_SOURCE 700` effectively instructs the compiler to provide the necessary definitions for modern POSIX features, which resolved the issues we were facing with incomplete type definitions and missing functions in the `netdb.h` header. This is a common practice in C programming to ensure that the required standards and features are available during compilation.
+
+
+
+### Mistakenly Printing a control code
+
+![Screenshot from 2024-10-05 22-46-49](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-05 22-46-49.png)
+
+![Screenshot from 2024-10-05 22-46-41](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-05 22-46-41.png)
+
+- If we outputted a control code  on purpose or perhaps accidentally, if a control code whacks out the terminal display, issue the **rest** command. Type **reset** and press ENTER, and the terminal attempts to recover itself from however we messed up.
