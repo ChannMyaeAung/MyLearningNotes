@@ -2676,3 +2676,73 @@ Hello there, hex!
 ![Screenshot from 2024-10-07 23-22-47](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-07 23-22-47.png)
 
 Figure 5.4 illustrates what's going on with the output, how each character of input is translated into the hex bytes.
+
+
+
+#### Hexdefilter
+
+```C
+
+int tohex(c)
+{
+    // Eliminates the digits 0 thru 9
+    if (c >= '0' && c <= '9')
+    {
+        // Returns the digit's integer value
+        return (c - '0');
+    }
+    // Eliminates the letters A thru F
+    if (c >= 'A' && c <= 'F')
+    {
+        // Returns the character's hex value: 'A' == 0x0A
+        return (c - 'A' + 0xA);
+    }
+
+    // Anything out of range returns -1
+    return -1;
+}
+
+int main()
+{
+    int ch, a, b;
+
+    // The endless loop relies upon the presence of an EOF to terminate
+    while (1)
+    {
+        // Reads a character
+        ch = getchar();
+        // check for EOF and breaks the loop if found
+        if (ch == EOF)
+            break;
+        // convert the character to a hex value
+        a = tohex(ch);
+
+        // Exit if the character isn't hex
+        if (a < 0)
+            break;
+
+        // Shifts value a four bits to represent the upperhalf of the byte in value
+        a <<= 4;
+
+        // Repeat the process for the next character, but without the shift
+        ch = getchar();
+        if (ch == EOF)
+            break;
+        b = tohex(ch);
+        if (b < 0)
+            break;
+
+        // Outputs the resulting byte
+        putchar(a + b);
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+48656C6C6F2C20776F726C64210A
+Hello, world!
+```
+
