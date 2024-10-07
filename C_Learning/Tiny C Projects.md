@@ -2457,6 +2457,7 @@ char *binString(char a)
     while (i < 8)
     {
         // The ternary operator sets a 1 or 0 into the string, depending on the value of the far left bit in variable a.
+        // The expression 'a & 0x80' checks if the most significant bit (leftmost bit) of 'a' is set. If it is, 'b[i]' is set to '1'; otherwise, it is set to '0'.
         b[i] = a & 0x80 ? '1' : '0';
 
         // Variable a's value is shifted one bit position to the left.
@@ -2506,6 +2507,16 @@ int main()
 }
 ```
 
+##### Explanation of Line 11:
+
+```C
+b[i] = a & 0x80 ? '1' : '0';
+```
+
+- `a & 0x80`: This performs a bitwise AND operation between `a`and `0x80` (which is `10000000` in binary). This operation isolates the most significant bit (MSB) of `a`.
+- `a & 0x80 ? '1' : '0'`: This is a ternary operator. If the MSB of `a` is 1, the expression evaluates to `'1'`; otherwise, it evaluates to `'0'`.
+- `b[i] = ...`: This assigns the result of the ternary operation to the `i`-th position in the array b.
+
 ```sh
 chan@CMA:~/C_Programming/practice$ ./practice
 Enter a word: A
@@ -2527,3 +2538,141 @@ Binary representation of 'a' is 01100001
 3. **Character `'a'`**:
    - ASCII code: 97
    - Binary representation: `01100001`
+
+#### Playing with ASCII conversion tricks
+
+```C
+printf("%d\n", '9' - '0');
+```
+
+- This `printf()` statement subtracts '0' from '9', which look like character values but are seen by the compiler as 0x39 - 0x30. 
+
+- The result is output as decimal value nine, which is what '9' represents.
+
+- The upper and lowercase characters differ by exactly 32 or 0x20. 
+
+  - ```
+    A  65  0x41   0010-0001
+    		    ↓
+    a   97  0x61   0110-0001
+    
+    /How the sixth bit in a byte affects letter case
+    ```
+
+  - To convert an uppercase letter to lowercase, you reset the sixth bit in the byte.
+
+  - To convert a lowercase letter to uppercase, you set the sixth bit in the byte.
+
+```C
+char c = 'A';
+c = c | 0x20; // or c |= 0x20;
+```
+
+- Above, the uppercase letter in `char` variable `c` is converted to its lowercase equivalent.
+
+- To convert a lowercase letter to uppercase, we must reset (change to zero) the sixth bit in the byte.
+
+- To handle this operation, use the & operator, which masks out bits:
+
+  - ```C
+    c = c & 0xdf; // c &= 0xdf;
+    ```
+
+  - ```C
+    int main()
+    {
+        char c = 'a';
+        c &= 0xdf;
+        printf("%c\n", c);
+        return 0;
+    }
+    ```
+
+  - ```sh
+    chan@CMA:~/C_Programming/test$ ./final
+    A
+    ```
+
+- The binary representation of `0x20` is `01000000`. The binary representation of `0xdf` is `10111111`.
+
+
+
+```C
+int main()
+{
+    char sentence[] = "ASCII makes my heart beat faster\n";
+    char *s;
+
+    s = sentence;
+    while (*s)
+    {
+        // Filters out uppercase text
+        if (*s >= 'A' && *s <= 'Z')
+        {
+            // outputs the lowercase character
+            putchar(*s | 0x20);
+        }
+        else
+        {
+            putchar(*s);
+        }
+        s++;
+    }
+
+    s = sentence;
+    while (*s)
+    {
+        // filters out lowercase text
+        if (*s >= 'a' && *s <= 'z')
+        {
+            // output the uppercase character
+            putchar(*s & 0xdf);
+        }
+        else
+        {
+            putchar(*s);
+        }
+        s++;
+    }
+    return 0;
+}
+```
+
+- The same string `sentence[]` is processed twice.
+- The first time, a while loop plucks uppercase characters from the string, converting them to lowercase by the bitwise `| 0x20` operation.
+- The second while loop targets lowercase letters, converting them to uppercase with `& 0xdf` operation.
+- Pointer `s` is used to work through the `sentence[]` array one character at a time.
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+ascii makes my heart beat faster
+ASCII MAKES MY HEART BEAT FASTER
+```
+
+#### A simple hex encoder/decoder
+
+```C
+
+int main()
+{
+    int ch;
+    while ((ch = getchar()) != EOF)
+    {
+        printf("%02X", ch);
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ ./practice
+Hello there, hex!
+48656C6C6F2074686572652C20686578210A
+```
+
+![Screenshot from 2024-10-07 23-22-47](/home/chan/Pictures/Screenshots/Screenshot from 2024-10-07 23-22-47.png)
+
+Figure 5.4 illustrates what's going on with the output, how each character of input is translated into the hex bytes.
