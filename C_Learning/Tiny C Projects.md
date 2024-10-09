@@ -2740,9 +2740,269 @@ int main()
 }
 ```
 
+### Explanation of Each Line
+
+1. **Function `tohex`**:
+   - `int tohex(c)`: Defines a function `tohex` that takes a single character `c` and returns its hexadecimal value.
+   - `if (c >= '0' && c <= '9')`: Checks if `c` is a digit between '0' and '9'.
+   - `return (c - '0');`: Converts the character digit to its integer value.
+   - `if (c >= 'A' && c <= 'F')`: Checks if `c` is an uppercase letter between 'A' and 'F'.
+   - `return (c - 'A' + 0xA);`: Converts the character letter to its hexadecimal value.
+   - `return -1;`: Returns -1 if `c` is not a valid hexadecimal character.
+2. The program stops when it encounters a nonhex digit or when the EOF is encountered.
+
+##### Explanation
+
+1. **Hexadecimal Values**:
+   - `0x40` is the hexadecimal representation of the decimal number 64.
+   - `0x08` is the hexadecimal representation of the decimal number 8.
+2. **Addition**:
+   - Adding these two values: `0x40 + 0x08` is equivalent to `64 + 8` in decimal, which equals 72.
+3. **ASCII Character**:
+   - The ASCII value 72 corresponds to the character 'H'.
+
+##### Step-by-Step Execution with Input `48656C6C6F2C20776F726C64210A`
+
+Let's break down the input `48656C6C6F2C20776F726C64210A` step by step:
+
+1. **Input**: "48"
+   - `a = tohex('4')`: `a = 4`
+   - `a <<= 4`: `a = 4 << 4 = 64` (0x40)
+   - `b = tohex('8')`: `b = 8`
+   - `putchar(a + b)`: `putchar(0x40 + 0x08)`: Prints 'H'
+2. **Input**: "65"
+   - `a = tohex('6')`: `a = 6`
+   - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+   - `b = tohex('5')`: `b = 5`
+   - `putchar(a + b)`: `putchar(0x60 + 0x05)`: Prints 'e'
+3. **Input**: "6C"
+   - `a = tohex('6')`: `a = 6`
+   - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+   - `b = tohex('C')`: `b = 12`
+   - `putchar(a + b)`: `putchar(0x60 + 0x0C)`: Prints 'l'
+4. **Input**: "6C"
+   - `a = tohex('6')`: `a = 6`
+   - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+   - `b = tohex('C')`: `b = 12`
+   - `putchar(a + b)`: `putchar(0x60 + 0x0C)`: Prints 'l'
+5. **Input**: "6F"
+   - `a = tohex('6')`: `a = 6`
+   - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+   - `b = tohex('F')`: `b = 15`
+   - `putchar(a + b)`: `putchar(0x60 + 0x0F)`: Prints 'o'
+6. **Input**: "2C"
+   - `a = tohex('2')`: `a = 2`
+   - `a <<= 4`: `a = 2 << 4 = 32` (0x20)
+   - `b = tohex('C')`: `b = 12`
+   - `putchar(a + b)`: `putchar(0x20 + 0x0C)`: Prints ','
+7. **Input**: "20"
+   - `a = tohex('2')`: `a = 2`
+   - `a <<= 4`: `a = 2 << 4 = 32` (0x20)
+   - `b = tohex('0')`: `b = 0`
+   - `putchar(a + b)`: `putchar(0x20 + 0x00)`: Prints ' '
+8. **Input**: "77"
+   - `a = tohex('7')`: `a = 7`
+   - `a <<= 4`: `a = 7 << 4 = 112` (0x70)
+   - `b = tohex('7')`: `b = 7`
+   - `putchar(a + b)`: `putchar(0x70 + 0x07)`: Prints 'w'
+9. **Input**: "6F"
+   - `a = tohex('6')`: `a = 6`
+   - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+   - `b = tohex('F')`: `b = 15`
+   - `putchar(a + b)`: `putchar(0x60 + 0x0F)`: Prints 'o'
+10. **Input**: "72"
+    - `a = tohex('7')`: `a = 7`
+    - `a <<= 4`: `a = 7 << 4 = 112` (0x70)
+    - `b = tohex('2')`: `b = 2`
+    - `putchar(a + b)`: `putchar(0x70 + 0x02)`: Prints 'r'
+11. **Input**: "6C"
+    - `a = tohex('6')`: `a = 6`
+    - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+    - `b = tohex('C')`: `b = 12`
+    - `putchar(a + b)`: `putchar(0x60 + 0x0C)`: Prints 'l'
+12. **Input**: "64"
+    - `a = tohex('6')`: `a = 6`
+    - `a <<= 4`: `a = 6 << 4 = 96` (0x60)
+    - `b = tohex('4')`: `b = 4`
+    - `putchar(a + b)`: `putchar(0x60 + 0x04)`: Prints 'd'
+13. **Input**: "21"
+    - `a = tohex('2')`: `a = 2`
+    - `a <<= 4`: `a = 2 << 4 = 32` (0x20)
+    - `b = tohex('1')`: `b = 1`
+    - `putchar(a + b)`: `putchar(0x20 + 0x01)`: Prints '!'
+14. **Input**: "0A"
+    - `a = tohex('0')`: `a = 0`
+    - `a <<= 4`: `a = 0 << 4 = 0` (0x00)
+    - `b = tohex('A')`: `b = 10`
+    - `putchar(a + b)`: `putchar(0x00 + 0x0A)`: Prints newline '\n'
+
+##### Final Output
+
+The input `48656C6C6F2C20776F726C64210A` is converted to "Hello, world!\n".
+
 ```sh
 chan@CMA:~/C_Programming/practice$ ./practice
 48656C6C6F2C20776F726C64210A
 Hello, world!
+```
+
+- In fact, the true test of encoding and decoding, we can pump output through both filters and end up with the original data.
+
+#### Updated encoding & decoding program
+
+`practice.h`
+
+```C
+int tohex(char c);
+int is_hex_input();
+
+void encode();
+void decode();
+```
+
+`functions.c`
+
+```C
+// Function to convert a single character to its hexadecimal value
+int tohex(char c){
+    // for digits '0' to '9'
+    if(c >= '0' && c <= '9'){
+        return (c - '0');
+    }
+
+    // For uppercase letters 'A' to 'F'
+    if(c >= 'A' && c <= 'F'){
+        return (c - 'A' + 0xA);
+    }
+
+    // For lowercase letters 'a' to 'f'
+    if(c >= 'a' && c <= 'f'){
+        return (c - 'a' + 0xA);
+    }
+
+    // Anything else is invalid
+    return -1;
+}
+
+// function to check if a string is in hex format
+int is_hex_input(){
+    int ch1 = getchar();
+    int ch2 = getchar();
+    ungetc(ch2, stdin); // push back second character
+    ungetc(ch1, stdin); // push back first character
+
+    // check if both characters are hex digits
+    return isxdigit(ch1) && isxdigit(ch2);
+}
+
+// Function to encode input to hex
+void encode(){
+    int ch;
+
+    // read each character and convert it to two hex digits
+    while((ch = getchar()) != EOF){
+        printf("%02X", ch);
+    }
+    printf("\n");
+}
+
+// function to decode hex input back to original characters
+void decode(){
+    int ch, a, b;
+
+    // Loop until EOF or invalid hex input
+    while(1){
+        ch = getchar();
+        if(ch == EOF){
+            break;
+        }
+
+
+        // Convert the first hex character
+        a = tohex(ch);
+        if(a<0){
+            break;
+        }
+
+        // Shift value to upper half of the byte
+        a <<= 4;
+
+        // Read the next hex character
+        ch = getchar();
+        if(ch == EOF){
+            break;
+        }
+        b = tohex(ch);
+        if(b < 0){
+            break;
+        }
+
+        // combine the two hex digits and output the result
+        putchar(a + b);
+    }
+
+    putchar('\n');
+}
+```
+
+`practice.c`
+
+```C
+int main() {
+    // Check if the input is hex-encoded
+    if (is_hex_input()) {
+        decode();  // If input is hex, decode it
+    } else {
+        encode();  // Otherwise, encode the input
+    }
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/practice$ echo "48656C6C6F2C20776F726C64210A" | ./practice 
+Hello, world!
+
+chan@CMA:~/C_Programming/practice$ echo "48656C6C6F2C20776F726C64210A" | ./practice | ./practice
+48656C6C6F2C20776F726C64210A0A
+
+```
+
+
+
+#### Hex Encode Program
+
+```C
+// set this value as a defined constant so that it can be updated easily
+#define BYTES_PER_LINE 18
+
+int main(){
+    int ch, bytes;
+    bytes = 0;
+    printf("HEX ENCODE v1.0\n");
+    
+    while((ch = getchar()) != EOF){
+        printf(" %02X", ch);
+        bytes++;
+        //check for the end of the line
+        if(bytes == BYTES_PER_LINE){
+            putchar("\n");
+            bytes = 0;
+        }
+    }
+    
+    printf("\nHEX ENCODE END\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ echo "Hello, World!" | ./final
+HEX ENCODE v1.0
+ 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 0A
+HEX ENCODE END
+
 ```
 
