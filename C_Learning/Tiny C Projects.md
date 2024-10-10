@@ -2998,6 +2998,73 @@ int main(){
 }
 ```
 
+##### Example with Input "Hello, World!"
+
+Let's break down the input "Hello, World!" step by step:
+
+1. **Input**: "H"
+   - `ch = 'H'` (ASCII 72)
+   - `printf(" %02X", 72)`: Prints " 48"
+   - `bytes = 1`
+2. **Input**: "e"
+   - `ch = 'e'` (ASCII 101)
+   - `printf(" %02X", 101)`: Prints " 65"
+   - `bytes = 2`
+3. **Input**: "l"
+   - `ch = 'l'` (ASCII 108)
+   - `printf(" %02X", 108)`: Prints " 6C"
+   - `bytes = 3`
+4. **Input**: "l"
+   - `ch = 'l'` (ASCII 108)
+   - `printf(" %02X", 108)`: Prints " 6C"
+   - `bytes = 4`
+5. **Input**: "o"
+   - `ch = 'o'` (ASCII 111)
+   - `printf(" %02X", 111)`: Prints " 6F"
+   - `bytes = 5`
+6. **Input**: ","
+   - `ch = ','` (ASCII 44)
+   - `printf(" %02X", 44)`: Prints " 2C"
+   - `bytes = 6`
+7. **Input**: " "
+   - `ch = ' '` (ASCII 32)
+   - `printf(" %02X", 32)`: Prints " 20"
+   - `bytes = 7`
+8. **Input**: "W"
+   - `ch = 'W'` (ASCII 87)
+   - `printf(" %02X", 87)`: Prints " 57"
+   - `bytes = 8`
+9. **Input**: "o"
+   - `ch = 'o'` (ASCII 111)
+   - `printf(" %02X", 111)`: Prints " 6F"
+   - `bytes = 9`
+10. **Input**: "r"
+    - `ch = 'r'` (ASCII 114)
+    - `printf(" %02X", 114)`: Prints " 72"
+    - `bytes = 10`
+11. **Input**: "l"
+    - `ch = 'l'` (ASCII 108)
+    - `printf(" %02X", 108)`: Prints " 6C"
+    - `bytes = 11`
+12. **Input**: "d"
+    - `ch = 'd'` (ASCII 100)
+    - `printf(" %02X", 100)`: Prints " 64"
+    - `bytes = 12`
+13. **Input**: "!"
+    - `ch = '!'` (ASCII 33)
+    - `printf(" %02X", 33)`: Prints " 21"
+    - `bytes = 13`
+14. **Input**: "\n"
+    - `ch = '\n'` (ASCII 10)
+    - `printf(" %02X", 10)`: Prints " 0A"
+    - `bytes = 14`
+
+Since the input "Hello, World!" has 14 characters, it does not reach the `BYTES_PER_LINE` limit of 18, so no newline is printed within the loop.
+
+##### Final Output
+
+The final output is:
+
 ```sh
 chan@CMA:~/C_Programming/test$ echo "Hello, World!" | ./final
 HEX ENCODE v1.0
@@ -3005,4 +3072,166 @@ HEX ENCODE v1.0
 HEX ENCODE END
 
 ```
+
+This output shows the hexadecimal representation of each character in the input string "Hello, World!" followed by the header and footer messages.
+
+
+
+#### Decoding Program
+
+```C
+// set this value as a defined constant so that it can be updated easily
+#define BYTES_PER_LINE 18
+
+// Calculates the buffer size for the num of bytes times the number of spaces used, plus one for the null character
+#define LENGTH (BYTES_PER_LINE * 3 + 1)
+
+int main()
+{
+    // buffer of size LENGTH to store input lines
+    char line[LENGTH];
+
+    // x = index for the buffer
+    // ch = to store each char read from input
+    // hex - to store the parsed hexadecimal value.
+    int x, ch, hex;
+
+    // This pointer holds the return value from the fgets() which is used to determine whether input is valid.
+    char *r;
+
+    r = fgets(line, LENGTH, stdin);
+    // fgets() returns NULL on invalid input; otherwise, the strncmp() performs an exact comparison on the first line of text vs the required text
+    if(r == NULL || strncmp(line, "HEX ENCODE", 10) != 0){
+        fprintf(stderr, "Invalid HEX ENCODE data\n");
+        exit(1);
+    }
+
+    x = 0;
+
+    while((ch = getchar()) != EOF){
+        // Stores incoming characters in the buffer
+        line[x] = ch;
+
+        // increment the offset
+        x++;
+        
+        // Checks for newline (as the decoded file is formatted) or if the buffer is full
+        if(ch == '\n' || x == LENGTH){
+            // Replaces the newline with a null character; otherwise, caps the string
+            if(line[x-1] == '\n'){
+                line[x-1] = '\0';
+            }else{
+                line[x] = '\0';
+            }
+
+            // Checks if the line matches the string "HEX ENCODE END"
+            // If true, it breaks out of the loop
+            if(strncmp(line, "HEX ENCODE END", 13) == 0){
+                break;
+            }
+
+            // Parses the string (input line of text), separating its content by spaces
+            r = strtok(line, " ");
+
+            // As long as the strtok() returns a non-NULL value, loop
+            while(r){
+                // Translate the 2-character hex string into an integer value
+                sscanf(r, "%02X", &hex);
+
+                // Output the integer value (which can be non-ASCII)
+                printf("%c", hex);
+
+                // Keeps scanning the same string
+                r = strtok(NULL, " ");
+            }
+            x = 0;
+        }
+
+    }
+    
+    return 0;
+}
+
+```
+
+- The difference between `scanf()` and `sscanf()` is that `scanf()` reads formatted input from the standard input usually from the user while `sscanf()` reads from a string rather than directly from the user input.
+
+`sample.txt`
+
+```
+HEX ENCODE v1.0
+54 68 69 73 20 69 73 20 61 6E 20 65 78 61 6D 70 6C 65
+20 6F 66 20 68 65 78 20 65 6E 63 6F 64 69 6E 67 20 69
+6E 20 61 20 66 6F 72 6D 61 74 74 65 64 20 6D 61 6E 6E
+65 72 2E 20 49 20 61 70 70 6C 61 75 64 20 79 6F 75 20
+66 6F 72 20 62 65 69 6E 67 20 61 20 6E 65 72 64 20 61
+6E 64 20 64 65 63 6F 64 69 6E 67 20 74 68 69 73 20 65
+78 61 6D 70 6C 65 2E 0A
+HEX ENCODE END
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final < sample.txt
+This is an example of hex encoding in a formatted manner. I applaud you for being a nerd and decoding this example.
+
+chan@CMA:~/C_Programming/test$ echo -e "HEX ENCODE v1.0\n48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 0A\nHEX ENCODE END" | ./final
+Hello, World!
+```
+
+##### Test Run Explanation
+
+Let's walk through the test run step by step:
+
+1. **Command**:
+
+   ```sh
+   echo -e "HEX ENCODE v1.0\n48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 0A\nHEX ENCODE END" | ./final
+   ```
+
+2. **Input**:
+
+   - The input provided to the program is:
+
+     ```
+     HEX ENCODE v1.0
+     
+     48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 0A
+     
+     HEX ENCODE END
+     ```
+
+3. **Execution**:
+
+   - The program starts and reads the first line using `fgets`.
+   - It checks if the first line is "HEX ENCODE v1.0". Since it matches, the program continues.
+   - The program initializes `x` to 0 and enters the `while` loop to read characters using `getchar`.
+
+4. **Processing Each Line**:
+
+   - The program reads the characters `48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 0A` and stores them in the buffer `line`.
+   - When it encounters the newline character, it replaces it with a null character and processes the line.
+   - It tokenizes the line using `strtok` and parses each token as a hexadecimal value using `sscanf`.
+   - The parsed hexadecimal values are:
+     - `48` -> `H`
+     - `65` -> `e`
+     - `6C` -> `l`
+     - `6C` -> `l`
+     - `6F` -> `o`
+     - `2C` -> `,`
+     - `20` ->
+     - `57` -> `W`
+     - `6F` -> `o`
+     - `72` -> `r`
+     - `6C` -> `l`
+     - `64` -> `d`
+     - `21` -> `!`
+     - `0A` -> `\n`
+   - It prints the characters, resulting in "Hello, World!\n".
+
+5. **End of Input**:
+
+   - The program reads the next line "HEX ENCODE END".
+   - It checks if the line matches "HEX ENCODE END". Since it matches, the program breaks out of the loop and exits.
+
+
 
