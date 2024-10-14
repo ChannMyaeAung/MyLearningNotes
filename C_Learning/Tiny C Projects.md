@@ -3235,3 +3235,274 @@ Let's walk through the test run step by step:
 
 
 
+#### Adding a wee bit of error-checking
+
+- To help track entry errors, early hex dumps in magazines offered a checksum digit at the end of each orw.
+- This checksum is merely the total of all the byte values in the row, sometimes modulo `0x100` to make it look like another two digit hex value.
+- When the user typed in the code, they could run the checksum or (their hex decoder program would) to determine whether a mistake was made and which line had to be reread and whether the entire operation had to start all over again.
+
+#### Checksum Program
+
+```C
+int main(){
+    int hexbytes [] = {
+        0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A
+    };
+
+    int x, checksum;
+
+    checksum = 0;
+    for(x = 0; x < 10; x++){
+        checksum += hexbytes[x];
+        printf(" %02X", hexbytes[x]);
+    }
+
+    // Output the checksum, but limited to a char-size value
+    printf("\nChecksum = %02X\n", checksum% 0x100);
+    
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final 
+ 41 42 43 44 45 46 47 48 49 4A
+Checksum = B7
+
+```
+
+
+
+```C
+// set this value as a defined constant so that it can be updated easily
+#define BYTES_PER_LINE 18
+
+// Calculates the buffer size for the num of bytes times the number of spaces used, plus one for the null character
+#define LENGTH (BYTES_PER_LINE * 3 + 1)
+
+int main()
+{
+    // line - of size LENGTH to store input lines
+    char line[LENGTH];
+
+    // x - index for the buffer, ch - to store each character read from input, hex - to store the parsed hex value
+    int x, ch, hex;
+
+    // checksum - to store the checksum, row - to track the number of rows, b - to monitor the byte count
+    int checksum, row, b;
+
+    // version - to store the version number
+    // r - to hold the return value from fgets and strtok
+    float version;
+    char *r;
+
+    // Reads the first line of input using fgets
+    r = fgets(line, LENGTH, stdin);
+
+    // checks if the input starts with "HEX ENCODE". if not, it prints an error msg and exits.
+    if(r == NULL || strncmp(line, "HEX ENCODE", 10) != 0){
+        fprintf(stderr, "Invalid HEX ENCODE data\n");
+        exit(1);
+    }
+
+    // extracts the version number from the input line using sscanf
+    sscanf(line, "HEX ENCODE v%f", &version);
+
+    x = 0;
+
+    row = 0; // track the number of rows
+    while((ch = getchar()) != EOF){
+
+        // stores each character in the buffer line
+        line[x] = ch;
+
+        // increment index x;
+        x++;
+
+        if(ch == '\n' || x == LENGTH){
+            // properly terminate line
+            if(line[x-1] == '\n'){
+                line[x-1] = '\0';
+            }else{
+                line[x-1] = '\0';
+            }
+
+            // stop processing on the last line
+            if(strncmp(line, "HEX ENCODE END", 13) == 0){
+                break;
+            }
+
+            checksum = 0; // reset the checksum
+            b = 0; // monitor the byte count
+
+            r = strtok(line, " ");
+            while(r){
+                // parses each token as a hex value
+                sscanf(r, "%02X", &hex);
+                
+                // if the byte count is < BYTES_PER_LINE
+                if(b < BYTES_PER_LINE){
+                    checksum += hex;
+                    printf("%c", hex);
+                    r = strtok(NULL, " ");
+
+                    // increase byte count
+                    b++;
+                }else{
+                    // validate
+                    if(hex != (checksum%0x100)){
+                        // bad checksum
+                        fprintf(stderr, "\nChecksum error at Line %d\n", row);
+                        fprintf(stderr, "Unable to decode data\n");
+                        exit(1);
+                    }
+
+                    break;
+                }
+            }
+            x = 0;
+            // next row
+            row++;
+        }
+    }
+
+    // Print the final checksum if there are remaining bytes
+    if(b > 0){
+        printf(" %02X", checksum % 0x100);
+    }
+
+    printf("\nHEX ENCODE END\n");
+    
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final < sample.txt
+This is an example of hex encoding in a formatted manner. I applaud you for being a nerd and decoding this example.
+ BF
+HEX ENCODE END
+
+```
+
+
+
+#### URL encoding
+
+- Specifically, for a web page address, URL encoding is used when referencing something that may otherwise be misinterpreted by the web server, such as a binary value, embedded web page, spaces, or other sneaky data.
+- URL encoding allows this information to be sent as plain text and properly decoded later.
+- Though various rules exist regarding this encoding method, the HTML 5 standard defines it as follows:
+  - Alphanumeric characters are not translated (0 to 9, A to Z, upper-and lowercase).
+  - The characters - (dash), . (period), _ (underscore), and * (asterisk) are retained.
+  - Spaces are converted into + (plus) character, though the `%20` code is also used.
+  - All other characters are represented as their hexadecimal ASCII value, prefixed with a percent sign.
+  - If the data to encode is wider than a byte, such as a Unicode character, it's divided into byte-size values, each a 2-digit hex number prefixed with a percent sign. This final point may not be consistent for all wide-character values.
+
+#### Writing a URL encoder
+
+- The key to success with writing a URL-encoding program, a filter in this incarnation, is to catch the exceptions first.
+- Output whatever characters need no translation just as they are.
+- Once these items are eliminated, all other characters the program outputs must obey the percent-hexadecimal encoding method.
+
+The following is a standard filter that processes input one character at a time. The four URL encoding exceptions are handled first (`-`, `.` , `_`, `*`) followed by the space.
+
+- The `isalnum()` function weeds out all alphanumeric characters. Anything remaining is output using %-hexadecimal format.
+
+```C
+int main()
+{
+    int ch;
+
+    while((ch = getchar()) != EOF){
+        if(ch == '-' || ch == '.' || ch == '_' || ch == '*'){
+            putchar(ch);
+        }else if(ch == ' '){ // the space is output as a + character
+            putchar('+');   
+        }else if(isalnum(ch)){ // Alphanumeric characters are output as is
+            putchar(ch);
+        }else{
+
+            // The %% is required to output a percent sign, followed by a 2-digit hex value, prefixed by a leading zero if necessary
+            printf("%%%02X", ch);
+        }
+    }
+
+    putchar('\n');
+    
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+https://c-for-dummies.com/blog/
+https%3A%2F%2Fc-for-dummies.com%2Fblog%2F%0A
+```
+
+- A few common codes regarding URL:
+  - %3A for the colon :
+  - %2F for the forward slash, /
+  - %3F for the question mark, ?
+  - %26 for an ampersand, &
+
+
+
+#### Writing a URL decoder
+
+```C
+int tohex(int c){
+    if(c >= '0' && c <= '9'){
+        return (c- '0');
+    }
+    if(c >= 'A' && c <= 'F'){
+        return (c - 'A' + 0xA);
+    }   
+    if(c >= 'a' && c <= 'f'){
+        return (c - 'a' + 0xA);
+    }
+    return -1;
+
+}
+int main()
+{
+    int ch, a, b;
+
+    while((ch = getchar()) != EOF){
+
+        // checks for the % sign and grabs the next two characters
+        if(ch == '%'){
+            ch = getchar();
+            // Bails on EOF
+            if(ch == EOF) break;
+
+            // convert the hex digit to an integer
+            a = tohex(ch);
+
+            // Grabs the next character
+            ch = getchar();
+            if(ch == EOF) break;
+            b = tohex(ch);
+
+            // Outputs the proper character value
+            putchar((a << 4) + b);
+        }else{
+            putchar(ch);
+        }
+    }
+    putchar('\n');
+    
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+https%3A%2F%2Fc-for-dummies.com%2Fblog%2F%0A
+https://c-for-dummies.com/blog/
+```
+
