@@ -1,4 +1,4 @@
-# Supabase Essentials
+# Supabase Setup
 
 
 

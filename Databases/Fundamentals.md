@@ -118,22 +118,18 @@ Queries are written in a **query language**, depending on the type of database w
 
 - **Deleting data**:
 
-  ```
-  javascript
-  
-  
-  Copy code
+  ```javascript
   db.users.remove({ name: 'Alice' });
   ```
 
 ### **Key Differences**:
 
 - **Schema** is about **structure**: It defines how data is organized and related.
-- **Query** is about **interaction**: It defines how you retrieve, insert, update, or delete data in the database.
+- **Query** is about **interaction**: It defines how we retrieve, insert, update, or delete data in the database.
 
 ### **Conclusion**:
 
 - **Schema** = Blueprint/structure of the database.
-- **Query** = How you request or manipulate data in the database.
+- **Query** = How we request or manipulate data in the database.
 
 Understanding both is essential to working with databases, whether it's designing data structures or interacting with them to build applications.
