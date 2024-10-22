@@ -3658,8 +3658,336 @@ Symbols list :
 
 Write code that generates a random password limited to the characters listed in this section.
 
-
+#### Solution #1
 
 ```C
+#define UPPER 1
+#define LOWER 6
+#define NUM 1
+#define SYM 2
+
+char uppercase(void){
+    // Random number between 0 and 25, mapped to 'A' to 'Z'
+    return (rand() % 26 + 'A');
+}
+
+char lowercase(void){
+    // Random number between 0 and 25, mapped to 'a' to 'z'
+    return (rand() % 26 + 'a');
+}
+
+char number(void){
+    // Random number between 0 and 9, mapped to '0' to '9'
+    return (rand() % 10 + '0');
+}
+
+char symbol(void){
+    char s[8] = "!@#$%*_-";
+    int r;
+    r = rand() % 8;
+    return s[r];
+}
+
+int main(){
+    int x;
+    
+    // seeds the random number generator with the current time to ensure different sequences of random numbers in each run.
+    srand((unsigned) time(NULL));
+    
+    for(x = 0; x < UPPER; x++){
+        putchar(uppercase());
+    }
+    
+    for(x = 0; x < LOWER; x++){
+        putchar(lowercase());
+    }
+    
+    for(x = 0; x < NUM; x++){
+        putchar(number());
+    }
+    
+    for(x = 0; x < SYM; x++){
+        putchar(symbol());
+    }
+    
+    putchar('\n');
+    
+    return 0;
+}
+```
+
+- `uppercase()`: Generates a random uppercase letter by mapping a random number between 0 and 25 to the ASCII values of 'A' to 'Z'.
+- `lowercase()`: Generates a random lowercase letter by mapping a random number between 0 and 25 to the ASCII values of 'a' to 'z'.
+- `number()`: Generates a random digit by mapping a random number between 0 and 9 to the ASCII values of '0' to '9'.
+- `symbol()`: Generates a random symbol from a predefined set of symbols.
+
+**Alternative Lowercase function (Work the same way)**
+
+```C
+char lowercase(){
+    char ch;
+    // Calls the uppercase() function to generate a random uppercase letter and assigns it to ch.
+    ch = uppercase();
+   
+    return (ch |= 0x20);
+}
+```
+
+- The bitwise OR assignment operator (`|=`) is used to set the 6th bit of the ASCII value of `ch`.
+
+- In ASCII, the difference between uppercase and lowercase letters is the 6th bit. For example:
+  - 'A' (uppercase) has an ASCII value of 65 (`01000001` in binary).
+  - 'a' (lowercase) has an ASCII value of 97 (`01100001` in binary).
+- By setting the 6th bit, we convert the uppercase letter to its corresponding lowercase letter.
+- `0x20` is the hexadecimal representation of the binary value `00100000`.
+- `ch |= 0x20` sets the 6th bit of `ch` to 1, effectively converting it to lowercase.
+- The function then returns the modified `ch`.
+
+### Example
+
+Let's see an example with the letter 'A':
+
+1. **Uppercase 'A'**:
+   - ASCII value: 65
+   - Binary: `01000001`
+2. **Bitwise OR with `0x20`**:
+   - `0x20` in binary: `00100000`
+   - `01000001` (65) OR `00100000` (32) = `01100001` (97)
+3. **Result**:
+   - ASCII value: 97
+   - Character: 'a' (lowercase)
+
+### Example
+
+Let's see an example with the letter 'A':
+
+1. **Uppercase 'A'**:
+   - ASCII value: 65
+   - Binary: `01000001`
+2. **Bitwise OR with `0x20`**:
+   - `0x20` in binary: `00100000`
+   - `01000001` (65) OR `00100000` (32) = `01100001` (97)
+3. **Result**:
+   - ASCII value: 97
+   - Character: 'a' (lowercase)
+
+**Output**
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Qengxvq6-*
+chan@CMA:~/C_Programming/test$ ./final
+Zwznnux9$@
+```
+
+
+
+#### Solution #2
+
+`hello.c`
+
+```C
+void generate_password(){
+    char uppercase[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";  // Uppercase letters
+    char lowercase[] = "abcdefghijklmnopqrstuvwxyz";  // Lowercase letters
+    char digits[] = "0123456789";                     // Digits
+    char symbols[] = "!@#$%*_-";
+    
+    // 1 uppercase, 6 lowercase, 1 digit, 2 symbols (total: 10 characters)
+    char password[11];
+    
+    // Seed the random number generator
+    srand(time(NULL));
+    
+    // Select one random uppercase letter
+    password[0] = uppercase[rand() % 26];
+    
+    // Select six random lowercase letter
+    for(i = 1; i <= 6; i++){
+        password[i] = lowercase[rand() % 26];
+    }
+    
+    // Select one random digit
+    password[7] = digits[rand() % 10];
+    
+    // Select two random symbols
+    password[8] = symbols[rand() % 8];
+    password[9] = symbols[rand() % 8];
+    
+    password[10] = '\0';
+    
+    printf("Generated password: %s\n", password);
+ }
+```
+
+`hello.h`
+
+```C
+void generate_password();
+```
+
+
+
+`main.c`
+
+```C
+int main(){
+    generate_pasword();
+    return 0;
+}
+```
+
+
+
+**Output**
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Generated password: Xsjzgdu4!!
+chan@CMA:~/C_Programming/test$ ./final
+Generated password: Pwyliha8!-
+chan@CMA:~/C_Programming/test$ ./final
+Generated password: Lobshhz5-*
+
+```
+
+#### Improving upon the password
+
+- The password pattern of the previous password generating program is predictable.
+- A better way to output the random characters is to scramble them.
+- For this improvement, the password must be stored in an array as opposed to output directly.
+
+`hello.h`
+
+```C
+enum
+{
+    ERROR_CODE = -1,
+    UPPER = 1,
+    LOWER = 6,
+    NUM = 1,
+    SYM = 2,
+};
+
+char uppercase(void);
+char lowercase(void);
+char numbers(void);
+char symbols(void);
+void scramble(char p[]);
+
+```
+
+
+
+`hello.c`
+
+```C
+#include "hello.h"
+
+char uppercase(void){
+    return (rand() % 26 + 'A');
+}
+char lowercase(void){
+    char ch;
+    ch = uppercase();
+    return (ch |= 0x20);
+}
+char numbers(void){
+    return (rand() % 10 + '0');
+}
+char symbols(void){
+    char s[8] = "!@#$%*_-";
+    int r;
+    r = rand() % 8;
+    return s[r];
+}
+
+void scramble(char p[]){
+
+    // calculates the buffer size
+    const int size = UPPER+LOWER+NUM+SYM+1;
+    char key[size];
+    int x, r;
+
+    // Initialize the array with null characters
+    for(x = 0; x < size; x++){
+        key[x] = '\0';
+    }
+
+    x = 0;
+    // Loops until the passed array has been fully processed (minus one for the null character)
+    while(x <size - 1){
+        // Generate a random value, 0 thru the buffer size 
+        r = rand() % (size - 1);
+
+        // If the random value at element r is a null character
+        if(!key[r]){
+
+            // it copies the original character to its new, random position.
+            key[r] = p[x];
+            x++;
+        }
+    }
+
+
+    // Copy the randomized array into the passed array
+    for(x=0; x < size; x++){
+        p[x] = key[x];
+    }
+}
+```
+
+
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <strings.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <time.h>
+#include <signal.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <pthread.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include "hello.h"
+
+int main()
+{
+    // Necessary storage for the password, plus one for the null character
+    char password[UPPER+LOWER+NUM+SYM+1];
+    int x;
+
+    srand((unsigned)time(NULL));
+
+    x = 0;
+    while(x < UPPER){
+        password[x++] = uppercase();
+    }
+    while(x < UPPER+LOWER){
+        password[x++] = lowercase();
+    }
+    while(x < UPPER+LOWER+NUM){
+        password[x++] = numbers();
+    }
+    while(x < UPPER+LOWER+NUM+SYM){
+        password[x++] = symbols();
+    }
+
+    password[x] = '\0';
+
+    printf("%s\n", password);
+    return 0;
+}
+
 ```
 
