@@ -1332,5 +1332,60 @@ school>
 
 - This time we only examine only one document.
 
+```bash
+# there's already an index applied to object id by default.
+# name_1 is the index we created.
+
+school> db.students.getIndexes()
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { name: 1 }, name: 'name_1' }
+]
+school> db.students.dropIndex("name_1")
+{ nIndexesWas: 2, ok: 1 }
+school> db.students.getIndexes()
+[ { v: 2, key: { _id: 1 }, name: '_id_' } ]
+```
+
+
+
 ## Collections
+
+
+
+```bash
+
+school> show collections
+students
+school> db.createCollection("teachers", {capped: true, size: 10000000, max:100}, {autoIndexId: false})
+{ ok: 1 }
+school> show collections
+students
+teachers
+```
+
+- `capped: true`  - Indicates that the collection is a capped collection. Capped collections have a fixed size and maintain insertion order.
+  - If capped is set to true, we do need to set the minimum size.
+  - Capped collections are fixed-size collections that automatically overwrite the oldest documents when the specified size or document count limit is reached.
+  - They are useful for scenarios where we need to maintain a rolling log of data, such as logging or caching.
+- `size: 10000000` - Specifies the maximum size of the collection in bytes (10 MB in this case). (1000 * 1024).
+- `max: 100` - Specifies the maximum number of documents the collection can hold. (In this case, we don't want any more than 100 teachers).
+- `{autoIndexId: false}` - Used to specify whether to automatically create an index on the `_id` field. By default, MongoDB creates an index on the `_id` field.
+
+```bash
+school> db.createCollection("courses")
+{ ok: 1 }
+
+school> show collections
+courses
+students
+teachers
+
+# drop the collection
+school> db.courses.drop()
+true
+school> show collections
+students
+teachers
+```
 
