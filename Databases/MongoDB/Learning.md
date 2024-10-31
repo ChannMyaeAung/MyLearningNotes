@@ -1389,3 +1389,156 @@ students
 teachers
 ```
 
+
+
+## Connecting to a Next.js Application
+
+- It's advised to refer to MongoDB documentation and Mongoose documentation.
+
+### Steps
+
+1. Create a cluster on MongoDB. Click "Connect" on the cluster created and copy the appropriate URL to connect to our next.js application.
+
+2. In Network Access, we should define our Network Address.
+
+3. After that, in our next.js application, inside the `app` directory, we need to create a folder called `lib`.
+
+4. Inside the `lib` folder, we need to create `utils.ts`.
+
+5. Inside the `utils.ts`, we are going to have the following code. Before that we need to store the URL we copied from our database in a `.env` file and we need to include `.env` to our `.gitignore`.
+
+   - `utils.ts`
+
+   - ```ts
+     import mongoose from "mongoose";
+     
+     export const connectToDB = async () => {
+       const connection: { isConnected?: number } = {};
+       try {
+         if (connection.isConnected) {
+           return;
+         }
+         if (!process.env.MONGO) {
+           throw new Error("MONGO environment variable is not defined");
+         }
+         const db = await mongoose.connect(process.env.MONGO);
+         connection.isConnected = db.connection.readyState;
+       } catch (error) {
+         if (error instanceof Error) {
+           throw new Error(error.message);
+         } else {
+           throw new Error("An unknown error occurred");
+         }
+       }
+     };
+     
+     ```
+
+   - then we also need to create `models.ts`
+
+     ```ts
+     import mongoose from "mongoose";
+     
+     // Defining the schema depending on our application
+     const userSchema = new mongoose.Schema(
+       {
+         username: {
+           type: String,
+           required: true,
+           unique: true,
+           min: 3,
+           max: 20,
+         },
+         email: {
+           type: String,
+           required: true,
+           unique: true,
+         },
+         password: {
+           type: String,
+           required: true,
+           min: 6,
+           max: 20,
+         },
+         img: {
+           type: String,
+         },
+         isAdmin: {
+           type: Boolean,
+           default: false,
+         },
+         isActive: {
+           type: Boolean,
+           default: true,
+         },
+         mobile: {
+           type: String,
+         },
+         address: {
+           type: String,
+         },
+       },
+       { timestamps: true }
+     );
+     const productSchema = new mongoose.Schema(
+       {
+         title: {
+           type: String,
+           required: true,
+           unique: true,
+         },
+         desc: {
+           type: String,
+           required: true,
+         },
+         price: {
+           type: Number,
+           required: true,
+           min: 0,
+         },
+         stock: {
+           type: Number,
+           required: true,
+           min: 0,
+         },
+         img: {
+           type: String,
+         },
+         color: {
+           type: String,
+         },
+         size: {
+           type: String,
+         },
+       },
+       { timestamps: true }
+     );
+     
+     // If there's an existing database, don't create a new one.
+     // If not, create a new schema.
+     export const User = mongoose.models.User || mongoose.model("User", userSchema);
+     export const Product =
+       mongoose.models.Product || mongoose.model("Product", productSchema);
+     
+     ```
+
+   - then finally we'll need to create `data.ts`.
+
+     ```ts
+     import { User } from "./models";
+     import { connectToDB } from "./utils";
+     
+     export const fetchUsers = async () => {
+       try {
+         connectToDB();
+         const users = await User.find();
+         return users;
+       } catch (err) {
+         console.log(err);
+         throw new Error("Failed to fetch users!");
+       }
+     };
+     
+     ```
+
+     
