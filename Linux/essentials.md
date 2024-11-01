@@ -80,7 +80,16 @@ sudo apt autoremove
 
 By understanding these commands and their differences, you can effectively manage your system's packages and keep your software up-to-date.
 
+If you didn't install Visual Studio Code through the repository but used a `.deb` file instead, you’ll need to download the latest `.deb` file from the Visual Studio Code website and install it.
 
+1. **Install the `.deb` file**:
+
+   ```bash
+   sudo dpkg -i ~/Downloads/code_*.deb
+   sudo apt -f install
+   ```
+
+This will update Visual Studio Code to the latest version on our system.
 
 ### Linux Is About Imagination
 
