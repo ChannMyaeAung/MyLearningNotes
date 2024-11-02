@@ -69,3 +69,194 @@ Supabase is built on **PostgreSQL**, which is a **relational** (SQL) database wi
 #### 11. **Use Cases**:
 
 - Best suited for structured data, where relationships between entities are important and data integrity is critical. Commonly used for enterprise applications, financial systems, and any application requiring complex querying and analytics.
+
+## **Supabase Core Concepts**:
+
+- **PostgreSQL Database**: Supabase uses PostgreSQL, an open-source relational database.
+- **Realtime**: Enables real-time subscriptions to database changes via WebSockets.
+- **Authentication**: Provides user management with support for email/password, OAuth providers, and more.
+- **Storage**: Offers file storage for managing files like images and videos.
+- **Edge Functions**: Serverless functions that run close to the user for low-latency responses.
+- **API**: Automatically generates RESTful APIs for your database tables.
+- **SDKs**: Client libraries for interacting with Supabase services in various languages.
+- **Row-Level Security (RLS)**: Security feature to control access at the row level in tables.
+
+
+
+### Core Features:
+
+```typescript
+// Authentication
+const { data: { user } } = await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'password123'
+})
+
+// Database Operations
+const { data, error } = await supabase
+  .from('posts')
+  .select('*')
+  .eq('author_id', user.id)
+
+// Real-time Subscriptions
+const subscription = supabase
+  .from('posts')
+  .on('INSERT', payload => {
+    console.log('New post:', payload.new)
+  })
+  .subscribe()
+```
+
+### Key differences from MongoDB:
+
+1. **Schema Definition**:
+
+   ```sql
+   -- Supabase/PostgreSQL
+   CREATE TABLE posts (
+     id UUID DEFAULT gen_random_uuid(),
+     title TEXT NOT NULL,
+     content TEXT,
+     author_id UUID REFERENCES users(id)
+   );
+   
+   -- vs MongoDB (schema-less)
+   {
+     title: String,
+     content: String,
+     author: ObjectId
+   }
+   ```
+
+2. **Relationships**:
+
+   ```typescript
+   // Supabase - Using joins
+   const { data } = await supabase
+     .from('posts')
+     .select(`
+       *,
+       users (
+         name,
+         email
+       )
+     `)
+   
+   // vs MongoDB - Using population
+   await Post.findOne().populate('author')
+   ```
+
+3. **Core Supabase Features**:
+
+   - **Authentication**
+
+     ```typescript
+     // Sign Up
+     const { data, error } = await supabase.auth.signUp({
+       email: 'user@example.com',
+       password: 'password123',
+       options: {
+         data: {
+           name: 'John Doe'
+         }
+       }
+     })
+     
+     // Sign In
+     const { data, error } = await supabase.auth.signInWithPassword({
+       email: 'user@example.com',
+       password: 'password123'
+     })
+     ```
+
+   - **Row Level Security (RLS)**:
+
+     ```sql
+     -- Example RLS policy
+     CREATE POLICY "Users can only see their own posts"
+     ON posts
+     FOR SELECT
+     USING (auth.uid() = author_id);
+     ```
+
+   - **Storage**:
+
+     ```typescript
+     // Upload file
+     const { data, error } = await supabase
+       .storage
+       .from('bucket-name')
+       .upload('file-path', file)
+     
+     // Get public URL
+     const { data } = supabase
+       .storage
+       .from('bucket-name')
+       .getPublicUrl('file-path')
+     ```
+
+4. **Best Practices**:
+
+   - **Database Design**:
+
+     ```sql
+     -- Use UUIDs for primary keys
+     CREATE TABLE profiles (
+       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+       user_id UUID REFERENCES auth.users,
+       username TEXT UNIQUE
+     );
+     
+     -- Add timestamps
+     CREATE TABLE posts (
+       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+       updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+     );
+     ```
+
+   - **Security**:
+
+     ```sql
+     -- Always use RLS
+     ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+     
+     -- Create policies
+     CREATE POLICY "Public profiles are viewable by everyone"
+     ON profiles FOR SELECT
+     USING (is_public = true);
+     ```
+
+Key Concepts to Remember:
+
+1. Database Paradigm:
+
+   - Supabase uses PostgreSQL (relational)
+
+   - Structured data with predefined schemas
+
+   - Strong relationships between tables
+
+2. Authentication:
+
+   - Built-in auth system
+
+   - Multiple providers (email, social)
+
+   - JWT-based sessions
+
+3. Security:
+
+   - Row Level Security (RLS)
+
+   - Policies for access control
+
+   - Database roles and permissions
+
+4. Real-time:
+
+   - Built-in real-time subscriptions
+
+   - Channel-based broadcasts
+
+   - Filtered real-time updates

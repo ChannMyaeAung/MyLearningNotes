@@ -151,22 +151,25 @@ By splitting the pathname and removing the last segment, we can navigate back to
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { MdSearch } from "react-icons/md";
+import { useDebouncedCallback } from "use-debounce";
 
 export default function Search({ placeholder }: { placeholder: string }) {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const pathname = usePathname();
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = useDebounceCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const params = new URLSearchParams(searchParams);
 
     if (e.target.value) {
+        
+      // `e.target.value.length > 2 && params.set("q", e.target.value)` to mitigate heavy computation we will search only if the characters is above 2.
       params.set("q", e.target.value);
     } else {
       params.delete("q");
     }
     replace(`${pathname}?${params}`);
-  };
+  }, 500);
 
   return (
     <div className="flex items-center gap-2 p-2 bg-transparent rounded-lg w-max">

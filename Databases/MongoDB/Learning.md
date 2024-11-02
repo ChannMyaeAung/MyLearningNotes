@@ -1542,3 +1542,95 @@ teachers
      ```
 
      
+     
+     **Example `data.ts` file for searching and creating pagination.**
+     
+     ```ts
+     import { User } from "./models";
+     import { connectToDB } from "./utils";
+     
+     interface UsersProps {
+       q: string;
+       page: number;
+     }
+     
+     export const fetchUsers = async ({ q, page }: UsersProps) => {
+       // Create a case-insensitive list of users
+       // this regex will match any variation of the q, let's say it is "John", it will match any such as "john", "JOHN", "JoHn".
+       const regex = new RegExp(q, "i");
+     
+       const ITEM_PER_PAGE = 2;
+     
+       try {
+         connectToDB();
+         // $regex tells MongoDB that the value is a regExp. 
+         // Limit & skip to create pagination.
+         const users = await User.find({ username: { $regex: regex } })
+           .limit(ITEM_PER_PAGE)
+           .skip(ITEM_PER_PAGE * (page - 1)); // Skips the docs of the previous pages
+         return users;
+       } catch (err) {
+         console.log(err);
+         throw new Error("Failed to fetch users!");
+       }
+     };
+     
+     ```
+     
+     The `limit()` and `skip()` methods in MongoDB are used for pagination, allowing us to control the number of documents returned and to skip a certain number of documents in the result set.
+     
+     ### Explanation of `limit()` and  `skip()`
+     
+     1. **`limit()` Method**:
+        - **Purpose**: Restricts the number of documents returned by the query.
+        - **Usage**: `limit(n)` where `n` is the maximum number of documents to return.
+        - **Example**: `limit(2)` will return at most 2 documents.
+     2. **`skip()` Method**:
+        - **Purpose**: Skips a specified number of documents in the result set.
+        - **Usage**: `skip(n)` where `n` is the number of documents to skip.
+        - **Example**: `skip(2)` will skip the first 2 documents and return the rest.
+     
+     ### How They Work Together for Pagination
+     
+     In the context of pagination, `limit()` and  `skip()` are used together to fetch a specific "page" of results.
+     
+     - **ITEM_PER_PAGE**: The number of items to display per page.
+     - **page**: The current page number.
+     
+     ### Formula for Pagination
+     
+     - **`limit(ITEM_PER_PAGE)`**: Ensures that only [ITEM_PER_PAGE](vscode-file://vscode-app/c:/Users/User/AppData/Local/Programs/Microsoft VS Code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html) documents are returned.
+     - **`skip(ITEM_PER_PAGE \* (page - 1))`**: Skips the documents of the previous pages.
+     
+     ### Example in [data.ts](vscode-file://vscode-app/c:/Users/User/AppData/Local/Programs/Microsoft VS Code/resources/app/out/vs/code/electron-sandbox/workbench/workbench.html)
+     
+     Given the following code:
+     
+     ```ts
+     const ITEM_PER_PAGE = 2;
+     
+     const users = await User.find({ username: { $regex: regex } }).limit(ITEM_PER_PAGE).skip(ITEM_PER_PAGE * (page - 1));
+     ```
+     
+     - **`ITEM_PER_PAGE = 2`**: We want to display 2 users per page.
+     - **`page`**: The current page number.
+     
+     #### How It Works:
+     
+     1. **First Page (`page = 1`)**:
+        - **`skip(ITEM_PER_PAGE * (1 - 1))`**: `skip(0)` (skips 0 documents).
+        - **`limit(2)`**: Returns the first 2 documents.
+     2. **Second Page (`page = 2`)**:
+        - **`skip(ITEM_PER_PAGE * (2 - 1))`**: `skip(2)` (skips the first 2 documents).
+        - **`limit(2)`**: Returns the next 2 documents after the first 2.
+     3. **Third Page (`page = 3`)**:
+        - **`skip(ITEM_PER_PAGE * (3 - 1))`**: `skip(4)` (skips the first 4 documents).
+        - **`limit(2)`**: Returns the next 2 documents after the first 4.
+     
+     ### Summary
+     
+     - **`limit()`**: Controls the number of documents returned.
+     - **`skip()`**: Skips a specified number of documents.
+     - **Together**: They enable pagination by returning a specific subset of documents based on the current page.
+     
+     This approach ensures that we can efficiently paginate through a large dataset by fetching only the necessary documents for each page.

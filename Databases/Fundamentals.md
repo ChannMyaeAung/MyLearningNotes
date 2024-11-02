@@ -133,3 +133,56 @@ Queries are written in a **query language**, depending on the type of database w
 - **Query** = How we request or manipulate data in the database.
 
 Understanding both is essential to working with databases, whether it's designing data structures or interacting with them to build applications.
+
+
+
+## **Core Database Fundamentals**:
+
+- **Database**: An organized collection of structured data stored electronically.
+- **Tables**: Structures within a database that store data in rows and columns.
+- **SQL (Structured Query Language)**: A standard language for accessing and manipulating relational databases.
+- **CRUD Operations**: The basic operations—Create, Read, Update, Delete—for managing data.
+- **Relationships**: Associations between tables defined by foreign keys.
+- **Joins**: Methods to combine rows from two or more tables based on related columns.
+- **Indexes**: Data structures that improve the speed of data retrieval operations.
+- **Transactions**: Sequences of database operations that are treated as a single unit.
+
+## Core Database Concepts
+
+1. **Relational vs Non-Relational Databases:**
+
+   ```
+   MongoDB (Non-Relational)         PostgreSQL/Supabase (Relational)
+   -------------------------        -----------------------------
+   Collections                      Tables
+   Documents                        Rows
+   Fields                          Columns
+   Nested Documents                Foreign Keys & Joins
+   Flexible Schema                 Strict Schema
+   ```
+
+2. **Key Database Concepts:**
+
+   - **ACID Properties**:
+
+     - Atomicity: Transactions are all-or-nothing
+
+     - Consistency: Data remains valid after transactions
+
+     - Isolation: Transactions don't interfere
+
+     - Durability: Completed transactions are permanent.
+
+   - **Relations & Keys**:
+
+     ```sql
+     -- Example of related tables
+     users (id, name, email)
+     posts (id, user_id, content)  -- user_id is a foreign key
+     ```
+
+   - **Normalization**: Organizing data to reduce redundancy
+
+     - First Normal Form (1NF): No repeating groups
+     - Second Normal Form (2NF): No partial dependencies
+     - Third Normal Form (3NF): No transitive dependencies
