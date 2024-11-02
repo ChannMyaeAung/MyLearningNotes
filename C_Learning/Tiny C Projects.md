@@ -3906,6 +3906,8 @@ void scramble(char p[]){
 
     // calculates the buffer size
     const int size = UPPER+LOWER+NUM+SYM+1;
+    
+    // key[] to determine which characters need to be randomized.
     char key[size];
     int x, r;
 
@@ -3920,11 +3922,15 @@ void scramble(char p[]){
         // Generate a random value, 0 thru the buffer size 
         r = rand() % (size - 1);
 
-        // If the random value at element r is a null character
+        // Check if position is empty
+        // If the random value at element r is a null character, meaning it's unassigned
         if(!key[r]){
 
             // it copies the original character to its new, random position.
+            // places the characters from p[x] into the random position key[r].
             key[r] = p[x];
+            
+            // Moves to the next character
             x++;
         }
     }
@@ -3966,9 +3972,10 @@ int main()
     // Necessary storage for the password, plus one for the null character
     char password[UPPER+LOWER+NUM+SYM+1];
     int x;
-
+	
+    // Seeds the randomizer
     srand((unsigned)time(NULL));
-
+	
     x = 0;
     while(x < UPPER){
         password[x++] = uppercase();
@@ -3989,5 +3996,301 @@ int main()
     return 0;
 }
 
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Yrhxsdb1-$
+chan@CMA:~/C_Programming/test$ ./final
+Jkjqpxv5!*
+```
+
+##### Explanation
+
+- The program's output is unchanged, but this incremental step stores the password.
+
+- With the password stored in a buffer, it can be passed to a new function, `scramble()` which randomizes the characters in the buffer.
+
+  - **Purpose**: The function shuffles the characters in the input array `p[]` so that they appear in random order.
+  - Mechanism:
+    - Uses a temporary array `key[]` to store characters at random positions.
+    - Random indices are generated using `rand() % (size - 1)`.
+    - The function ensures that each character is placed in a unique position by checking if `key[r]` is empty.
+  - **Result**: After the function executes, `p[]` contains the same characters as before but in a randomized order.
+
+  ### Example
+
+  Suppose `p[]` contains the characters: `{'A', 'b', '3', '@', '\0'}`.
+
+  1. **Before Scrambling**:
+
+     ```
+     Index: 0 1 2 3 4
+     p[]     : A b 3 @ \0
+     ```
+
+  2. **Scrambling Process**:
+
+     - Randomly assigns each character to a position in `key[]`.
+     - For example:
+       - `key[2] = 'A'`
+       - `key[0] = 'b'`
+       - `key[3] = '3'`
+       - `key[1] = '@'`
+
+  3. **After Scrambling**:
+
+     ```
+     Index: 0 1 2 3 4
+     
+     key[]: b @ A 3 \0
+     ```
+
+  4. **Copy Back to `p[]`**:
+
+     - `p[]` now contains: `{'b', '@', 'A', '3', '\0'}`.
+
+  ##### Important Notes
+
+  - **Randomness**: The function relies on the `rand()` function to generate random indices. Ensure that the random number generator is properly seeded using `srand()` in your `main()` function.
+  - **Null Terminator**: The `size` calculation includes an extra character for the null terminator `'\0'`, which signifies the end of the string.
+  - **No Repeats**: By checking if `key[r]` is empty before assigning, the function prevents overwriting characters and ensures all positions are filled exactly once.
+
+  Now if we add our scramble() function to our main function just before the printf() statement:
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <strings.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <time.h>
+#include <signal.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <pthread.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include "hello.h"
+
+int main()
+{
+    // Necessary storage for the password, plus one for the null character
+    char password[UPPER + LOWER + NUM + SYM + 1];
+    int x;
+
+    srand((unsigned)time(NULL));
+
+    x = 0;
+    while (x < UPPER)
+    {
+        password[x++] = uppercase();
+    }
+    while (x < UPPER + LOWER)
+    {
+        password[x++] = lowercase();
+    }
+    while (x < UPPER + LOWER + NUM)
+    {
+        password[x++] = numbers();
+    }
+    while (x < UPPER + LOWER + NUM + SYM)
+    {
+        password[x++] = symbols();
+    }
+
+    password[x] = '\0';
+
+    scramble(password);
+
+    printf("%s\n", password);
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+g_fiu$wCo9
+chan@CMA:~/C_Programming/test$ ./final
+3*Wxievkg%
+```
+
+Now it is blessedly randomized.
+
+#### Generating random words, Mad Libs style
+
+- To build a random word password generator, we need a routine that spits out random words.
+- If they're to be legitimate words, we most likely need some type of list from which to extract the words.
+- Writing a word-generating function is a good approach, plus it gives us an opportunity to create a list of words we like.
+
+`hello.h`
+
+```C
+const char *add_word(void);
+```
+
+`hello.c`
+
+```C
+#include <stdlib.h>
+#include "hello.h"
+
+const char *add_word(void){
+    const char *vocabulary[] = {
+        "orange", "grape", "apple", "banana",
+        "coffee", "tea", "juice", "beverage",
+        "happy", "grumpy", "bashful", "sleepy"};
+	
+    int r;
+    
+    // Generate a random value, zero thru the number of elements in the array (minus one)
+    r = rand() % (sizeof(vocabulary) / sizeof(char *));
+    
+    // Returns the random element - the word
+    return vocabulary[r];
+}
+```
+
+`main.c`
+
+```C
+// This macro makes the for loop more readable in the main() function
+#define repeat(a) for(int x = 0; x < a; x++)
+
+int main(){
+    srand((unsigned)time(NULL));
+    
+    // Outputs three random words
+    repeat(3){
+        printf("%s ", add_word());
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+sleepy apple sleepy 
+chan@CMA:~/C_Programming/test$ ./final
+grumpy orange sleepy 
+```
+
+
+
+#### Mad Libs Style
+
+Mad Libs style is a fun word game format where players fill in blanks with specific types of words (like nouns, adjectives, or verbs) to complete a story without knowing the context. Once all the blanks are filled in, the story is read back, often resulting in funny or absurd sentences because the chosen words rarely fit the narrative in a conventional way.
+
+Here’s how it works:
+
+1. A template story is created with blanks labeled by word types, like **[noun]**, **[adjective]**, or **[verb]**.
+2. Players are prompted to fill in each blank with a word matching the specified type, without seeing the full story.
+3. After all the blanks are filled, the complete story is revealed, often resulting in hilarious or nonsensical outcomes.
+
+**Example:**
+
+Template:
+
+> "The [adjective] cat jumped over the [noun] and started to [verb] loudly."
+
+Filled in:
+
+> "The *spiky* cat jumped over the *pineapple* and started to *dance* loudly."
+
+Mad Libs is commonly used as a fun party activity, educational tool, or writing exercise to spark creativity and encourage understanding of parts of speech.
+
+
+
+The first step in coding a Mad Libs program is crafting several functions along the lines of `add_word()` . 
+
+- We must write one function for each word category as found in a Mad Libs: `add_noun()`, `add_verb()`, and `add_adjective()`.
+- Each function is populated with its own `vocabulary[]` array, packed with the corresponding word types: nouns, verbs and adjectives.
+- The `main()` function calls each function as required to fill in the blanks for a Mad Libs-like sentence.
+
+`hello.h`
+
+```C
+const char *add_noun(void);
+const char *add_verb(void);
+const char *add_adjective(void);
+```
+
+
+
+`hello.c`
+
+```C
+#include <stdlib.h>
+#include "hello.h"
+
+const char *add_noun(void)
+{
+    const char *vocabulary[] = {
+        "couch", "dog", "tree", "eyeball",
+        "banana", "necklace", "house", "car",
+        "computer", "mountain", "cup", "hair"};
+    int r;
+
+    // Generates a random value, zero thru the number of elements in the array (minus one)
+    r = rand() % (sizeof(vocabulary) / sizeof(char *));
+
+    // Returns the random element - the word
+    return vocabulary[r];
+}
+
+const char *add_verb(void)
+{
+    const char *vocabulary[] = {
+        "run", "eat", "burp", "sneeze",
+        "cut", "yodel", "cook", "slice"};
+    int r;
+
+    r = rand() % (sizeof(vocabulary) / sizeof(char *));
+    return vocabulary[r];
+}
+const char *add_adjective(void)
+{
+    const char *vocabulary[] = {
+        "loud", "big", "soft", "crunchy",
+        "smelly", "great", "blue", "tiny",
+        "ripe", "hairy"};
+    int r;
+
+    r = rand() % (sizeof(vocabulary) / sizeof(char *));
+
+    return vocabulary[r];
+}
+```
+
+
+
+`main.c`
+
+```C
+int main(){
+    srand((unsigned) time(NULL));
+    
+    printf("Will you please take the %s %s ", add_adjective(), add_noun());
+    printf("and %s the %s?\n", add_verb(), add_noun());
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Will you please take the tiny computer and cook and couch?
+
+chan@CMA:~/C_Programming/test$ ./final
+Will you please take the tiny mountain and slice and house?
 ```
 
