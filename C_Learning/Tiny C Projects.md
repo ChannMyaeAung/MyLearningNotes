@@ -4294,3 +4294,260 @@ chan@CMA:~/C_Programming/test$ ./final
 Will you please take the tiny mountain and slice and house?
 ```
 
+
+
+One way to add a richer variety of words to the various functions is to take the code a step further and read words from a vocabulary text file.
+
+`nouns.txt`
+
+```
+couch
+dog
+tree
+eyeball
+banana
+necklace
+house
+car
+computer
+mountain
+cup
+hair
+girl
+teeth
+flagpole
+table
+mummy
+motorcycle
+log
+Godzilla
+```
+
+`adjectives.txt`
+
+```
+loud
+big
+soft
+crunchy
+smelly
+great
+blue
+tiny
+ripe
+hairy
+pretty
+ugly
+tall
+short
+fat
+skinny
+great
+busy
+slow
+sexy
+hungry
+rich
+poor
+```
+
+`verbs.txt`
+
+```
+run
+eat
+burp
+sneeze
+cut
+yodel
+cook
+slice
+pinch
+torture
+beg
+cough
+laugh
+fly
+climb
+kick
+yell
+punch
+fight
+sit
+play
+```
+
+- These three separate files will be scanned for random words.
+
+`hello.h`
+
+```C
+enum{
+    BSIZE = 32,
+};
+
+struct term{
+    char filename[16];  // A string representing the filename to open
+    
+    FILE *fp;  // A FILE pointer referencing the open file listed in the filename member
+    
+    int items;  // The total number of words extracted from the file
+    
+    char *list_base;  // A block of memory containing pointers referencing each word extracted from the file
+}
+
+// arg passed as a pointer to allow the function to modify the struct's members and have the updated data retained.
+void build_vocabulary(struct term *t);
+
+// The function doesn't require a pointer as an arg because it doesn't modify the struct's content
+char *add_word(struct term t);
+```
+
+- If we don't pass `struct term *t` pointer as an argument to the function `build_vocabulary`, any changes are abandoned when the function terminates.
+- Because a pointer is passed, structure pointer notation `->` is used within the function.
+
+
+
+`hello.c`
+
+**Purpose**: Reads words from a file and stores them in the `list_base` array of the `struct term`.
+
+**Process** of `build_vocabulary(struct term *t)`:
+
+- **Opening the File**:
+  - Attempts to open the file specified by `t->filename`.
+  - If the file cannot be opened, it prints an error message and exits.
+- **Initializing the List**:
+  - Allocates initial memory for `t->list_base` to hold pointers to strings (words).
+  - Checks if the memory allocation was successful.
+- **Reading Words**:
+  - Uses a loop to read each line from the file using `fgets`.
+  - Allocates memory for each word and copies it into the allocated space.
+  - Removes the newline character at the end of each word. This step is required to ensure that the word returned doesn't contain a newline.
+  - Stores the pointer to the word in `t->list_base` and increments `t->items`.
+  - Confirms that  the `t->list_base` buffer isn't full. If the list becomes full, it reallocates more memory to accommodate additional words.
+- **Closing the File**:
+  - After all words are read, it closes the file.
+
+```C
+void build_vocabulary(struct term *t){
+    char buffer[BSIZE]; // Buffer to store each line from the file
+    char *r, *entry;
+    
+    t->fp = fopen(t->filename, "r");
+    if(t->fp == NULL){
+        fprintf(stderr, "Unable to open file %s\n", t->filename);
+        exit(1);
+    }
+    
+    // Allocate initial memory for the list of words
+    t->list_base = malloc(sizeof(char *) * 100);
+    if(t->list_base == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    t->items = 0;
+    
+    // Read words from the file until the end is reached
+    while(!feof(t->fp)){
+        r = fgets(buffer, BSIZE, t->fp);
+        if(r == NULL){
+            break;
+        }
+        
+        // Allocate memory for the word.
+        entry = malloc(sizeof(char) * strlen(buffer) + 1);
+        if(entry == NULL){
+            fprintf(stderr, "Unable to allocate memory\n");
+            exit(1);
+        }
+        
+        // Copy the word from the buffer into the allocated space "entry".
+        strcpy(entry, buffer);
+        r = entry;
+        
+        // Remove the newline character at the end of the word
+        while(*r){
+            if(*r == '\n'){
+                *r = '\0';
+                break;
+            }
+            r++;
+        }
+        
+        // Add the word to the list
+        *(t->list_base + t->items) = entry;
+        // increment the word count
+        t->items++;
+        
+        // If the list reaches its current capacity, reallocate more memory
+        if(t->items % 100 == 0){
+            t->list_base = realloc(t->list_base, sizeof(char *)*(t->items + 100));
+            if(t->list_base == NULL){
+                fprintf(stderr, "Unable to allocate memory\n");
+                exit(1);
+            }
+        }
+    }
+    fclose(t->fp);
+}
+
+/* Purpose: Select a random word from the vocabulary stored in t.list_base */
+char *add_word(struct term t){
+    int word;
+    
+    // Generates a random index within the range of 0 to t.items - 1
+    word = rand() % t.items;
+    return *(t.list_base + word); // Returns the word at that index from t.list_base
+}
+```
+
+- At the end of the function, the `items` member of the struct (`t.items`) contains **a count of all the words read from the file**.
+- The `list_base` member contains **the addresses for each string stored in memory.**
+
+
+
+`main.c`
+
+```C
+int main(){
+    struct term noun = {"nouns.txt", NULL, 0, NULL};
+    struct term verb = {"verbs.txt", NULL, 0, NULL};
+    struct term adjectives = {"adjectives.txt", NULL, 0, NULL};
+    
+    // Build vocabularies by reading words from files
+    build_vocabulary(&noun);
+    build_vocabulary(&verb);
+    build_vocabulary(&adjectives);
+    
+    srand((unsigned)time(NULL));
+    
+    printf("Will you please take the %s %s ", add_word(adjective), add_word(noun));
+    
+    printf("and %s the %s?\n", add_word(verb), add_word(noun));
+    
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Will you please take the hungry log and fight the Godzilla?
+
+chan@CMA:~/C_Programming/test$ ./final
+Will you please take the blue table and cough the mummy?
+
+chan@CMA:~/C_Programming/test$ ./final
+Will you please take the pretty necklace and sit the tree?
+
+```
+
+
+
+### Building a random word password generator
+
