@@ -4551,3 +4551,314 @@ Will you please take the pretty necklace and sit the tree?
 
 ### Building a random word password generator
 
+- We can craft two different types of random word password programs based on the two versions of the Mad Libs programs.
+- The first program uses arrays to store a series of random words. 
+- For more variety, however, we can use the second code to take advantage of files that store our favorite password words.
+
+
+
+`hello.h`
+
+```C
+char *number(void);
+char *symbol(void);
+char *add_word(void);
+```
+
+`hello.c`
+
+```C
+char *number(void){
+    // The static array's contents are retained when the function terminates
+    static char n[2];
+    n[1] = rand() % 10 + '0'; // Generate a random character, 0 thru 9, storing it as the first element of array n[]
+    
+    n[1] = '\0';
+    return n;
+}
+
+char *symbol(void){
+    char sym[8] = "!@#$%*_-";
+    static char s[2];
+    
+    s[0] = sym[rand() % 8];
+    s[1] = '\0';
+    
+    return s;
+}
+char *add_word(void){
+    char *vocabulary[] = {
+        "Orange", "Grape", "Apple", "Banana", "coffee", "tea", "juice", "beverage",
+        "happY", "grumpY", "bashfuL", "sleepY"};
+	int r;
+    r = rand() % 12;
+    return vocabulary[r];
+}
+```
+
+- The purpose of declaring variables as `static` here is to ensure that the arrays `n` and `s` persist after the functions return.
+- This allows us to safely return pointers to these arrays without causing undefined behavior.
+- In C, when we declare a variable inside a function as `static`, it has the following properties:
+  - **Static Storage Duration**: The variable is allocated when the program starts and remains in memory until the program exits.
+  - **Local Scope**: The variable is only accessible within the function where it is declared.
+  - **Retains Value Between Calls**: The variable retains its value between multiple calls to the function.
+
+`main.c`
+
+```C
+int main(){
+    char password[32];
+    
+    srand((unsigned)time(NULL));
+    
+    // Initialize the string so that the strcpy() doesn't puke
+    password[0] = '\0';
+    
+    // Copies the first word, appends a number, appends the second word, appends a symbol, appends the final word
+    strcpy(password, add_word());
+    strcat(password, number());
+    strcat(password, add_word());
+    strcat(password, symbol());
+    strcat(password, add_word());
+    
+    printf("%s\n", password);
+    return 0;
+}
+```
+
+- It's important to initialize the `password` array as an empty with with the null terminator `\0`, before using `strcat` as `strcat` expects a properly null-terminated string as its destination.
+- `strcpy(destination, source)` : Copies the `source` string into the `destination` array, including the null terminator.
+- `strcat(destination, source)` : Appends the source string to the end of the `destination` string, starting from the null terminator, and **adds a new null terminator at the end.**
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+happY4sleepY_Orange
+
+chan@CMA:~/C_Programming/test$ ./final
+Orange3sleepY%bashfuL
+
+chan@CMA:~/C_Programming/test$ ./final
+grumpY0bashfuL$Banana
+```
+
+
+
+- The  above program can be enhanced by expanding the `vocabulary[]` array in the `add_word()` function.
+- Or, devise a system where we have files containing words we like to use in a password like the way the second Mad Libs program works.
+
+`hello.h`
+
+```C
+enum{
+    BSIZE = 32,
+};
+
+struct term{
+    char filename[16];
+    FILE *fp;
+    int items;
+    char **list_base;
+}
+
+void build_vocabulary(struct term *t);
+char *number(void);
+char *symbol(void);
+char *add_word(void);
+```
+
+- `t->list_base` is a dynamically allocated array of pointers to `char`, effectively an array of strings.
+- `t->items` is an integer tracking the number of words added to the list.
+
+`hello.c`
+
+```C
+void build_vocabulary(struct term *t){
+    char buffer[BSIZE];
+    char *r, *entry;
+    
+    t->fp = fopen(t->filename, "r");
+    if(t->fp == NULL){
+        fprintf(stderr, "Unable to open file %s\n", t->filename);
+        exit(1);
+    }
+    
+    t->list_base = malloc(sizeof(char *) * 100);
+    
+    if(t->list_base == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    t->items = 0;
+    while(!feof(!t->fp)){
+        r = fgets(buffer, BSIZE, t->fp);
+        if(r == NULL){
+            break;
+        }
+        
+        entry = malloc(sizeof(char *) * strlen(buffer) + 1);
+        if(entry == NULL){
+            fprintf(stderr, "Unable to allocate memory\n");
+            exit(1);
+        }
+        
+        strcpy(entry, buffer);
+        r = entry;
+        while(*r){
+            if(*r == '\n'){
+                *r = '\0';
+                break;
+            }
+            r++;
+        }
+        
+        // Adds a new word `entry` to the t->list_base at the current index t->items
+        *(t->list_base + t-> items) = entry;
+        t->items++;
+        if(t->items % 100 == 0){
+            t->list_base = realloc(t->list_base, sizeof(char *) * (t->items + 100));
+            if(t->list_base == NULL){
+                fprintf(stderr, "Unable to allocate memory\n");
+                exit(1);
+            }
+        }
+    }
+    fclose(t->fp);
+}
+
+char *number(void){
+    static char n[2];
+    n[0] = rand() % 10 + '0';
+    n[1] = '\0';
+    
+    return n;
+}
+
+char *symbol(void){
+    char sym[8] = "!@#$%*_-";
+    static char s[2];
+    
+    s[0] = sym[rand() % 8];
+    s[1] = '\0';
+    
+    return s;
+}
+
+char *add_word(void){
+    char *vocabulary[] = {
+        "Orange", "Grape", "Apple", "Banana", "coffee", "tea", "juice", "beverage",
+        "happY", "grumpY", "bashfuL", "sleepY"};
+    int r;
+    r = rand() % 12;
+    return vocabulary[r];
+
+}
+
+// Ensure that the passed string has at lease one uppercase letter
+void check_caps(char *string){
+    int found, r, len;
+    char *s;
+    
+    // initial scan
+    found = 0;
+    s = string;
+    while(*s){
+        if(isupper(*s)){
+            found = 1;
+            break;
+        }
+        s++;
+    }
+    
+    // Exit if the string has a capital letter
+    if(found){
+        return;
+    }
+    
+    // Make a random letter uppercase
+    len = strlen(string);
+    s = string;
+    while(1){
+        r = rand() % len;
+        if(islower(*(s+r))){
+            *(s+r) = toupper(*(s+r));
+            break;
+        }
+    }
+}
+```
+
+- `t->list_base + t->items` in `build_vocabulary()`:
+  - `t->list_base` is a pointer to the first element of the array (`char **`).
+  - By adding `t->items`, we move the pointer ahead by `t->items` positions.
+  - This points to the next available slot in the array where we can store the new word.
+- **`*(t->list_base + t->items)`**:
+  - The `*` operator dereferences the pointer to access the value at that position, which is of type `char *`.
+  - This represents the slot in the array where we will store the pointer to the new word (`entry`).
+- **`= entry;`**:
+  - `entry` is a pointer to a `char` (a string), which we've just read from the file and copied into dynamically allocated memory.
+  - We assign `entry` to the dereferenced slot, effectively storing the new word in our vocabulary list.
+
+**Alternative Notation**
+
+The line can also be written using array indexing for clarity:
+
+```C
+t->list_base[t->items] = entry;
+```
+
+- This notation shows that we are placing `entry` into the `list_base` array at index `t->items`.
+
+`main.c`
+
+```C
+int main()
+{
+
+    char password[32];
+    struct term nouns = {"nouns.txt", NULL, 0, NULL};
+    struct term verbs = {"verbs.txt", NULL, 0, NULL};
+    struct term adjectives = {"adjectives.txt", NULL, 0, NULL};
+
+    build_vocabulary(&nouns);
+    build_vocabulary(&verbs);
+    build_vocabulary(&adjectives);
+
+    srand((unsigned)time(NULL));
+
+    password[0] = '\0';
+
+    strcpy(password, add_word());
+    strcat(password, number());
+    strcat(password, add_word());
+    strcat(password, symbol());
+    strcat(password, add_word());
+
+    printf("%s\n", password);
+
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Orange2Apple$beverage
+chan@CMA:~/C_Programming/test$ ./final
+coffee5Apple!beverage
+chan@CMA:~/C_Programming/test$ ./final
+tea6happY!grumpY
+
+```
+
+---
+
+
+
+## Chapter 7 - String utilities
+
