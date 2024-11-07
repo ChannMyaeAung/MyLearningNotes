@@ -4862,3 +4862,290 @@ tea6happY!grumpY
 
 ## Chapter 7 - String utilities
 
+### Understanding the string
+
+- It's important to separate what we believe to be a string from a character array.
+- Though all strings are character arrays, not all character arrays are strings.
+- For example:
+
+```C
+char a[3] = {'c', 'a', 't'};
+```
+
+- This statement creates a char array `a[]`.  It contains three characters: c-a-t. This array is not a string.
+- The following char array, however, is a string:
+
+```C
+char b[4] = {'c', 'a', 't', '\0'};
+```
+
+- Array `b[]` contains four characters: c-a-t plus null character.
+- This terminating null character makes the array a string.
+- It can be processed by any C language string function or output as a string.
+
+
+
+To save us time, the C compiler lets us craft strings by enclosing characters in double quotes:
+
+```C
+char c[4] = "cat";
+```
+
+- Array `c[]` is a string. It consists of four characters, c-a-t plus the null character added automatically by the compiler.
+
+
+
+But if we declare  a string like this:
+
+```C
+char d[3] = "cat";
+```
+
+- The compiler allocates three characters for c-a-t, but none for the null character.
+- This declaration might be flagged by the compiler or it might not.
+- Either way, the string is malformed, and minus the terminating character, manipulating or outputting the string yields unpredictable and potentially wacky results.
+
+
+
+Because the compiler automatically allocates storage for a string, the following declaration format is used most often:
+
+```C
+char e[] = "cat";
+```
+
+- With empty brackets, the compiler calculates the string's storage and assigns the proper number of elements to the array, including the null character.
+
+
+
+#### String Considerations
+
+- When allocating string storage, always add one for the null character. Strings are allocated directly as a char array declaration or via a memory-allocation function such as `malloc()`.
+- When using string storage, the final character in storage must be the null character, whether or not the buffer is full.
+- The `fgets()` function, often used to read string input, automatically accounts for the null character in its second argument, `size`.
+  - So, if we use the value 32 as the `size` argument in an `fgets()` statement, the function stores up to 31 characters before it automatically adds the null character to terminate the input string.
+- Without the terminating null character, string functions continuing processing bytes until the next random null character is encountered.
+  - The effect could be garbage output or worse a segmentation fault.
+- One problem with forgetting the null is that often memory is already packed with null characters.
+  - A buffer can overflow, but the random null characters already in memory prevent output from looking bad and from our mistake being detected.
+  - Never rely upon null characters sitting in memory.
+
+
+
+### Measuring a string
+
+- The `strlen()` counts the number of characters in the string ,with escaped characters counted as a single character.
+
+  - For example, the newline `\n` is a single character, though it occupies two character positions.
+  - The tab `\t` is also a single character, though the terminal may translate it into multiple spaces when output.
+
+- The `strlen()` can be used elsewhere in the code to manipulate all characters in the string without violating the terminating null character or double-counting escaped characters.
+
+  - ```C
+    #include <stdio.h>
+    #include <string.h>
+    
+    int main() {
+        char str[] = "Hello, World!";
+        size_t len = strlen(str);
+    
+        printf("Length of the string: %zu\n", len);
+    
+        // Manipulate characters in the string
+        for (size_t i = 0; i < len; i++) {
+            if (str[i] == 'o') {
+                str[i] = '0';
+            }
+        }
+    
+        printf("Modified string: %s\n", str);
+    
+        return 0;
+    }
+    ```
+
+- If we want to include the null character in the string's size, we can use the `sizeof` operator, but this trick only works on statically allocated strings (otherwise, the pointer size is returned).
+
+  - The `sizeof` operator returns the size of the array, including the terminating null character. This works for statically allocated strings. For dynamically allocated strings, `sizeof` returns the size of the pointer.
+
+  - ```C
+    #include <stdio.h>
+    
+    int main() {
+        char static_str[] = "Hello, World!";
+        char *dynamic_str = "Hello, World!";
+    
+        // Size of statically allocated string (includes null character)
+        size_t static_size = sizeof(static_str);
+    
+        // Size of dynamically allocated string (size of pointer)
+        size_t dynamic_size = sizeof(dynamic_str);
+    
+        printf("Size of static string (including null character): %zu\n", static_size);
+        printf("Size of dynamic string (pointer size): %zu\n", dynamic_size);
+    
+        return 0;
+    }
+    ```
+
+  - ```sh
+    chan@CMA:~/C_Programming/test$ ./final
+    
+    Size of static string (including null character): 14
+    Size of dynamic string (pointer size): 8
+    
+    ```
+
+
+
+In the following code snippets, a comparison is made between values returned by `strlen()` and `sizeof`.
+
+- A string `s[]` is declared which contains 10 characters.
+
+```C
+int main(){
+    char s[] = "0123456789";
+    
+    printf("%s is %lu characters long\n", s, strlen(s));
+    printf("%s occupies %zu bytes of storage\n", s, sizeof(s));
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+0123456789 is 10 characters long
+0123456789 occupies 11 bytes of storage
+```
+
+- The `strlen()` function returns the number of characters in the string.
+- The `sizeof` returns the amount of storage the string occpies - essentially `strlen() + 1` though, if the string is smaller than its allocated buffer size, `sizeof` returns the buffer size and not `strlen() + 1`.
+
+
+
+If we make this change to `s[]` in the code:
+
+```C
+char s[20] = "0123456789";
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+0123456789 is 10 characters long
+0123456789 occupies 20 bytes of storage
+
+```
+
+- Despite the larger buffer size, the null character still sits at element 10 (the 11th character) in the `s[]` array.
+- The remainder of the buffer is considered garbage but is still reported as the string's "size" by the `sizeof` operator.
+
+
+
+In the following code snippet, empty `a[]` and null `b[]` are tested whether the compiler notices the difference between a null string or an empty string.
+
+- The `strcmp()` is used, which returns zero when both strings are identical.
+
+```C
+int main()
+{
+
+    char a[5] = {'\0'};
+    char b[5];
+
+    if (strcmp(a, b) == 0)
+    {
+        puts("Strings the the same");
+    }
+    else
+    {
+        puts("Strings are not the same");
+    }
+
+    // Size according to strlen()
+    printf("Length: a = %lu b = %lu\n", strlen(a), strlen(b));
+
+    // Size according to sizeof
+    printf("Storage: a = %zu b = %zu\n", sizeof(a), sizeof(b));
+
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Strings are not the same
+Length: a = 0 b = 4
+Storage: a = 5 b = 5
+
+```
+
+- There's always a random chance that the garbage in memory for string `b[]` may match up with the contents of string `a[]`. 
+- Therefore, even this output can't truly be trusted.
+- Why does `strlen(b)` return the value 4?
+- It's completely legitimate in C to have a string that contains only the terminating null character: such a string's length is zero.
+- It can be manipulated by all string functions.
+
+
+
+### Returning vs. Modifying directly
+
+- Functions that manipulate strings in C have two ways they can make their changes.
+- The first is to return a modified version of the string.
+- The second is to manipulate the passed string directly.
+
+For example, the `strcat()` function appends one string to another.
+
+```C
+char *strcat(char *dest, const char *src);
+```
+
+- String `src` (source) is appended to the end of string `dest` (destination).
+- The function assumes enough room is available in the `dest` buffer to successfully append the string.
+- Upon success, string `dest` contains both `dest` plus `src`.
+- The function returns a pointer to `dest`. 
+- The `strcat()` function is an example of manipulating a passed string directly.
+
+```C
+char *strappend(char *dest, const char *src){
+    return strcat(dest, src);
+}
+
+int main(){
+     // Array s1[] contains enough storage for both strings
+    char s1[32] = "This is another ";
+    char s2[] = "fine mess!";
+    
+    // Pointer to hold the result of the concatenation
+    char *s3;
+	
+    // Append s2 to s1 and store the result in s3
+    s3 = strappend(s1, s2);
+    printf("%s\n", s3);
+
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+This is another fine mess!
+```
+
+
+
+**Exercise 7.1**
+
+Modify the source code for the above code snippet. Remove the `strcat()` function from the code, replacing it with your own code that sticks the contents of argument `src` to the end of argument `dest`. Do not use the `strcat()` function to accomplish this task! Instead, determine the size of the resulting string and allocate storage for it. The `strappend()` function returns the address of the created string.
+
+
+
+**Solution**
+
+`main.c`
+
+```C
+```
+
