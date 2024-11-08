@@ -483,6 +483,22 @@ These conventions are widely used in C and many other programming languages.
   - `(int)` specifies the type of argument that the function pointed to by `handler` takes, which is a single integer.
 
   Function pointers like `handler` are commonly used in C for callback functions, where you pass the address of a function into another function to be called later. 
+  
+- Changing the 5th bit (counting from 0)  of an ASCII character converts it between uppercase and lowercase.
+
+  - **Explanation:**
+
+    - In ASCII, the uppercase letters 'A' to 'Z' have values from 65 to 90.
+    - The lowercase letters 'a' to 'z' have values from 97 to 122.
+    - The difference between the uppercase and lowercase letters is 32, which corresponds to the 5th bit (0x20 in hexadecimal).
+
+  - **Example:**
+
+    - 'A' (65 in decimal) is `01000001` in binary.
+
+    - 'a' (97 in decimal) is `01100001` in binary.
+
+    - The difference is the 5th bit (0x20).
 
 
 

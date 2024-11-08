@@ -5142,6 +5142,232 @@ Modify the source code for the above code snippet. Remove the `strcat()` functio
 
 
 
+**1st Solution**
+
+`main.c`
+
+```C
+char *strappend(char *dest, const char *src){
+    size_t dest_len = strlen(dest);
+    size_t src = strlen(src);
+    
+    char *result = malloc(sizeof(char *) * (dest_len + src_len + 1));
+    
+    if(result == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    // Copy dest to result
+    strcpy(result, dest);
+    
+    // Copy src to the end of result after dest
+    strcpy(result + dest_len, src);
+    
+    return result;
+}
+
+int main(){
+    char s1[32] = "This is another ";
+    char s2[] = "fine mess!";
+    char *s3;
+    
+    s3 = strappend(s1, s2);
+    printf("%s\n", s3);
+    
+    free(s3);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+This is another fine mess!
+
+```
+
+
+
+**2nd Solution**
+
+```C
+char *strappend(char *dest, char *src){
+    char *s, *index;
+    
+    s = malloc(strlen(dest) + strlen(src) + 1);
+    if(s == NULL){
+        fprintf(stderr, "Memory Allocation Failed!\n");
+        exit(1);
+    }
+    
+    // Pointer to traverse the new string
+    index = s;
+    
+    // Copy dest to the new string
+    while(*dest){  //Loop until \0 
+        *index = *dest;
+        index++;
+        dest++;
+    }
+    
+    // Copy src to the end of the new string
+    while(*src){
+        *index = *src;
+        index++;
+        src++;
+    }
+    
+    // Null-terminate the new string
+    *index = '\0';
+    
+    return s;
+}
+
+int main(){
+    char s1[32] = "This is another ";
+    char s2[] = "fine mess!";
+    char *s3;
+    
+    s3 = strappend(s1, s2);
+    printf("%s\n", s3);
+    
+    free(s3);
+    return 0;
+}
+
+```
+
+**Notes**
+
+- `index = s` is an assignment where `index` is set to point to the same memory location as `s`. 
+  - This allows us to use `index` to traverse and modify the newly allocated memory without losing the original starting address stored in `s`.
+- We return `s` because it holds the address of the newly allocated memory where the concatenated string is stored.
+  - If we were to return `index`, it would point to the end of the string after the copying operations, which is not useful.
+- `*index = *s` would be incorrect in this context because `*index` and `*s` are dereferencing the pointers, meaning they access the values stored at the memory locations pointed to by `index` and `s`.
+  - We want to assign the pointer itself, not the value it points to.
+- Condition `while(*dest)`:
+  - `*dest` dereferences the pointer `dest` to get the character it points to.
+- `*index = *dest`: This line copies the character from the memory location pointed to by `dest` to the memory location pointed to by `index`.
+- **Pointer Arithmetic vs. Dereferencing**
+  1. **Pointer Arithmetic**:
+     - `index++` increments the pointer `index` to point to the next memory location.
+     - `dest++` increments the pointer `dest` to point to the next character in the string.
+  2. **Deferencing and Incrementing**:
+     - `*index++` increments the pointer `index` and then dereferences the new address. This is equivalent to `*(index++)`.
+     - `*dest++` increments the pointer `dest` and dereferences the new address. This is equivalent to `*(dest++)`.
+- **Why Not Use `*index++`** or `*dest++` In this case?
+  - **Correct Usage**: We want to increment the pointers themselves to move to the next character in the string, not the values they point to.
+  - **Clarity**: Using `index++` and `dest++` makes it clear that we are moving the pointers to the next position.
+  - Using `*index++` or `*dest++` would increment the pointers and then dereference the new address which is not what we want in this context.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+This is another fine mess!
+
+```
+
+
+
+### Changing Case
+
+Changing the 5th bit (counting from 0)  of an ASCII character converts it between uppercase and lowercase.
+
+- **Explanation:**
+
+  - In ASCII, the uppercase letters 'A' to 'Z' have values from 65 to 90.
+  - The lowercase letters 'a' to 'z' have values from 97 to 122.
+  - The difference between the uppercase and lowercase letters is 32, which corresponds to the 5th bit (0x20 in hexadecimal).
+
+- **Example:**
+
+  - 'A' (65 in decimal) is `01000001` in binary.
+
+  - 'a' (97 in decimal) is `01100001` in binary.
+
+  - The difference is the 5th bit (0x20).
+
+
+
+```C
+void strupper(char *s){
+    // Loops until *s references the null character
+    while(*s){
+        
+        // Converts only lowercase letters
+        if(*s >= 'a' && *s <= 'z'){
+            // Resets the sixth bit(count from 1) to convert to uppercase
+            *s &= 0xdf;
+        }
+        
+        // Proceed to the next character
+        s++;
+    }
+}
+
+int main(){
+    char string[] = "Random STRING sample 123@#$";
+    printf("Original string: %s\n", string);
+    strupper(string);
+    printf("Uppercase string: %s\n", string);
+    
+    return 0;
+}
+```
+
+- 
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: Random STRING sample 123@#$
+Uppercase string: RANDOM STRING SAMPLE 123@#$
+
+```
+
+**Notes**:
+
+- `0xdf`: The hexadecimal value `0xdf` is `11011111` in binary. Using the bitwise AND operator (`&`), this clears the 5th bit of the character effectively converting it to uppercase.
+- `char *s` in `void strupper(char *s)` is a pointer to a character, which means ***it points to the first character of the string.***
+- `*s` inside the code: This deferences the pointer `s` , giving us the value of the characters it points to.
+
+
+
+Due to the layout of the ASCII table, the following statement also works:
+
+```C
+*s -= 32; 
+```
+
+- Subtracting 32 from each character's ASCII value also converts it to lowercase.
+
+Let's modify our `strupper()` function to create a function that converts characters to lowercase.
+
+```C
+void strlower(char *s){
+    while(*s){
+        if(*s >= 'A' && *s <= 'Z'){
+            *s += 32;
+        }
+        s++;
+    }
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: Random STRING sample 123@#$
+Uppercase string: random string sample 123@#$
+
+```
+
+
+
+**Exercise 7.2**
+
+Write a function, `strcaps()` that capitalizes the first letter of every word in a string. Process the text "This is a sample string" or a similar string that contains several words written in lowercase, including at least one one-letter word. The function modifies the string directly as opposed to generating a new string.
+
+
+
 **Solution**
 
 `main.c`
