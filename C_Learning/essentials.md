@@ -499,6 +499,8 @@ These conventions are widely used in C and many other programming languages.
     - 'a' (97 in decimal) is `01100001` in binary.
 
     - The difference is the 5th bit (0x20).
+  
+- Similarly, adding or subtracting 32 from a character also converts uppercase or lowercase. Adding 32 will convert an uppercase character into a lowercase and Subtracting 32 will convert a lowercase character to an uppercase.
 
 
 

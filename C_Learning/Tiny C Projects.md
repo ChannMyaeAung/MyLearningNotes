@@ -5373,5 +5373,274 @@ Write a function, `strcaps()` that capitalizes the first letter of every word in
 `main.c`
 
 ```C
+void strcaps(char *s){
+    int i = 0;
+    
+    // Capitalize the first letter
+    if(s[0] >= 'a' && s[0] <= 'z'){
+        s[0] -= 32;
+    }
+    
+    // Process the rest of the string
+    while(s[i] != '\0'){
+        // If current character is space and the next character is a letter
+        if(s[i] == ' ' && s[i+1] >= 'a' && s[i+1] <= 'z'){
+            s[i+1] -= 32; // Convert the next character to uppercase
+        }
+        i++;
+    }
+}
+
+int main()
+{
+
+    char string[] = "This is a sample string";
+
+    printf("Original string: %s\n", string);
+    strcaps(string);
+    printf("Uppercase string: %s\n", string);
+    return 0;
+}
 ```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: This is a sample string
+Uppercase string: This Is A Sample String
+```
+
+**Solution by the author**
+
+`main.c`
+
+```C
+void strcaps{
+    // Create TRUE/FALSE constants, 0 and 1
+    enum{FALSE, TRUE};
+    int inword = FALSE;
+    
+    // Loop thru the string until *s == '\0'
+    while(*s){
+        if(isalpha(*s)){
+            // is a word being processed? If no, a new word has started
+            if(!inword){
+                *s = toupper(*s);
+            	inword = TRUE; // currently inside a word
+            }
+        }else{ // non-alphabet char here
+            inword = FALSE; // not in a word
+        }
+        s++; // Continue processing the string
+    }
+}
+
+int main()
+{
+
+    char string[] = "This is a sample string";
+
+    printf("Original string: %s\n", string);
+    strcaps(string);
+    printf("Uppercase string: %s\n", string);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: This is a sample string
+Uppercase string: This Is A Sample String
+```
+
+
+
+### Reversing a string
+
+- The key to changing the order of characters in a string is knowing the string's length - where it starts and where it ends.
+- For the string's start, the string's variable name is used, which holds the base address.
+- The string's ending address isn't stored anywhere; the code must find the string's terminating null character and then use math to calculate the string's size.
+
+![Screenshot from 2024-11-09 15-14-43](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-09 15-14-43.png)
+
+- Figure 7.1 illustrates a string lounging in memory, with both array and pointer notation calling out some of its parts.
+
+- The terminating null character marks the end of the string ,wherever its location may be, measured as offset `n` from the string's start.
+
+- The easiest way to locate the end of a string is to use the `strlen()` function.
+
+  - Add the function's return value to the string's starting location in memory to find the string's end.
+
+- Assume that the `char` pointer `s` references the string's start and that int variable `len` is initialized to zero. 
+
+- If so, this `while` loop locates the string's end where the null character dwells:
+
+  ```C
+  while(*s++){
+      len++;
+  }
+  ```
+
+- After this loop is complete, pointer `*s` references the string's terminating null-character, and the value of `len` is equal to the string's length (minus the null character).
+
+- A more readable version of the loop:
+
+  ```C
+  while(*s != '\0'){
+      len++;
+      s++;
+  }
+  ```
+
+​	
+
+```C
+#include <stdio.h>
+
+int main() {
+    char str[] = "Hello, World!";
+    char *s = str; // Pointer s references the start of the string
+    int len = 0; // Initialize len to zero
+
+    // Loop to count the length of the string
+    while (*s++) {
+        len++;
+    }
+
+    // After the loop, s points to the null character
+    printf("Length of the string: %d\n", len); // Print the length of the string
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Length of the string: 13
+```
+
+
+
+- The stupidest way to find the end of a string is to use the `sizeof` operator.
+- The operator is not dumb, but when used on a `char` pointer argument, `sizeof` returns the number of bytes the pointer (memory address variable) occupies, not the size of the buffer the pointer references.
+- For example, on my computer, a pointer is 8 bytes wide, so no matter what size buffer `*s` refers to, `sizeof(s)` always returns 8.
+
+```C
+#include <stdio.h>
+
+int main() {
+    char str[] = "Hello, World!";
+    char *s = str; // Pointer s references the start of the string
+
+    // Using sizeof on a char pointer
+    printf("Size of pointer s: %zu bytes\n", sizeof(s)); // Print the size of the pointer
+
+    // Using sizeof on the actual array
+    printf("Size of array str: %zu bytes\n", sizeof(str)); // Print the size of the array
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Size of pointer s: 8 bytes
+Size of array str: 14 bytes
+```
+
+**Explanation:**
+
+- `char *s = str;` : The pointer `s` references the start of the string `str`.
+- `sizeof(s)` : When used on a `char` pointer, `sizeof` returns the size of the pointer itself, not the size of the string it points to.
+  - On most systems, this is typically 4 bytes (on a 32-bit system) or 8 bytes (on a 64-bit system).
+- `sizeof(str)`: When used on the actual array `str`, `sizeof` returns the total size of the array, including the null character.
+  - For the string "Hello, World!", this would be 14 bytes (13 characters + 1 null character).
+
+
+
+After obtaining the string's length, the reversing process works backgrounds through the string, copying each character into another buffer, front to back.
+
+- The result is a new string containing the reverse character order of the original.
+
+
+
+`hello.h`
+
+```C
+char *strrev(char *s);
+```
+
+`hello.c`
+
+```C
+char *strrev(char *s){
+    int len, i;
+    char *reversed;
+    
+    len = 0;
+    while(*s){
+        len++;
+        s++;
+    }
+    
+    // Allocate storage for the reversed string
+    // same length as the passed string
+    reversed = malloc(sizeof(char) * len);
+    
+    if(reversed == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    // Back up `s` over the terminating null character; now it points to the last character in the passed string
+    s--;
+    i = 0;
+    
+    // Copies the number of characters in the original string
+    while(len){
+        
+        // Copies the character
+        *(reversed + i) = *s;
+        i++;
+        
+        // Decrement the offset for the original string & back up the pointer s
+        len--;
+        s--;
+    }
+    
+    // caps a newly constructed string with the null character!
+    *(reversed + i) = '\0';
+    
+    return reversed;
+}
+```
+
+- The `strrev()` creates a new string, `reversed`.
+- First, a `while` loop calculates the string's size (argument *s).
+- Second, storage is allocated for the new string based on the original string's size.
+- We don't need to +1 in the `malloc()` to make room for the null character because variable `len` already references the null character's offset.
+- Finally, a `while` loop process string `s` backward as it fills string `reversed` with characters.
+
+`main.c`
+
+```C
+int main()
+{
+    char str[] = "A string dwelling in memory";
+    printf("Before: %s\n", str);
+    printf("After: %s\n", strrev(str));
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Before: A string dwelling in memory
+After: yromem ni gnillewd gnirts A
+```
+
+
+
+### Trimming a string
 
