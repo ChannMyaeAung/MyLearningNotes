@@ -5591,11 +5591,11 @@ char *strrev(char *s){
         exit(1);
     }
     
-    // Back up `s` over the terminating null character; now it points to the last character in the passed string
+    // Move the pointer s back to the last char of the original string from the null character
     s--;
     i = 0;
     
-    // Copies the number of characters in the original string
+    // Copies the number of characters from the original string to the reversed string in reverse order
     while(len){
         
         // Copies the character
@@ -5642,5 +5642,462 @@ After: yromem ni gnillewd gnirts A
 
 
 
+#### Reversing a string (Iterative Method)
+
+- Uses two pointers (start and end)
+- Swaps characters from both ends moving towards the center
+- More space-efficient as it doesn't use the call stack
+- Generally preferred in practice
+
+`main.c`
+
+```C
+void strrev(char *str){
+    int length = strlen(str);
+    int start = 0;
+    int end = length - 1;
+    char temp;
+    
+    // Loop to reverse the string
+    while(start < end){
+        // Swaping characters at start and end indices
+        temp = str[start];
+        str[start] = str[end];
+        str[end] = temp;
+        
+        // Move towards the middle of the string
+        start++;
+        end--;
+    }
+}
+```
+
+**Walkthrough**:
+
+- **Initial State**:
+
+  - `str = "This is a sample string 123@#!"`
+  - `start = 0`, `end = 29`
+  - Characters to swap: `str[0] = 'T'` and `str[29] = '!'`
+
+- **First Swap**:
+
+  - Swap `str[0]` and `str[29]`
+  - `temp = str[0]` (temp = 'T')
+  - `str[0] = str[29]` (str[0] = '!')
+  - `str[29] = temp` (str[29] = 'T')
+  - Increment `start` to `1`, decrement `end` to `28`
+  - `str = "!his is a sample string 123@#T"`
+
+- **Second Swap**:
+
+  - Swap `str[1]` and `str[28]`
+  - `temp = str[1]` (temp = 'h')
+  - `str[1] = str[28]` (str[1] = '#')
+  - `str[28] = temp` (str[28] = 'h')
+  - Increment `start` to `2`, decrement `end` to `27`
+  - `str = "!#is is a sample string 123@hT"`
+
+- ...And so on until start is less than the end.
+
+- **Final State:**
+
+  - `str = "!#@321 gnirts a elpmas a sihT"`
+  - `start = 15`, `end = 14`
+
+  At this point, the `start` index is greater than the `end` index, so the loop terminates. The string has been successfully reversed.
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: This is a sample string 123@#!
+Reversed string: !#@321 gnirts elpmas a si sihT
+
+```
+
+#### Reversing a string (Recursive Method):
+
+- More elegant but uses more memory due to recursive calls
+- Needs start and end indices as parameters
+- Base case is when start >= end
+
+`main.c`
+
+```C
+void strrev_recursive(char *str, int start, int end){
+    char temp;
+    
+    // Base case
+    if(start >= end){
+        return;
+    }
+    
+    // Swap characters
+    temp = str[start];
+    str[start] = str[end];
+    str[end] = temp;
+    
+    // Recursive call for remaining characters
+    strrev_recursive(str, start + 1, end - 1);
+}
+
+int main(){
+    char str[] = "This is a sample string 123@#!";
+    printf("Original string: %s\n", str);
+    strrev_recursive(str, 0, strlen(str) - 1);
+    printf("Reversed string (recursive): %s\n", str);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Original string: This is a sample string 123@#!
+Reversed string (recursive): !#@321 gnirts elpmas a si sihT
+```
+
+
+
+###### Things to Note:
+
+Both methods:
+
+- Modify the string in place
+- Don't create a new string
+- Handle strings of any length
+- Are time complexity O(n/2) which simplifies to O(n).
+
+The iterative method is generally preferred because:
+
+1. It is more efficient in terms of space complexity
+2. It avoids stack overflow for very long strings
+3. It's easier to understand and debug
+
+
+
 ### Trimming a string
+
+**Extracting portions of a string: left, middle and right**
+
+| Left      | Mid      | Right                |
+| --------- | -------- | -------------------- |
+| Slice me, | dice me, | make julienne fries! |
+
+
+
+- Each function requires at least two arguments: 
+  - A string to slice and
+  - A character count.
+- The middle extraction function also requires an offset.
+
+
+
+`left() function`
+
+The following function:
+
+- Extracts `len` characters from the passed string `s`.
+- Storage is allocated for a new string.
+- The `left()` is easier to code because it copies the first `len` characters of the passed string `s` into the target string `buf`.
+- The address of `buf` is returned.
+
+```C
+char *left(char *s, int len){
+    // storage for the new string
+    char *buf;
+    int x;
+    
+    buf = malloc(sizeof(char) * len + 1);
+    if(buf == NULL){
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    
+    // Copy the len characters
+    // *(s+x) = s[x], *(buf+x) = buf[x]
+    for(x = 0; x < len; x++){
+        if(*(s+x) == '\0'){
+            break;
+        }
+        
+        // copy the charactes to buf
+        *(buf+x) = *(s+x);
+    }
+    
+    return buf;
+}
+```
+
+
+
+`right() function`
+
+- Unlike the `left()` function, chopping off the right side of a string requires that the program knows where the string ends.
+- Our code must hunt down that terminating null character.
+- For the `right()` function, we count backward from the null character to lop off the right side of the string.
+- The following function:
+  - Borrows its allocation routine from the `left()` function.
+  - After the buffer is created, the code hunts for the end of the string, moving the pointer `start` to this location.
+  - Then the value of `len` is subtracted from `start` to reposition the pointer to the beginning of the right-end string chunk desired.
+  - Then `len` number of characters are copied into the new string.
+
+```C
+char *right(char *s, int len){
+    char *buf;
+    char *start;
+    int x;
+    
+    buf = (char *)malloc(sizeof(char) * len + 1);
+    if(buf == NULL){
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    
+    // Initialize start to the beginning of the string
+    start = s;
+    
+    // Move start to the end of the string
+    while(*start != '\0'){
+        start++;
+    }
+    
+    // Move start back by 'len' characters
+    start -= len;
+    
+    // Check if start is before the beginning of the string
+    if(start < s){
+        // Exit if len > the length of the string
+        exit(1);
+    }
+    
+    // Copy len characters from start to buf
+    for(x = 0; x < len; x++){
+        *(buf + x) = *(start + x); // same as buf[x] = start[x]
+    }
+    
+    *(buf + x) = '\0';
+    
+    return buf;
+}
+```
+
+**Visualization**:
+
+Let's visualize the process with the example string `"Slice me, dice me, make julienne fries!"` and `len = 20`.
+
+1. **Initial State**:
+   - `str = "Slice me, dice me, make julienne fries!"`
+   - `len = 20`
+2. **Find the End of the String**:
+   - `start` moves to the end of the string (points to the null character).
+3. **Move Back by `len` Characters**:
+   - `start` moves back by 20 characters.
+   - `start` now points to the character `'m'` in `"make julienne fries!"`.
+4. **Copy Characters**:
+   - Copy the characters from `start` to `buf`.
+   - `buf` will contain `"make julienne fries!"`.
+5. **Result**:
+   - The rightmost 20 characters are `"make julienne fries!"`.
+
+By following these steps, the function correctly extracts the rightmost `len` characters from the input string.
+
+![Screenshot from 2024-11-10 22-06-37](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-10 22-06-37.png)
+
+`mid() function`
+
+- The `mid()` function has three arguments:
+
+  - ```C
+    char *mid(char *s, int offset, int len);
+    ```
+
+  - Pointer `s` references the string to slice.
+
+  - Integer `offset` is the character position to start extraction.
+
+  - Integer `len` is the number of characters to extract.
+
+- The `mid()` function performs a straight character-by-character copy from the passed string `s` into the new string buffer `buf`.
+
+- The key is adding the `offset` value when passing the characters:
+
+  - ```C
+    *(buf + x) = *(s + offset - 1 + x);
+    ```
+
+  - The `offset` value must be reduced by 1 to account for the fact that characters in the string start at offset 0, not offset 1.
+
+```C
+char *mid(char *s, int offset, int len){
+    char *buf;
+    int x;
+    
+    buf = (char *)malloc(sizeof(char) * len + 1);
+    if(buf == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    for(x = 0; x < len; x++){
+        *(buf + x) = *(s + offset - 1 + x);
+        if(*(buf + x) == '\0'){
+            break;
+        }
+    }
+    
+    *(buf + x) = '\0';
+    
+    return buf;
+}
+```
+
+**Visualization**
+
+Let's visualize the process with the example string `"Slice me, dice me, make julienne fries!"`, `offset = 11`, and `len = 7`.
+
+1. **Initial State**:
+   - `str = "Slice me, dice me, make julienne fries!"`
+   - `offset = 11`
+   - `len = 7`
+2. **Memory Allocation**:
+   - Allocate memory for 7 characters plus one for the null terminator.
+3. **Copy Characters**:
+   - Start copying from `str + offset - 1` (which is `str + 10`).
+   - Copy 7 characters from the original string to the buffer.
+4. **Characters Copied**:
+   - Characters copied: `"dice me"`
+   - Buffer after copying: `"dice me"`
+5. **Result**:
+   - The substring starting at offset 11 and of length 7 is `"dice me"`.
+
+
+
+![Screenshot from 2024-11-10 22-25-39](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-10 22-25-39.png)
+
+
+
+**Combined Version**
+
+`hello.h`
+
+```C
+char *left(char *s, int len);
+char *right(char *s, int len);
+char *mid(char *s, int offset, int len);
+```
+
+`hello.c`
+
+```C
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <ctype.h>
+#include "hello.h"
+char *left(char *s, int len)
+{
+    char *buf;
+    int x;
+
+    buf = (char *)malloc(sizeof(char) * len + 1);
+    if (buf == NULL)
+    {
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+
+    for (x = 0; x < len; x++)
+    {
+        if (*(s + x) == '\0')
+        {
+            break;
+        }
+
+        *(buf + x) = *(s + x);
+    }
+
+    return buf;
+}
+char *right(char *s, int len)
+{
+    char *buf;
+    char *start;
+    int x;
+
+    buf = (char *)malloc(sizeof(char) * len + 1);
+    if (buf == NULL)
+    {
+        fprintf(stderr, "Memory allocation error\n");
+        exit(1);
+    }
+
+    start = s;
+    while (*start != '\0')
+        start++;
+    start -= len;
+    if (start < s)
+        exit(1);
+
+    for (x = 0; x < len; x++)
+        *(buf + x) = *(start + x);
+    *(buf + x) = '\0';
+
+    return (buf);
+}
+char *mid(char *s, int offset, int len)
+{
+    char *buf;
+    int x;
+
+    buf = (char *)malloc(sizeof(char) * len + 1);
+    if (buf == NULL)
+    {
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+
+    for (x = 0; x < len; x++)
+    {
+        *(buf + x) = *(s + offset - 1 + x);
+
+        if (*(buf + x) == '\0')
+        {
+            break;
+        }
+    }
+
+    *(buf + x) = '\0';
+    return buf;
+}
+```
+
+`main.c`
+
+```C
+int main()
+{
+	char string[] = "Slice me, dice me, make Julienne fries!";
+
+	printf("Original string: %s\n",string);
+	printf("Left %d characters: %s\n",8,left(string,8));
+	printf("Middle %d characters: %s\n",7,mid(string,11,7));
+	printf("Right %d characters: %s\n",20,right(string,20));
+
+	return(0);
+}
+```
+
+`Output`
+
+```C
+chan@CMA:~/C_Programming/test$ ./final
+Original string: Slice me, dice me, make Julienne fries!
+Left 8 characters: Slice me
+Middle 7 characters: dice me
+Right 20 characters: make Julienne fries!
+
+```
 

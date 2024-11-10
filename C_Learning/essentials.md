@@ -1855,6 +1855,52 @@ if (arr == NULL) {
 - **`malloc`**: Use when you need to allocate memory quickly and will handle initialization yourself.
 - **`calloc`**: Use when you need zero-initialized memory, which can save you the step of manually setting the memory to zero.
 
+
+
+#### Difference between `sizeof(char *) * len + 1` and `sizeof(char) * (len + 1)`
+
+`sizeof(char *) * len + 1`
+
+- `sizeof(char *)` is the size of a pointer to a `char`. This is typically 4 bytes on a 32-bit system or 8 bytes on a 64-bit system.
+- When we use `sizeof(char *) * len + 1`, we are allocating memory for `len` pointers to `char` plus one additional byte. This is not what we want when we are trying to allocate memory for a string of `len` characters.
+
+`sizeof(char) * (len + 1)`
+
+- `sizeof(char)` is the size of a `char`, which is always 1 byte.
+- When we use `sizeof(char) * (len + 1)`, we are allocating memory for `len` characters plus one additional byte for the null terminator. This is the correct way to allocate memory for a string of `len` characters.
+
+**Example**:
+
+Let's consider an example where `len` is 10:
+
+Incorrect Allocation
+
+```C
+char *buf = malloc(sizeof(char *) * len + 1);
+```
+
+- `sizeof(char *)` is 8 bytes (on a 64-bit system).
+- `sizeof(char *) * len` is `8 * 10 = 80` bytes.
+- `sizeof(char *) * len + 1` is `80 + 1 = 81` bytes.
+- This allocates 81 bytes, which is much more than needed for a string of 10 characters.
+
+Correct Allocation
+
+```C
+char *buf = malloc(sizeof(char) * (len + 1));
+```
+
+- `sizeof(char)` is 1 byte.
+- `sizeof(char) * len` is `1 * 10 = 10` bytes.
+- `sizeof(char) * (len + 1)` is `1 * (10 + 1) = 11` bytes.
+- This allocates 11 bytes, which is exactly enough for a string of 10 characters plus the null terminator.
+
+##### Summary
+
+- `sizeof(char *)` gives the size of a pointer to a `char`, which is not what we need for allocating memory for a string.
+- `sizeof(char)` gives the size of a `char`, which is 1 byte. This is what we need for allocating memory for a string.
+- Always use `sizeof(char) * (len + 1)` when allocating memory for a string of `len` characters to ensure you have enough space for the characters and the null terminator.
+
 ---
 
 
