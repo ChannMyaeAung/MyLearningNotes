@@ -136,6 +136,101 @@ Low Memory Addresses
 
 Understanding these segments helps in managing memory efficiently, preventing issues like memory leaks, and avoiding stack overflows.
 
+
+
+### Difference between `char *s` and `char **s`
+
+`char *s`:
+
+- Single pointer to a character/string
+- Points directly to a sequence of characters
+- It can point to a single character or first character of a string
+- Common use: storing/manipulating single strings
+
+```C
+char *s = "Hello";  // Points to string literal
+// or
+char str[] = "Hello";
+char *s = str;      // Points to first character of array
+```
+
+`char **s`:
+
+- Pointer to a pointer to character (double pointer)
+- It can hold the address of a `char *` (i.e., the address of a pointer to a character), which can be used to represent an **array of strings** or a **2D array of characters**.
+- Can point to an array of strings
+- Common use: array of strings or dynamic string arrays
+- This is commonly used in situations where we need multiple strings, like an array of command-line arguments (`argv` in `main(int argc, char **argv)`).
+
+```C
+// Example of char **s:
+char *strings[] = {"Hello", "World"};
+char **s = strings;  // Points to array of strings
+
+// Accessing elements:
+printf("%s\n", s[0]);  // Prints "Hello"
+printf("%s\n", s[1]);  // Prints "World"
+```
+
+Complete Program Showing Both
+
+```C
+#include <stdio.h>
+
+int main() {
+    // char *s example
+    char *single = "Hello";
+    printf("Single pointer:\n");
+    printf("%s\n", single);
+    
+    // char **s example
+    char *array[] = {"Hello", "World"};
+    char **double_ptr = array;
+    
+    printf("\nDouble pointer:\n");
+    printf("First string: %s\n", double_ptr[0]);
+    printf("Second string: %s\n", double_ptr[1]);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Single pointer: 
+Hello
+
+Double pointer:
+First string: Hello
+Second string: World
+
+```
+
+**Key Differences**:
+
+1. Memory Structure:
+
+   - `char *s` : s -> "Hello"
+   - `char **s` : s -> ptr -> "Hello" -> ptr -> "World"
+
+2. Common Uses:
+
+   - `char *s` : Single strings
+   - `char **s`: Arrays of strings, 2D character arrays
+
+3. Dereferencing:
+
+   - `char *s` : Use `*s` to get a character
+   - `char **s` : Use `*s` to get a string, `**s` to get a character.
+
+4. **`char \*s`**: Points to a single string.
+
+   **`char \**s`**: Points to multiple strings or an array of `char *` pointers, each potentially pointing to a different string.
+
+In terms of memory, `char *s` is a single-level pointer, while `char **s` is a double-level pointer, allowing for more complex structures like lists of strings.
+
+---
+
 ### Should declare a normal variable or a pointer variable?
 
 In C, whether you should declare a **normal variable** or a **pointer variable** depends on the use case and how you need to manage and access memory. Below are some guidelines to help you decide:

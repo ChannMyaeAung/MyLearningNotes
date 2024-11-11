@@ -5965,7 +5965,7 @@ Let's visualize the process with the example string `"Slice me, dice me, make ju
 2. **Memory Allocation**:
    - Allocate memory for 7 characters plus one for the null terminator.
 3. **Copy Characters**:
-   - Start copying from `str + offset - 1` (which is `str + 10`).
+   - Start copying from `str + offset - 1` (which is `str + 10` or `str[10]`).
    - Copy 7 characters from the original string to the buffer.
 4. **Characters Copied**:
    - Characters copied: `"dice me"`
@@ -6018,7 +6018,7 @@ char *left(char *s, int len)
 
         *(buf + x) = *(s + x);
     }
-
+	*(buf + x) = '\0';
     return buf;
 }
 char *right(char *s, int len)
@@ -6033,20 +6033,34 @@ char *right(char *s, int len)
         fprintf(stderr, "Memory allocation error\n");
         exit(1);
     }
-
+    
+	// Initialize start to the beginning of the string
     start = s;
-    while (*start != '\0')
+    
+    // Move start to the end of the string
+    while(*start != '\0'){
         start++;
+    }
+    
+    // Move start back by 'len' characters
     start -= len;
-    if (start < s)
+    
+    // Check if start is before the beginning of the string
+    if(start < s){
+        // Exit if len > the length of the string
         exit(1);
-
-    for (x = 0; x < len; x++)
-        *(buf + x) = *(start + x);
+    }
+    
+    // Copy len characters from start to buf
+    for(x = 0; x < len; x++){
+        *(buf + x) = *(start + x); // same as buf[x] = start[x]
+    }
+    
     *(buf + x) = '\0';
-
-    return (buf);
+    
+    return buf;
 }
+
 char *mid(char *s, int offset, int len)
 {
     char *buf;
@@ -6061,6 +6075,9 @@ char *mid(char *s, int offset, int len)
 
     for (x = 0; x < len; x++)
     {
+        // The offset value is decreased by 1 because the first character is offset 0, not offset 1.
+        // We will copy characters starting from offset until length
+        // same as buf[x] = s[offset - 1 + x]
         *(buf + x) = *(s + offset - 1 + x);
 
         if (*(buf + x) == '\0')
@@ -6100,4 +6117,639 @@ Middle 7 characters: dice me
 Right 20 characters: make Julienne fries!
 
 ```
+
+
+
+### Difference between `char *s` and `char **s`
+
+`char *s`:
+
+- Single pointer to a character/string
+- Points directly to a sequence of characters
+- It can point to a single character or first character of a string
+- Common use: storing/manipulating single strings
+
+```C
+char *s = "Hello";  // Points to string literal
+// or
+char str[] = "Hello";
+char *s = str;      // Points to first character of array
+```
+
+`char **s`:
+
+- Pointer to a pointer to character (double pointer)
+- It can hold the address of a `char *` (i.e., the address of a pointer to a character), which can be used to represent an **array of strings** or a **2D array of characters**.
+- Can point to an array of strings
+- Common use: array of strings or dynamic string arrays
+- This is commonly used in situations where we need multiple strings, like an array of command-line arguments (`argv` in `main(int argc, char **argv)`).
+
+```C
+// Example of char **s:
+char *strings[] = {"Hello", "World"};
+char **s = strings;  // Points to array of strings
+
+// Accessing elements:
+printf("%s\n", s[0]);  // Prints "Hello"
+printf("%s\n", s[1]);  // Prints "World"
+```
+
+Complete Program Showing Both
+
+```C
+#include <stdio.h>
+
+int main() {
+    // char *s example
+    char *single = "Hello";
+    printf("Single pointer:\n");
+    printf("%s\n", single);
+    
+    // char **s example
+    char *array[] = {"Hello", "World"};
+    char **double_ptr = array;
+    
+    printf("\nDouble pointer:\n");
+    printf("First string: %s\n", double_ptr[0]);
+    printf("Second string: %s\n", double_ptr[1]);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Single pointer: 
+Hello
+
+Double pointer:
+First string: Hello
+Second string: World
+
+```
+
+**Key Differences**:
+
+1. Memory Structure:
+
+   - `char *s` : s -> "Hello"
+   - `char **s` : s -> ptr -> "Hello" -> ptr -> "World"
+
+2. Common Uses:
+
+   - `char *s` : Single strings
+   - `char **s`: Arrays of strings, 2D character arrays
+
+3. Dereferencing:
+
+   - `char *s` : Use `*s` to get a character
+   - `char **s` : Use `*s` to get a string, `**s` to get a character.
+
+4. **`char \*s`**: Points to a single string.
+
+   **`char \**s`**: Points to multiple strings or an array of `char *` pointers, each potentially pointing to a different string.
+
+In terms of memory, `char *s` is a single-level pointer, while `char **s` is a double-level pointer, allowing for more complex structures like lists of strings.
+
+
+
+### Splitting a string
+
+To write a string-splitting function in C with fewer than 20 lines of code, we need to pass at least 4 arguments:
+
+```C
+int strsplit(char *org, int offset, char **s1, char **s2);
+```
+
+- Pointer `org` references the string to split.
+- Integer `offset` is the location of the split.
+- The last two pointers, `s1` and `s2` contains two sides of the split.
+  - These pointers are passed by reference, which allows the function to access and modify their contents.
+
+
+
+In the following function:
+
+- the size of the original string is obtained and used to allocate storage for `s1` and `s2`.
+- Then the `strncpy()` function copies the separate portions of the original string into the separate strings.
+- The function returns 1 upon success, and 0 when things foul up.
+
+```C
+int strsplit(char *org, int offset, char **s1, char **s2){
+    int len;
+    
+    len = strlen(org);
+    
+    // If the offset arg is out of range, return zero - error.
+    if(offset > len){
+        return 0;
+    }
+    
+    // Allocate storage for split string 1, argument s1 dereferenced
+    *s1 = malloc(sizeof(char) * offset + 1);
+    
+    // Allocate storage for split string 2, calcuating the proper size
+    *s2 = malloc(sizeof(char) * len - offset + 1);
+    if(s1 == NULL || s2 == NULL){
+        return 0;
+    }
+    
+    // copy the first offset characters to the first substring
+    strncpy(*s1, org, offset);
+    (*s1)[offset] = '\0';
+    
+    // copy the remaining characters to the second substring
+    strncpy(*s2, org + offset, len - offset);
+    (*s2)[len - offset] = '\0';
+    
+    return 1;
+}
+
+int main(){
+    char string[] = "When this baby hits 88 miles per hour";
+    
+    // Pointers to hold the two substrings
+    char *first, *second;
+    
+    // Variable to hold the result of the split
+    int r;
+    
+    // Split the string at offset 15
+    r = strsplit(string, 15, &first, &second);
+    
+    if(r == 1){
+        printf("Split successful\n");
+        printf("'%s' split into:\n", string);
+        printf("'%s'\n", first); // Print the first substring
+        printf("'%s'\n", second); // Print the second substring
+    }else{
+        puts("The function was unable to split the string");
+    }
+    
+    //Free the allocated memory
+    free(first);
+    free(second);
+    
+    return 0;
+}
+```
+
+- `*s1 = malloc(sizeof(char) * (offset + 1));`: Allocate memory for the first substring, including space for the null terminator. The first string is until the offset.
+- `*s2 = malloc(sizeof(char) * (len - offset + 1));`: Allocate memory for the second substring, including space for the null terminator. The second string is the remaining characters based on the offset.
+
+### Visualization
+
+Let's visualize the process with the example string `"When this baby hits 88 miles per hour"` and `offset = 15`.
+
+1. **Original String**:
+
+   string = "When this baby hits 88 miles per hour"
+
+2. **Offset Calculation**:
+
+   - `offset = 15`
+   - The string will be split at the 15th character (0-based index).
+
+3. **Memory Allocation**:
+
+   - Allocate memory for the first substring (`"When this baby "`), including space for the null terminator.
+   - Allocate memory for the second substring (`"hits 88 miles per hour"`), including space for the null terminator.
+
+4. **Copy Characters**:
+
+   - Copy the first 15 characters to the first substring:
+
+   - ```
+     first = "When this baby "
+     ```
+
+   - Copy the remaining characters to the second substring:
+
+   - ```
+     second = "hits 88 miles per hour"
+     ```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Split successful
+'When this baby hits 88 miles per hour' split into:
+'When this baby '
+'hits 88 miles per hour'
+```
+
+
+
+### Inserting one string into another
+
+```c
+char *strinsert(char *org, char *ins, int offset);
+```
+
+- The function's return value is a newly created string, which avoids the necessity that string `org` be large enough to also accommodate inserting string `ins`.
+- Returning the string, that is, creating it within the function, also avoids having to temporarily store the remainder of string `org` for concatenation later.
+- In this approach, the new string is built character by character, inserting string `ins` at `offset` characters as the new string is built. `offset` refers to the location where we want to insert the character.
+- Rather than use the `strcat()` and `strcpy()`, this version of `strinsert()` function copies characters sequentially from string `org` into a newly created buffer.
+- Once the character count is equal to `offset`, characters are copied from string `ins` into the newly created buffer. 
+- After that, the count continues from string `org`.
+
+![Screenshot from 2024-11-11 17-16-49](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-11 17-16-49.png)
+
+```C
+char *strinsert(char *org, char *ins, int offset){
+    char *new;
+    int size, index, append;
+    
+    size = strlen(org) + strlen(ins);
+    
+    if(offset < 0){
+        return NULL;
+    }
+    
+    new = malloc(sizeof(char) * size + 1);
+    if(new == NULL){
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    
+    offset -= 1; // adjust offset to be zero-based
+    
+    // Indexes to track prograss thru new string
+    index = 0;
+    
+    // Status variable to track whether ins string has been inserted
+    append = 0;
+    
+    // Loop thru the original string
+    while(*org){
+        // if the current index matches the offset, insert ins 
+        if(index == offset){
+            while(*ins){
+                // copy char from ins to new
+                *(new + index) = *ins;
+                index++;
+                ins++;
+            }
+            // set append flag to indicate 'ins' has been appended
+            append = 1;
+        }
+        // copy char from 'org' to 'new' to continue building the new string
+        *(new + index) = *org;
+        index++;
+        org++;
+    }
+    
+    // Confirms that a string was inserted; if not, string ins is appended
+    if(!append){
+        while(*ins){
+            *(new + index) = *ins;
+            index++;
+            ins++;
+        }
+    }
+    *(new + index) = '\0';
+    
+    return new;
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    char s1[] = "Well, this is another mess!";
+    char s2[] = "fine ";
+    
+    printf("Before: %s\n", s1);
+    // Insert s2 into s1 at offset 23
+    char *result = strinsert(s1, s2, 23);
+    printf("After: %s\n", result);
+    
+    free(result);
+    return 0;
+}
+```
+
+
+
+`Output`
+
+- This is the program's output where the string "fine " (plus a space) is inserted into the string "Well, this is another mess!" at offset 23.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Before: Well, this is another mess!
+After: Well, this is another fine mess!
+```
+
+
+
+### Counting words in a string
+
+- To solve the puzzle of counting words in a string, we must write code that recognizes when a word starts.
+
+```C
+int strwords(char *s){
+    
+    
+    // Create the constants FALSE = 0 and TRUE = 1
+    enum{FALSE, TRUE};
+    
+    // Starts out assuming the code isn't reading inside of a word
+    int inword = FALSE;
+    int count;
+    
+    count = 0;
+    while(*s){
+        if(isalpha(*s)){
+            
+            // Confirms that a word isn't being processed
+            if(!inword){
+                count++;
+                inword = TRUE;
+            }
+        }else{
+            // For non-alpha char, inword is FALSE
+            inword = FALSE;
+        }
+        s++;
+    }
+    return count;
+}
+
+int main(){
+    char string[] = "This is a sample string";
+    printf("The string '%s' contains %d words\n", string, strwords(string));
+    return (0);
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The string 'This is a sample string' contains 5 words
+```
+
+
+
+But if we change is to isn't, the output is 
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The string 'This isn't a sample string' contains 6 words
+```
+
+
+
+**Exercise 7.3**
+
+Modify the `strwords()` function so that it accounts for contractions. 
+
+`main.c`
+
+```C
+int strwords(char *s){
+    // Create the constants FALSE = 0 and TRUE = 1
+    enum{FALSE, TRUE};
+    
+    // Variable to track if we are inside a word
+    int inword = FALSE;
+    int count;
+    
+    count = 0;
+    
+    // Loop thru the string
+    while(*s){
+        if(isalpha(*s)){
+            // If s is an alphabet & if we are not already in a word
+            if(!inword){
+                count++;
+                inword = TRUE;
+            }
+        }
+        // Check for contractions
+        else if(*s == '\'' && isalpha(*(s + 1))){
+            // Skip the apostrophe and the following alphabetic characters
+            s++;
+        }else{
+            inword = FALSE; // If the character is not alphabetic, we are not in a word
+        }
+        s++;
+    }
+    return count;
+}
+
+int main(){
+    char string[] = "This is a sample string";
+    printf("The string '%s' contains %d words\n", string, strwords(string));
+    return (0);
+}
+```
+
+**Things to Note**:
+
+```C
+else if (*s == '\'' && isalpha(*(s + 1)))
+```
+
+Check if the character is an apostrophe followed by an alphabetic character.
+
+- `s++`: Skip the apostrophe and the following alphabetic character.
+
+### Visualization
+
+Let's visualize the process with the example string `"This isn't a sample string"`.
+
+1. **Initial State**:
+
+   string = "This isn't a sample string"
+
+2. **Loop Through the String**:
+
+   - `T` is alphabetic, increment word count to 1.
+   - `h` is alphabetic, continue.
+   - `i` is alphabetic, continue.
+   - `s` is alphabetic, continue.
+   - ` ` is not alphabetic, set `inword` to `FALSE`. (Space)
+   - `i` is alphabetic, increment word count to 2.
+   - `s` is alphabetic, continue.
+   - `'` is an apostrophe followed by `n`, skip the apostrophe.
+   - `n` is alphabetic, continue.
+   - `t` is alphabetic, continue.
+   - ` ` is not alphabetic, set `inword` to `FALSE`.
+   - `a` is alphabetic, increment word count to 3.
+   -  ` ` is not alphabetic, set `inword` to `FALSE`. (Space)
+   - `s` is alphabetic, increment word count to 4.
+   - `a` is alphabetic, continue.
+   - `m` is alphabetic, continue.
+   - `p` is alphabetic, continue.
+   - `l` is alphabetic, continue.
+   - `e` is alphabetic, continue.
+   -  ` ` is not alphabetic, set `inword` to `FALSE`. (Space)
+   - `s` is alphabetic, increment word count to 5.
+   - `t` is alphabetic, continue.
+   - `r` is alphabetic, continue.
+   - `i` is alphabetic, continue.
+   - `n` is alphabetic, continue.
+   - `g` is alphabetic, continue.
+
+3. **Result**:
+
+   - The string `"This isn't a sample string"` contains 5 words.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The string 'This isn't a sample string' contains 5 words
+```
+
+
+
+### Converting tabs to spaces
+
+To set a tab stop, we must know where text output is going across the screen - the current column value. This value is compared with the tab stop width desired, using the following equation:
+
+```C
+spaces = tab - (column % tab)
+```
+
+![Screenshot from 2024-11-11 20-56-55](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-11 20-56-55.png)
+
+- The `(column % tab)` expression returns the number of spaces since the last tab stop interval (tab) based on the cursor's current column offset (column).
+- To obtain the number of spaces until the next tab stop, this value is subtracted from the tab stop width.
+- The result is the number of spaces required to line up the next character output with a tab stop.
+
+
+
+```C
+void strtabs(const char *s, int tab){
+    int column, x, spaces;
+    
+    // The column variable tracks the current column position.
+    column = 0;
+    
+    // Loop thru the string
+    while(*s){
+        if(*s == '\t'){
+            // Calculates the number of spaces to output to line up at the next tab stop
+            spaces = tab - (column % tab);
+            
+            // Output the required spaces
+            for(x = 0; x < spaces; x++){
+                putchar(' ');
+            }
+            
+            // update the column offset
+            column += spaces;
+        }else{ // if the character is not a tab
+            putchar(*s);
+            
+            // reset the column if the character is a newline, otherwise increment the column counter
+            if(*s == '\n'){
+                column = 0;
+            }else{
+                column++;
+            }
+        }
+        s++;
+    }
+}
+
+int main()
+{
+    const char *text[3] = {"Hello\tHi\tHowdy\n", "\tLa\tLa\n", "Constantinople\tConstantinople\n"};
+    int x, y;
+    
+    // Nested loop to output the three sample strings at three different tab stops: 4, 8 and 16 spaces
+    for (y = 4; y < 32; y *= 2)
+    {
+        // Print the current tab width
+        printf("Tab width: %d\n", y);
+        
+        // Loop thru each string in the array
+        for (x = 0; x < 3; x++)
+        {
+            // Replace tabs with spaces in the current strings
+            strtabs(text[x], y);
+        }
+    }
+
+    return (0);
+}
+```
+
+### Visualization
+
+Let's visualize the process with the example strings and different tab widths.
+
+1. **Initial State**:
+
+   ```C
+   text[0] = "Hello\tHi\tHowdy\n"
+   
+   text[1] = "\tLa\tLa\n"
+   
+   text[2] = "Constantinople\tConstantinople\n"
+   ```
+
+2. **Loop Through Tab Widths**:
+
+   - Tab widths: 4, 8, 16
+
+3. **Tab Width 4**:
+
+   - For `text[0] = "Hello\tHi\tHowdy\n"`:
+     - Replace `\t` with spaces to the next tab stop (4 spaces).
+     - Result: `"Hello Hi Howdy\n"`
+   - For `text[1] = "\tLa\tLa\n"`:
+     - Replace `\t` with spaces to the next tab stop (4 spaces).
+     - Result: `" La La\n"`
+   - For `text[2] = "Constantinople\tConstantinople\n"`:
+     - Replace `\t` with spaces to the next tab stop (4 spaces).
+     - Result: `"Constantinople Constantinople\n"`
+
+4. **Tab Width 8**:
+
+   - For `text[0] = "Hello\tHi\tHowdy\n"`:
+     - Replace `\t` with spaces to the next tab stop (8 spaces).
+     - Result: `"Hello Hi Howdy\n"`
+   - For `text[1] = "\tLa\tLa\n"`:
+     - Replace `\t` with spaces to the next tab stop (8 spaces).
+     - Result: `" La La\n"`
+   - For `text[2] = "Constantinople\tConstantinople\n"`:
+     - Replace `\t` with spaces to the next tab stop (8 spaces).
+     - Result: `"Constantinople Constantinople\n"`
+
+5. **Tab Width 16**:
+
+   - For `text[0] = "Hello\tHi\tHowdy\n"`:
+     - Replace `\t` with spaces to the next tab stop (16 spaces).
+     - Result: `"Hello Hi Howdy\n"`
+   - For `text[1] = "\tLa\tLa\n"`:
+     - Replace `\t` with spaces to the next tab stop (16 spaces).
+     - Result: `" La La\n"`
+   - For `text[2] = "Constantinople\tConstantinople\n"`:
+     - Replace `\t` with spaces to the next tab stop (16 spaces).
+     - Result: `"Constantinople Constantinople\n"`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Tab width: 4
+Hello   Hi  Howdy
+    La  La
+Constantinople  Constantinople
+Tab width: 8
+Hello   Hi      Howdy
+        La      La
+Constantinople  Constantinople
+Tab width: 16
+Hello           Hi              Howdy
+                La              La
+Constantinople  Constantinople
+
+```
+
+- When the terminal window encounters a tab, it doesn't convert the tab into multiple spaces like the program does.
+- For the terminal window, the cursor itself moves the required number of character positions across the screen: spaces aren't output.
+
+
+
+### A string library
 
