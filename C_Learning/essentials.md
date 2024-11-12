@@ -3,6 +3,8 @@
 - C is a language behind the Internet and almost every operating system
 - C is a language that's used to write almost all the other languages.
 - C is a language that can write for almost every processor in existence, from watches and phones to places and satellites.
+- C is a procedural programming language. 
+- Inelegantly put, this description means that C code runs from top to bottom, with one thing happening after another.
 
 When we run `make` or when we run `clang`, four different things are happening under the hood.
 

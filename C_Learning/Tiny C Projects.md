@@ -6753,3 +6753,635 @@ Constantinople  Constantinople
 
 ### A string library
 
+#### Creating a library
+
+- Libraries are created from object code files.
+- The `ar` (archive) utility is what transforms the object code file into a library.
+
+```C
+ar -rcs libmystring.a mystring.o
+```
+
+- -c - Creates the archive
+- -s - Indexes the archive
+- -r - Inserts file(s) into the archive
+
+Name format that follows the convention used in Linux: `libname.a`.
+
+
+
+**How I updated my MakeFile**
+
+```makefile
+# Compiler & Standard
+CC = clang
+STD = -std=c23
+
+# Compiler Flags
+CFLAGS = -Wall -Wextra -g -D_XOPEN_SOURCE=700
+LIBS = -lssl -lcrypto -lpthread -lm
+
+# Directories
+LIBDIR = ./libs
+OBJDIR = ./obj
+
+# Targets
+all: final
+
+# Final executable
+final: $(OBJDIR)/main.o $(LIBDIR)/libhello.a
+	@echo "Linking and producing the final application"
+	$(CC) $(STD) $(CFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lhello -o final $(LIBS)
+
+# Object files
+$(OBJDIR)/main.o: main.c hello.h
+	@echo "Compiling the main file"
+	$(CC) $(STD) $(CFLAGS) -c main.c -o $(OBJDIR)/main.o
+
+$(OBJDIR)/hello.o: hello.c hello.h
+	@echo "Compiling the hello file"
+	$(CC) $(STD) $(CFLAGS) -c hello.c -o $(OBJDIR)/hello.o
+
+#Static library
+$(LIBDIR)/libhello.a: $(OBJDIR)/hello.o
+	@echo "Creating static library libhello.a"
+	ar -rcs $(LIBDIR)/libhello.a $(OBJDIR)/hello.o
+
+# Clean up
+clean:
+	@echo "Removing everything except the source files"
+	@rm -f ./*.o $(OBJDIR)/*.o $(LIBDIR)/libhello.a final
+```
+
+- If we have copied the library into the `/usr/local/lib` folder, the linker searches for it there.
+- The `-L` (big L) switch directs the linker to look in a specific directory for library files.
+
+
+
+### A Kinda OOP approach
+
+- C is a procedural programming language. 
+- Inelegantly put, this description means that C code runs from top to bottom, with one thing happening after another.
+- Object-oriented programming (OOP) involves methods instead of functions.
+- Methods work like functions, though they are often a part of the data type they manipulate.
+
+For example, in Java,
+
+```Java
+Len = Str.length()
+```
+
+- The string variable is named `Str`. 
+- The dot operator access the `length()` method, which is attached to all string objects.
+- The equivalent in C is
+
+```C
+len = strlen(str);
+```
+
+The dot operator is also used in C, specifically in a structure.
+
+#### Adding a function to a structure
+
+- A structure contains members of specific data types: int, float, char and so on.
+- As it turns out, a function is also a data type, and it can serve as a member of a structure.
+
+```C
+type (*name) (arguments)
+```
+
+- The `type` is a data type, the value returned from the function or `void` for nothing returned.
+- The `name` is the function's name, which is secretly a pointer. 
+- In this format, the function's name isn't followed by parentheses.
+- Instead, the `arguments` item lists any arguments passed to the function.
+
+```C
+struct str{
+    char *string;
+    unsigned long (*length) (const char *);
+}
+```
+
+- The `str` structure's function member is referenced as the `length`.
+  - It takes a `const char` pointer -  a string - as its argument and it returns an `unsigned long` value.
+- To make the function member work, it must be assigned to a specific function.
+- In this case, `strlen()` is ideal which takes a `const char` pointer as an argument and returns an `unsigned long` value.
+- Creating a structure merely defines its members.
+- To use the structure, a variable of the structure type is created.
+- Here, structure `str` variable `str1` is created:
+
+```C
+struct str str1;
+```
+
+- And its members must be assigned values. Here is how the `length` member is assigned:
+
+```C
+str1.length = &strlen;
+```
+
+- The `length` member's function is `strlen()`.
+- It is specified without the parentheses, prefixed by the ampersand to obtain its address.
+- Once assigned, the function member can be called like any function.
+
+```C
+len = str1.length(str1.string);
+```
+
+- Member `str1.length` is a function (secretly `strlen()`).
+- It operates on the `string` member of the same structure, `str1.string`.
+- The value returned, the length of the string, is stored in variable `len`.
+
+
+
+`main.c`
+
+```C
+int main(){
+    struct str{
+        char *string;
+        unsigned long (*length) (const char *);
+    };
+    struct str str1;
+    char s[] = "Heresy";
+    
+    // The string member is assigned
+    str1.string = s;
+    
+    // The function is assigned, no parentheses, and prefixed by the address-of operator.
+    str1.length = &strlen;
+    
+    printf("The string '%s' is %lu characters long\n", str1.string, str1.length(str1.string));
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The string 'Heresy' is 6 characters long
+```
+
+#### Creating a string "object"
+
+- To create a phony string object, a `string_create()` function is needed. 
+- This function is passed a pointer to a `string` structure along with the string's contents (text).
+
+```C
+int string_create(struct string *s, char *v);
+```
+
+- The pointer is necessary to allow the function to modify the structure directly.
+- Without the pointer, any changes made to the passed structure within the function are discarded.
+- The string passed, `v`, is eventually incorporated into the structure along with other informative goodies.
+
+
+
+`string_create()`
+
+- Returns TRUE or FALSE values depending on whether the object is successfully created.
+- The string's length is obtained and stored in the structure's length member. 
+- This value is used to allocate storage for the string.
+
+```C
+int string_create(struct string*s, char *v){
+    // Confirm that a string is available, if not, returns FALSE
+    if(s == NULL){
+        return FALSE;
+    }
+    
+    s->length = strlen(v);
+    
+    s-> value = malloc(sizeof(char) * s->length + 1);
+    if(s->value == NULL){
+        return FALSE;
+    }
+    
+    strcpy(s->value, v);
+    
+    return TRUE;
+}
+```
+
+
+
+`string_destroy()`
+
+- Just as an object is created, a companion `string_destroy()` function must exist.
+- This function removes the object, which means de-allocating the string's storage and zeroing out any other structure members.
+- The `string_destroy()` does three things:
+  - frees the allocated memory
+  - assigns the value pointer to NULL (which confirms that the memory is deallocated).
+  - sets the string's length to zero.
+- This function does not obliterate the structure variable, unlike OOP languages that may also remove the variable that's created.
+
+```C
+void string_destroy(struct string *s){
+    free(s->value);
+    s->value = NULL;
+    s->length = 0;
+}
+```
+
+
+
+Completed program
+
+`hello.h`
+
+```C
+enum{
+    TRUE,
+    FALSE
+};
+
+struct string
+{
+    char *value;
+    int length;
+};
+
+int string_create(struct string *s, char *v);
+
+void string_destroy(struct string *s);
+```
+
+`hello.c`
+
+```C
+int string_create(struct string *s, char *v){
+    if(s == NULL){
+        return FALSE;
+    }
+    
+    s->length = strlen(v);
+    s->value = malloc(sizeof(char) * s->length + 1);
+    
+    if(s->value == NULL){
+        return FALSE;
+    }
+    
+    strcpy(s->value, v);
+    
+    return TRUE;
+}
+
+void string_destroy(struct string *s){
+    
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    struct string str1;
+    string_create(&str1, "I am not a string object");
+    
+    printf("The string '%s' is %d characters long\n", str1.value, str1.length);
+    
+    string_destroy(&str1);
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The string 'I am not a string object' is 24 characters long
+```
+
+- After destroying a string structure variable, it can be reused or reassigned.
+- The point it to have both a create function and a destroy function for the "object" which mimics how some object-oriented programming languages work with objects.
+
+---
+
+## Chapter 8 - Unicode and wide characters
+
+
+
+```C
+void toMorse(char c){
+    // arrays declared as const char to keep the code from otherwise messing with them; this type of construction dislikes being manipulated.
+    const char *morse_alpha[] = {
+        ".-", "-...", "-.-.", "-..", ".", "..-.",
+        "--.", "....", "..", ".---", "-.-", ".-..",
+        "--", "-.", "---", ".--.", "--.-", ".-.",
+        "...", "-", "..-", "...-", ".--", "-..-",
+        "-.--", "--.."};
+    const char *morse_digit[] = {
+        "-----", ".----", "..---", "...--", "....-",
+        ".....", "-....", "--...", "---..", "----."};
+	
+    // Pulls out alphabetic characters
+    if(isalpha(c)){
+        c = toupper(c);
+        
+        // Subtracts the character from 'A' to print the corresponding Morse code for the alphabetic character
+        printf("%s ", morse_alpha[c - 'A']);
+    }else if(isdigit(c)){ // Checks for digits 0 thru 9
+        
+        // Subtracts the digit from '0' to print the corresponding Morse code for the digit
+        printf("%s ", morse_digit(c - '0'));
+    }else if(c == ' ' || c == '\n'){
+        putchar('\n');
+    }else{
+        return;
+    }
+}
+
+int main(){
+    int ch;
+    while((ch = getchar()) != EOF){
+        toMorse(ch);
+    }
+    return 0;
+}
+```
+
+- The `toMorse()` function is easily set into a filter, which translates text input into Morse code strings for output.
+
+### Visualization
+
+Let's visualize the process with the example string `"Hey it's an honor 123"`.
+
+1. **Initial State**:
+
+   ```
+   Input: "Hey it's an honor 123"
+   ```
+
+   
+
+2. **Character-by-Character Conversion**:
+
+   - `H`: Convert to Morse code `....`
+   - `e`: Convert to Morse code `.`
+   - `y`: Convert to Morse code `-.--`
+   - ``: Print newline to separate words
+   - `i`: Convert to Morse code `..`.
+   - `t`: Convert to Morse code `-`
+   - `'`: Ignore
+   - `s`: Convert to Morse code `...`
+   - ``: Print newline to separate words
+   - `a`: Convert to Morse code `.-`
+   - `n`: Convert to Morse code `-.`
+   - ``: Print newline to separate words
+   - `h`: Convert to Morse code `....`
+   - `o`: Convert to Morse code `---`
+   - `n`: Convert to Morse code `-.`
+   - `o`: Convert to Morse code `---`
+   - `r`: Convert to Morse code `.-.`
+   - ``: Print newline to separate words
+   - `1`: Convert to Morse code `.----`
+   - `2`: Convert to Morse code `..---`
+   - `3`: Convert to Morse code `...--`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hey it's an honor 123
+.... . -.-- 
+.. - ... 
+.- -. 
+.... --- -. --- .-. 
+.---- ..--- ...-- 
+```
+
+
+
+### Understanding Unicode and Wide Characters
+
+1. **Unicode**:
+   - Unicode is a standard for encoding text in different writing systems. It assigns a unique code point to each character, regardless of the platform, program, or language.
+   - UTF-8 is a variable-width character encoding for Unicode. It can represent any character in the Unicode standard and is backward compatible with ASCII.
+2. **Wide Characters**:
+   - In C, wide characters are used to represent Unicode characters. They are typically stored in `wchar_t` type variables.
+   - Wide character strings are arrays of `wchar_t` and are manipulated using functions from the `<wchar.h>` library.
+
+### Setting the locale
+
+In C, locales are used to define various cultural-specific settings that affect the behavior of certain functions, such as those related to formatting, character classification, and string collation. 
+
+The `setlocale` function is used to set or query the program's current locale.
+
+
+
+- A locale is a set of parameters that defines the user's language, country, and any special variant preferences. 
+- These parameters affect the behavior of various functions in the C standard library, such as:
+  - **Character classification and conversion**: Functions like `isalpha`, `isdigit`, `toupper`, and `tolower` depend on the locale to determine character properties.
+  - **String collation and comparison**: Functions like `strcoll` and `strxfrm` use locale-specific rules for comparing and transforming strings.
+  - **Date and time formatting**: Functions like `strftime` use locale-specific formats for representing dates and times.
+  - **Number formatting**: Functions like `printf` and `scanf` use locale-specific rules for formatting numbers, including decimal points and thousands separators.
+
+```sh
+chan@CMA:~/C_Programming/test$ locale
+LANG=en_SG.UTF-8
+LANGUAGE=en_SG:en
+LC_CTYPE="en_SG.UTF-8"
+LC_NUMERIC="en_SG.UTF-8"
+LC_TIME="en_SG.UTF-8"
+LC_COLLATE="en_SG.UTF-8"
+LC_MONETARY="en_SG.UTF-8"
+LC_MESSAGES="en_SG.UTF-8"
+LC_PAPER="en_SG.UTF-8"
+LC_NAME="en_SG.UTF-8"
+LC_ADDRESS="en_SG.UTF-8"
+LC_TELEPHONE="en_SG.UTF-8"
+LC_MEASUREMENT="en_SG.UTF-8"
+LC_IDENTIFICATION="en_SG.UTF-8"
+LC_ALL=
+```
+
+- The UTF-8 character format is what allows Unicode text I/O - though to enable UTF-8 in our code, we must use the `setlocale()` function, prototyped in the `locale.h` header file.
+
+```C
+char *setlocale(int category, const char *locale);
+```
+
+- The first argument, `category` is a defined constant representing which aspect of the locale we want to set. Common categories include:
+  - `LC_ALL`: All locale settings.
+  - `LC_COLLATE`: String collation (comparison) rules.
+  - `LC_CTYPE`: Character classification and conversion.
+  - `LC_MONETARY`: Monetary formatting.
+  - `LC_NUMERIC`: Number formatting (decimal point, thousands separator).
+  - `LC_TIME`: Date and time formatting.
+- The second argument is a string to set the specific locale details.
+  - For example, for text, we can specify "en_SG.UTF-8" which activates the 8-bit Unicode character set for English. An empty string can also be specified.
+  - `""`: The default locale, usually determined by the environment variables.
+  - `"C"`: The standard C locale, which is the default locale when a program starts.
+  - `"en_US.UTF-8"`, `"fr_FR.UTF-8"`, etc.: Specific locales for different languages and regions.
+- The `setlocale()` function returns a string representing the specific information requested.
+- If the locale is not supported, it returns `NULL`.
+- We need not use the string; setting the locale is good enough for wide character I/O.
+
+
+
+The following program uses the `setlocale()` function to output locale details - specifically the character set in use.
+
+- Line 8 uses the `setlocale()` function to return a string describing the current locale, saved in variable `locale`.
+- Used in this way, the `setlocale()` function doesn't change the locale settings; it only reports information.
+
+```C
+#include <locale.h>
+
+int main(){
+    
+    // Pointer to a string to retain the function's output
+    char *locale;
+    
+    // Synchronizes the GPU so that the work completes
+    locale = setlocale(LC_ALL, "");
+    printf("The current locale is %s\n", locale);
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+The current locale is en_SG.UTF-8
+```
+
+
+
+### Exploring character types
+
+To invoke the magic that enables access to Unicode's humongous character set, we must be familiar with the three types of characters used in computerdom:
+
+- Single-byte characters
+- Wide characters
+- Multi-byte characters
+
+
+
+**Single-byte characters**: 
+
+- provide the traditional way to generate text.
+- These are 8-bit values, the `char` data type, equal to a single byte of storage.
+- Though `char` values range from 0 through 255 (unsigned), only values 0 through 127 are assigned characters using the ASCII standard.
+
+
+
+**Wide characters**:
+
+- The wide character data type uses more than 8-bits to encode text.
+- The number of bytes can vary, depending on the character.
+- In C, the `wchar_t` data type handles wide characters, and the wide character (wchar) family of functions manipulate these characters.
+
+
+
+**Multi-byte characters**:
+
+- A multibyte character requires several bytes to represent the character.
+- This description includes wide characters but also characters that require a prefix byte, or lead unit, and then another sequence of bytes to represent a single character.
+- This type of multibyte character may be used in specific applications and computer platforms.
+
+
+
+To represent a single-byte character, we use the `char` data type in C.
+
+```C
+char hash = '#';
+```
+
+- The hash character is assigned to `char` variable `hash`.
+- The character code is 35 decimal, 23 hex.
+
+
+
+To represent wide characters, use the `wchar_t` data type.  We must include `wchar.h` header file which also prototypes the various wide character functions.
+
+```C
+wchar_t yen = 0xa5;
+```
+
+- The Yen character ¥ is U+00a5. 
+- The value is assigned to `wchar_t` variable `yen`.
+
+
+
+```C
+wchar_t yen = L'¥';
+```
+
+- The `L` prefix defines the character as long (wide).
+- This prefix works like the `L` suffix applied to `long` integer values: `123L` indicates the value `123` specified as a `long int` value.
+
+The `L` prefix is also used to declare a wide character string.
+
+```C
+wchar_t howdy[] = L"Hello, planet Earth!";
+```
+
+- The string above, "Hello, planet Earth!", is composed of wide characters, thanks to the `L` prefix.
+- The `wchar_t` data type declares wide string `howdy`.
+
+
+
+As with single characters, we cannot insert special characters into a wide string. The following declaration is flagged as illegal character encoding:
+
+```C
+wchar_t monetary[] = L"$¥€₤";
+```
+
+- Such a string is instead composed in this manner:
+
+```C
+wchar_t monetary[] = {
+    0x24, 0xa5, 0x20ac, 0xa3, 0x0
+}
+```
+
+- Hex values above represent the characters dollar sign, yen, euro, and British pound, followed by the null character caboose to terminate the string.
+- To output wide characters and wide strings, use the `wprintf()` function.
+  - This function works like the standard library `printf()` function, though it deals with wide strings.
+- Special placeholders are used for wide characters and wide strings:
+  - The `%lc` placeholder represents a single wide character.
+  - The `%ls` placeholder represents a wide string.
+- Lowercase `l` in the placeholder identifies the target variable as the wide or `wchar_t` data type.
+
+
+
+### Generating wide character output
+
+- To output wide characters in C, we have to employ the functions declared in the `wchar.h` header file, which also conveniently defines the `wchar_t` data type.
+- We also need the `locale.h` header file because the wide character functions must be activated by first setting the locale.
+
+```C
+#include <wchar.h>
+
+int main(){
+    wprintf(L"Hello, wide world!\n");
+    return 0;
+}
+```
+
+- The `setlocale()` function isn't required because the output is ASCII, albeit wide ASCII, which is why the `wprintf()` formatting string is prefixed by an `L` (long, or wide character).
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hello, wide world!
+```
+
+```C
+int main()
+{
+    wchar_t hello[] = L"Hello, wide world!\n";
+    wprintf(L"%ls", hello);
+    return (0);
+}
+
+```
+
+- The `wchar_t` data type defines array `hello[]` composed of characters present in the wide string.
+- If the `L` prefix is omitted, the compiler barfs up a data type mismatch error and the code won't compile.
+- To create a wide string, we need both the `wchar_t` data type and the `L` prefix on the text enclosed in double quotes.
+- `wprintf(L"%ls", hello)`: The `L` prefix is required for the formatting string, because all wide character functions deal with wide characters. 
+  - The `%ls` placeholder represents a string of wide characters.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Hello, wide world!
+```
+
