@@ -7385,3 +7385,444 @@ chan@CMA:~/C_Programming/test$ ./final
 Hello, wide world!
 ```
 
+
+
+To output a single wide character, use the `putwchar()` function. It works like `putchar()`.
+
+
+
+The code in the next listing outputs the four playing card suits: spades, hearts, clubs, and diamonds.
+
+- Their unicode values are assigned as elements of the `suits[]` array.
+- The `setlocale()` function is required because these are not ASCII characters.
+- Within the `for` loop, the `putwchar()` function outputs the characters.
+- A final `putwchar()` function outputs a newline - a wide newline.
+
+
+
+```C
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    const int count = 4;
+    
+    // Unicode values for four playing card suits
+    wchar_t suits[] = {
+        0x2660, 0x2665, 0x2663, 0x2666
+    };
+    
+    int x;
+    
+    // The locale is set because these are not ASCII characters.
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    for(x = 0; x < count; x++){
+        putwchar(suits[x]);
+    }
+    
+    putwchar('\n');
+    return 0;
+}
+```
+
+- `LC_CTYPE`: Character classification and conversion.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+♠♥♣♦
+```
+
+
+
+In the following listing, three Unicode strings are declared in the `main()` function.
+
+- Each one ends with newline and null characters.
+- The `fputws()` function sends strings as the output to the `stdout` device.
+  - This function is equivalent to `fputs()` function.
+
+
+
+```C
+#include <wchar.h>
+#include <stdio.h>
+#include <locale.h>
+
+int main(){
+    // Russian word "Привет!" (Hello!)
+    wchar_t russian[] = {
+        0x41f, 0x440, 0x438, 0x432, 0x435, 0x442, '!', '\n', '\0'};
+
+    // Chinese word "你好" (Hello)
+    wchar_t chinese[] = {
+        0x4f60, 0x597d, '\n', '\0'};
+
+    // Emoji "👋" (Waving Hand)
+    wchar_t emoji[] = {
+        0x1f44b, '\n', '\0'};
+
+    // Set the locale to UTF-8
+    setlocale(LC_ALL, "en_SG.UTF-8");
+
+    // Print the wide character strings
+    fputws(russian, stdout);
+    fputws(chinese, stdout);
+    fputws(emoji, stdout);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ make all
+Compiling the main file
+clang -std=c23 -Wall -Wextra -g -D_XOPEN_SOURCE=700 -c main.c -o ./obj/main.o
+Linking and producing the final application
+clang -std=c23 -Wall -Wextra -g -D_XOPEN_SOURCE=700 ./obj/main.o -L./libs -lhello -o final -lssl -lcrypto -lpthread -lm
+
+chan@CMA:~/C_Programming/test$ ./final
+Привет!
+伱好
+👋
+```
+
+
+
+- The inability of some typefaces to properly render portions of the Unicode character set is something we should always consider when coding wide text output.
+- Not every string we output requires all wide text characters, such as those strings shown in the next listing.
+- In face, most often we may find a single character required in a string of otherwise typable, plain ASCII text.
+- One way to sneak such a character into a string is demonstrated here.
+
+```C
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    // The character is specified by its Unicode value, U-00A5.
+    wchar_t yen = 0xa5;
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"That will be %lc500\n", yen);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+That will be ¥500
+```
+
+
+
+Another way to insert a non-ASCII Unicode character in a string is substitution.
+
+- For example, we can create a wide character string of ASCII text, then plop in a specific character before the string is output.
+
+
+
+First, we create a wide character string with a placeholder for the untypable Unicode character:
+
+```C
+wchar_t s[] = L"That will be $500\n";
+```
+
+The next step is to replace this element with the proper wide character:
+
+```C
+s[13] = 0xa5; // Jpn yen 
+```
+
+This assignment works because all characters in string `s[]` are wide. Character code `0xa5` replaces the dollar sign.
+
+
+
+**Exercise 8.1**
+
+Create a program that outputs this text: `I ♥ to code.`
+
+The unicode value for the heart symbol is U+2665.
+
+```C
+int main()
+{
+    wchar_t s[] = L"I * to code.";
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    s[2] = 0x2665;
+    wprintf(L"%ls\n", s);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+I ♥ to code.
+```
+
+
+
+### Receiving wide character input
+
+The following listing uses the `getwchar()` function to process standard input, including wide characters.
+
+- The single character input is echoed back in the `wprintf()` statement.
+- The `%lc` placeholder represents `wchar_t` variable `mood`.
+
+```C
+#include <locale.h>
+#include <wchar.h>
+
+int main(){
+    
+    // The single wide character variable mood holds input
+    wchar_t mood;
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"What is your mood? ");
+    
+    // Obtail a wide character from standard input and stores it in wchar_t variable mood
+    mood = getwchar();
+    wprintf(L"I feel %lc, too!\n", mood);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+What is your mood? 7
+I feel 7, too!
+chan@CMA:~/C_Programming/test$ ./final
+What is your mood? ¥ 
+I feel ¥, too!
+```
+
+- The program reads from standard input, though any text we type is represented internally by using wide characters.
+- Therefore, the program runs whether we type a Unicode character or any other keyboard character.
+- However, the true test is to type a Unicode character, specifically an emoji.
+
+#### Typing Miscellaneous Symbols in Ubuntu Linux
+
+CTRL + SHIFT + u then, the code number. For example,
+
+- The Unicode for a coffee cup symbol is U+2615. 
+- So when we want to output that in the terminal window, we have to press CTRL + SHIFT + u, then the underscored <u>`u`</u> will appear.  
+- Then type the number 2615 right after the underscored u and we'll get our coffee cup emoji.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+What is your mood? ☕
+I feel ☕, too!
+```
+
+The Umbrella Symbol Unicode - U+2602
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+What is your mood? ☂
+I feel ☂, too!
+```
+
+
+
+To read more than a single character, use the `fgetws()` function. 
+
+- This function is the wide character version of `fgets()`, with a similar set of arguments.
+
+```C
+wchar_t *fgetws(wchar_t *ws, int n, FILE *stream);
+```
+
+- The first argument is a `wchar_t` buffer to store input.
+- Then comes the buffer size, which is the input character count minus one for the null character, which is automatically added.
+- Finally, the file stream, such as `stdin` for standard input.
+- The `fgetws()` function returns the buffer's address upon success or NULL otherwise.
+
+The next listing shows how the `fgetws()` function is used.
+
+- The wide character buffer `input` stores wide characters read from the standard input device (`stdin`).
+- A `wprintf()` function outputs the characters stored in the `input` buffer.
+
+```C
+#include <stdio.h>
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    // Uses a constant to set the buffer size
+    const int size = 32;
+    wchar_t input[size];
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"Type some fancy text: ");
+    
+    // Reads the size characters into the input buffer from standard input
+    fgetws(input, size, stdin);
+    wprintf(L"You typed: '%ls'\n", input);
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Type some fancy text: ☂
+You typed: '☂
+'
+chan@CMA:~/C_Programming/test$ ./final
+Type some fancy text: 你好，世界
+You typed: '你好，世界
+'
+```
+
+- As with standard input and the `fgets()` function, the newline character is retained in the input string.
+
+**Exercise 8.2**
+
+When the string is shorter than the maximum number of characters allowed, the newline is retained in the string. Your tasks is to modify the source code so that any newline in the string is removed from output. One way to accomplish this tasks is to write your won output function. That's too easy. Instead, you must create a function that removes the newline added by the `fgetws()` function, effectively trimming the string.
+
+```C
+#include <stdio.h>
+#include <wchar.h>
+#include <locale.h>
+
+void remove_newline(wchar_t *str){
+    while(*str){
+        if(*str == '\n'){
+            *str = '\0';
+            break;
+        }
+        str++;
+    }
+}
+
+int main(){
+    const int size = 32;
+    wchar_t input[size];
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"Type some fancy text: ");
+    fgetws(input, size, stdin);
+    remove_newline(input);
+    wprintf(L"You typed: ' %ls '\n", input);
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Type some fancy text: ♅
+You typed: ' ♅ '
+```
+
+Another wide input function is `wscanf()`.
+
+- This function is based on `scanf()`.
+
+```C
+int wscanf(const wchar_t *restrict format, ...);
+```
+
+- This format is identical to that of `scanf()` function, though the formatting string (the first argument) is composed of wide characters.
+
+```C
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    // The pound character is defined as a wchar_t constant.
+    const wchar_t pound = 0xa3;
+    int quantity;
+    float total;
+
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+
+    wprintf(L"How many crisps do you want? ");
+    wscanf(L"%d", &quantity);
+    total = quantity * 1.4;
+    wprintf(L"That'll be %lc%.2f\n", pound, total);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+How many crisps do you want? 2
+That'll be £2.80
+chan@CMA:~/C_Programming/test$ ./final
+How many crisps do you want? 4
+That'll be £5.60
+```
+
+
+
+### Working with wide characters in files
+
+- The `wchar.h` header files also defines wide character equivalents of file I/O functions available in the standard C library.
+  - For example, `fputwc()` to send a wide character to stream, the equivalent of `fputc()`.
+  - These wide character functions are paired with the standard library file I/O functions, such as `fopen()`.
+- As with standard I/O, our wide character file functions must set the locale.
+- The file must be opened for reading, writing, or both.
+- Wide character file I/O functions are used to put and get text from the file.
+- The `WEOF` constant is used to identify the wide end-of-file character, `wint_t` data type.
+- Once the file activity is done, the file is closed.
+
+
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    const wchar_t alpha = 0x391;
+    const wchar_t omega = 0x3a9;
+    const wchar_t no_sigma = 0x3a2;
+    const char *file = "alphabeta.wtxt";
+    FILE *fp;
+    wchar_t a;
+    
+    fp = fopen(file, "w");
+    if(fp == NULL){
+        fprintf(stder, "Unable to open %s\n", file);
+        exit(1);
+    }
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"Writing the Greek alphabet...\n");
+    for(a = alpha; a <= omega; a++){
+        if(a == no_sigma){
+            continue;
+        }
+        fputwc(a, fp);
+        fputwc(a, stdout);
+    }
+    
+    fputwc('\0', fp);
+    fclose(fp);
+    wprintf(L"\nDone\n");
+    return 0;
+}
+```
+
+
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Writing the Greek alphabet...
+ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ
+Done.
+```
+
+`alphabeta.wtxt`
+
+```
+ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ 
+```
+
