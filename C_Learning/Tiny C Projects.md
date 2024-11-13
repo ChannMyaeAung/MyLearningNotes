@@ -7773,6 +7773,11 @@ That'll be £5.60
 
 
 
+As an example, consider code to output 24 uppercase letters of the Greek alphabet, alpha to omega, A(U+0391) to Ω (U+03A9), saving the alphabet to a file.
+
+- The Unicode values increment successively for each letter, though a blank spot exists at code U+03B1.
+- The uppercase blank spot keeps the upper- and lowercase values parallel, as two lowercase sigma characters are used in Greek.
+
 ```C
 #include <stdio.h>
 #include <stdlib.h>
@@ -7780,9 +7785,9 @@ That'll be £5.60
 #include <locale.h>
 
 int main(){
-    const wchar_t alpha = 0x391;
-    const wchar_t omega = 0x3a9;
-    const wchar_t no_sigma = 0x3a2;
+    const wchar_t alpha = 0x391; // Unicode for Greek capital letter Alpha (Α)
+    const wchar_t omega = 0x3a9; // Unicode for Greek capital letter Omega (Ω)
+    const wchar_t no_sigma = 0x3a2; // Unicode for a non-existent Greek letter (reserved)
     const char *file = "alphabeta.wtxt";
     FILE *fp;
     wchar_t a;
@@ -7796,10 +7801,14 @@ int main(){
     setlocale(LC_CTYPE, "en_SG.UTF-8");
     
     wprintf(L"Writing the Greek alphabet...\n");
+    
+    // Loop through the Greek alphabet from Alpha to Omega
     for(a = alpha; a <= omega; a++){
         if(a == no_sigma){
-            continue;
+            continue; // Skip the non-existent Greek letter
         }
+        
+        // Write the character to the file and to the console
         fputwc(a, fp);
         fputwc(a, stdout);
     }
@@ -7811,7 +7820,9 @@ int main(){
 }
 ```
 
-
+- After the file is created, the uppercase Greek characters are written to the file one at a time, using a `for` loop.
+- Constants `alpha` and `omega` represent the first and last characters' Unicode values.
+- The `wchar_t` constant `no_sigma` is used in an `if` test with the loop so that its character (U+03A2, which is blank) is skipped.
 
 ```sh
 chan@CMA:~/C_Programming/test$ ./final
