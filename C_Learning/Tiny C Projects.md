@@ -7837,3 +7837,391 @@ Done.
 ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ 
 ```
 
+
+
+The next listing shows the file-reading code.
+
+- Traditional file I/O commands open the file.
+- The locale is set.
+- Then the `fgetws()` function does its magic to read the uppercase alphabet wide string.
+- The line is output, and the file is closed.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    const char *file = "alphabeta.wtxt";
+    const int length = 64;
+    FILE *fp;
+    
+    // The wide character input buffer
+    wchar_t line[length];
+    
+    fp = fopen(file, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open %s\n", file);
+        exit(1);
+    }
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+   	wprintf(L"Reading from %s\n", file);
+    fgetws(line, length, fp);
+    wprintf(L"%ls\n", line);
+    fclose(fp);
+    return 0;
+}
+```
+
+- Because the earlier program where we write Greek alphabets to "alphabeta.wtxt" file, we added a null character to the end, the `fgetws()` function here reads text from the file in one chunk like the `fgets()` function.
+- `fgetws()` stops reading when it encounters the null byte, a newline, or the buffer fills.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Reading from alphabeta.wtxt
+ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ
+```
+
+
+
+To read one wide character at a time from a file, use the `fgetwc()` function, which is the wide character counterpart of `fgetc()`.
+
+- Like `fgetc()`, the value returned by `fgetwc()` isn't a character or even a wide character. It's a wide integer.
+
+```C
+wint_t fgetwc(FILE *stream);
+```
+
+- The function's argument is an open file handle, or `stdin` for standard input.
+
+- The value returned is of the `wint_t` data type.
+
+- As with `fgetc()`, the reason is that the wide end-of-file marker, `WEOF`, can be encountered, which the `wchar_t` type doesn't interpret properly.
+
+- To modify the above program to read single characters from the file, only a few changes are required:
+
+  - The `line[]` buffer is removed, along with the `length` constant. 
+
+  - In its place, a single `wint_t` variable is declared:
+
+  - ```C
+    wint_t ch;
+    ```
+
+  - To read from the file, the `fgetws()` statement, as well as the `wprintf()` statement are replaced with:
+
+  - ```C
+    while((ch = fgetwc(fp)) != WEOF){
+        putchar(ch);
+    }
+    putchar('\n');
+    ```
+
+  - The `while` loop's condition both reads a character (a `wint_t` value) from the open file handle `fp`.
+
+  - This value is compared with `WEOF`, the wide character end-of-file marker.
+
+  - As long as the character isn't the end of file, the loop repeats.
+
+  - The loop's sole statement is `putwchar(ch)`, which outputs the character read.
+
+  - A final `putwchar()` statement outputs a newline, cleaning up the output.
+
+**Complete Program**
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+
+int main(){
+    const char *file = "alphabeta.wtxt";
+    FILE *fp;
+    wint_t ch;
+    
+    fp = fopen(file, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open %s\n", file);
+        exit(1);
+    }
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    
+    wprintf(L"Reading from %s\n", file);
+    while((ch = fgetwc(fp)) != WEOF){
+        putwchar(ch);
+    }
+    putwchar('\n');
+    
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Reading from alphabeta.wtxt
+ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ
+```
+
+
+
+**Exercise 8.3**
+
+Create code that writes the Cyrillic alphabet to a file. The first letter of the Cyrillic alphabet, А, is `U+0410`. The last letter is Я, `U+042F`. These are the uppercase letters. Unlike Greek, no blanks are found in the Unicode sequence.
+
+
+
+Writing Cyrillic alphabet to a file
+
+```C
+int main(){
+    const wchar_t cyrillicA = 0x0410;
+    const wchar_t cyrillicR = 0x042F;
+    
+    const char *file = "cyrillic.wtxt";
+    FILE *fp;
+    wchar_t c;
+    
+    fp = fopen(file, "w");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open %s\n", file);
+        exit(1);
+    }
+    
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+    wprintf(L"Writing Cyrillic characters to %s\n", file);
+    
+    for(c = cyrillicA; c <= cyrillicR; c++){
+        fputwc(c, fp);
+        fputwc(c, stdout);
+    }
+    
+    fputwc('\0', fp);
+    fclose(fp);
+    wprintf(L"\nDone\n");
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Writing Cyrillic characters to cyrillic.wtxt
+АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
+Done
+```
+
+`cyrillic.wtxt`
+
+```
+АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ 
+```
+
+
+
+Reading from `cyrillic.wtxt` (`fgetwc()`)
+
+```C
+int main(){
+    const char *file = "cyrillic.wtxt";
+    FILE *fp;
+    wint_t ch;
+
+    fp = fopen(file, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open %s\n", file);
+        exit(1);
+    }
+
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+
+    wprintf(L"Reading Cyrillic characters from %s\n", file);
+
+    while ((ch = fgetwc(fp)) != WEOF)
+    {
+        putwchar(ch);
+    }
+
+    putwchar('\n');
+
+    fclose(fp);
+
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Reading Cyrillic characters from cyrillic.wtxt
+АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
+
+```
+
+
+
+Reading from `cyrillic.wtxt` (`fgetws()`)
+
+```C
+
+int main()
+{
+    const char *file = "cyrillic.wtxt";
+    const int length = 64;
+    FILE *fp;
+    wchar_t line[length];
+
+    fp = fopen(file, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open %s\n", file);
+        exit(1);
+    }
+
+    setlocale(LC_CTYPE, "en_SG.UTF-8");
+
+    wprintf(L"Reading Cyrillic characters from %s\n", file);
+
+    while (fgetws(line, length, fp) != NULL)
+    {
+        wprintf(L"%ls\n", line);
+    }
+
+    fclose(fp);
+
+    return 0;
+}
+
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Reading Cyrillic characters from cyrillic.wtxt
+АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
+
+```
+
+---
+
+
+
+## Chapter 9 - Hex Dumper
+
+- Hexdump is a Linux utility available as part of the default installation.
+- In C, the 8-bit byte corresponds directly to the `char` data type.
+
+
+
+```C
+unsigned long byte = sizeof(char) * 8;
+```
+
+- The `sizeof` operator returns the number of bytes used by a specific C language data type, `char` .
+- This value is multiplied by eight to obtain the number of bits.
+- The result is stored in `unsigned long` variable `byte`.
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Size of char: 8
+```
+
+- We don't need to perform the math and overhead.
+
+- The reason is that the compiler itself has a limit.
+- Specifically, the limit values are set as defined constants in the appropriately named `limits.h` header file.
+- Memory capacity, media storage, file size - all these quantities are measured in 8-bit bytes, `char` values.
+- This yardstick gives rise to two systems for counting bytes: one based on the powers of two (binary), the other on the powers of 10 (decimal).
+- When we allocate 1 K (kilobyte) of memory, we are setting aside 1024 char-sized pieces of memory as a single chunk.
+- All `char` or byte-size values easily fit within an integer-sized chunk.
+- The `int` data type avoid any wrapping that occurs with a `char` which is probably one reason why functions like `getchar()` and `putchar()` use integers instead of `char` types.
+
+
+
+The next listing stores the 256 `char` values in a char array, `data[]`.
+
+- Two `for` loops process the array, the first to fill it and the second to output its values.
+- Though the array stores only byte values, `int` variable `b` is used to store the values.
+
+```C
+int main(){
+    // Room for the full variety of byte values
+    unsigned char data[256];
+    int b;
+    
+    for(b = 0; b < 256; b++){
+        data[b] = b;
+    }
+    
+    for(b = 0; b < 256; b++){
+        printf("%d\n", data[b]);
+    }
+    return 0;
+}
+```
+
+- With an array holding the values, allows for modifications and manipulations to be made to the stored data.
+- The goal is to accurately present the data in a readable format. 
+- The inelegant term for doing so is `dump`.
+
+
+
+### Dumping data
+
+- Dump is both a noun and a verb, neither of which is flattering.
+- What's being dumped isn't considered useful unless it's data.
+- In the digital realm, a *dump* is the movement of data from one place to another.
+- To dump data in C, we copy it from one location to another.
+- We can dump a chunk of memory, though only the memory the program has access to.
+
+
+
+```C
+int main()
+{
+    unsigned char data[256];
+    int b;
+
+    for (b = 0; b < 256; b++)
+    {
+        data[b] = b;
+    }
+
+    for (b = 0; b < 256; b++)
+    {
+        printf(" %02X", data[b]);
+        // output a newline every 16 bytes
+        if ((b + 1) % 16 == 0)
+        {
+            putchar('\n');
+        }
+    }
+    return 0;
+}
+```
+
+- One is added to the value of `b`, (b + 1), to avoid a newline popping out after the first value (zero).
+
+![Screenshot from 2024-11-14 21-35-15](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-14 21-35-15.png)
+
+- The output is better, but it could still use some improvement.
+- Because the data dump is sequential, it's easy to see patterns and reference rows and columns.
+
+
+
+**Exercise 9.2**
+
+Improve the code in the previous program in two stages. First add an initial column showing the byte values' offset. Output this value as a 5-digit hexadecimal number. Then output the row of 16 bytes.
+
+Second, add an extra space to separate the eighth and ninth byte columns. This space makes the rows and columns more readable.
+
+**Solution**
+
+```C
+```
+
+```sh
+```
+
