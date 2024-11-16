@@ -8220,8 +8220,408 @@ Second, add an extra space to separate the eighth and ninth byte columns. This s
 **Solution**
 
 ```C
+int main(){
+    unsigned char data[256];
+    int b;
+    
+    // Initialize the 'data' array with values from 0 to 255
+    for(b = 0; b < 256; b++){
+        data[b] = b;
+    }
+    
+    // Iterate thru the 'data' array to print its content
+    for(b = 0; b < 256; b++){
+        if(b % 16 == 0){
+            // Print b as a 5-digit hexadecimal number with leading zeros
+            printf("%05X ", b);
+        }
+        
+        // Print the current byte in hexadecimal format 
+        printf(" %02X", data[b]); //Print 'data[b]' as a 2-digit hexadecimal number with leading zeros
+        
+        // Insert a space after every 8 bytes for readability
+        if((b + 1) % 8 == 0){
+            putchar(' ');
+        }
+        
+        // After every 16 bytes, print a newline character to move to the next line
+        if((b + 1) % 16 == 0){
+            putchar('\n');
+        }
+    }
+    return 0;
+}
 ```
 
 ```sh
+chan@CMA:~/C_Programming/test$ ./final
+00000  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F 
+00010  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F 
+00020  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F 
+00030  30 31 32 33 34 35 36 37  38 39 3A 3B 3C 3D 3E 3F 
+00040  40 41 42 43 44 45 46 47  48 49 4A 4B 4C 4D 4E 4F 
+00050  50 51 52 53 54 55 56 57  58 59 5A 5B 5C 5D 5E 5F 
+00060  60 61 62 63 64 65 66 67  68 69 6A 6B 6C 6D 6E 6F 
+00070  70 71 72 73 74 75 76 77  78 79 7A 7B 7C 7D 7E 7F 
+00080  80 81 82 83 84 85 86 87  88 89 8A 8B 8C 8D 8E 8F 
+00090  90 91 92 93 94 95 96 97  98 99 9A 9B 9C 9D 9E 9F 
+000A0  A0 A1 A2 A3 A4 A5 A6 A7  A8 A9 AA AB AC AD AE AF 
+000B0  B0 B1 B2 B3 B4 B5 B6 B7  B8 B9 BA BB BC BD BE BF 
+000C0  C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF 
+000D0  D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF 
+000E0  E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF 
+000F0  F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF 
+
 ```
+
+- A final improvement is to add a third ASCII column after the byte values.
+- This additional information cross-references the hex bytes of displayable ASCII text, providing a handy way for humans to quickly scan the dump for relevant information.
+- The ordeal of adding an ASCII column to the output is complicated due to stream output.
+- Each row must be processed sequentially: 16 bytes are output as hex values and then the same bytes are output as printable ASCII characters.
+- To resolve this, the `line_out()` function features three arguements,
+  - an offset representing a byte count,
+  - the length of the data chunk,
+  - and the data itself as an `unsigned char` pointer
+- Variable `a` tracks progress in the `for` loops and is used with the data pointer to fetch specific byte values: `*(data + a)`.
+- This function outputs a single row of the dump, so it is called from the `main` function to output all the data.
+
+`hello.h`
+
+```C
+void line_out(int offset, int length, unsigned char *data);
+```
+
+`hello.c`
+
+```C
+void line_out(int offset, int length, unsigned char *data){
+    int a;
+    
+    // Print the offset in 5-digit hex format followed by a space
+    printf("%05X ", offset);
+    
+    // Print each byte in hex format
+    for(a = 0; a < length; a++){
+        printf(" %02X", *(data + a));
+        
+        // After every 8 bytes, print an extra space for readability
+        if((a + 1) % 8 == 0){
+            putchar(' ');
+        }
+    }
+    
+    // Additional space between hex bytes and ASCII representation
+    putchar(' ');
+    
+    // Print the ASCII representation of each byte
+    for(a = 0; a < length; a++){
+        
+        // Check if byte is printable
+        if(*(data + a) >= ' ' && *(data + a) <= '~'){
+            putchar(*(data + a));
+        }else{
+            putchar(' ');
+        }
+    }
+    putchar('\n');
+}
+```
+
+`main.c`
+
+```C
+int main(){
+    unsigned char data[256];
+    int b;
+    
+    const int length = 16;
+    
+    for(b = 0; b < 256; b++){
+        data[b] = b;
+    }
+    
+    // Iterate over the data array in steps of length (16 bytes)
+    for(b = 0; b < 256; b += length){
+        // Call the line_out func to print each 16-byte chunk
+        // Pass the current offset, the length, and a pointer to the current chunk
+        line_out(b, length, data + b);
+    }
+    
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+00000  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F                  
+00010  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F                  
+00020  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F   !"#$%&'()*+,-./
+00030  30 31 32 33 34 35 36 37  38 39 3A 3B 3C 3D 3E 3F  0123456789:;<=>?
+00040  40 41 42 43 44 45 46 47  48 49 4A 4B 4C 4D 4E 4F  @ABCDEFGHIJKLMNO
+00050  50 51 52 53 54 55 56 57  58 59 5A 5B 5C 5D 5E 5F  PQRSTUVWXYZ[\]^_
+00060  60 61 62 63 64 65 66 67  68 69 6A 6B 6C 6D 6E 6F  `abcdefghijklmno
+00070  70 71 72 73 74 75 76 77  78 79 7A 7B 7C 7D 7E 7F  pqrstuvwxyz{|}~ 
+00080  80 81 82 83 84 85 86 87  88 89 8A 8B 8C 8D 8E 8F                  
+00090  90 91 92 93 94 95 96 97  98 99 9A 9B 9C 9D 9E 9F                  
+000A0  A0 A1 A2 A3 A4 A5 A6 A7  A8 A9 AA AB AC AD AE AF                  
+000B0  B0 B1 B2 B3 B4 B5 B6 B7  B8 B9 BA BB BC BD BE BF                  
+000C0  C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF                  
+000D0  D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF                  
+000E0  E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF                  
+000F0  F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF    
+```
+
+![Screenshot from 2024-11-16 21-36-10](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-16 21-36-10.png)
+
+**Exercise 9.3**
+
+The output from the preceding program is predictable  - awath of 256-byte values from 0x00 through 0xFF. Le
+
+s modify the code to repopulate the `data[]` buffer with random values.
+
+`hello.c`
+
+```c#
+void line_out(int offset, int length, unsigned char *data)
+{
+    int a;
+    printf("%05X ", offset);
+
+    for (a = 0; a < length; a++)
+    {
+        printf(" %02X", *(data + a));
+        if ((a + 1) % 8 == 0)
+        {
+            putchar(' ');
+        }
+    }
+    putchar(' ');
+
+    for (a = 0; a < length; a++)
+    {
+        if (*(data + a) >= ' ' && *(data + a) <= '~')
+        {
+            putchar(*(data + a));
+        }
+        else
+        {
+            putchar(' ');
+        }
+    }
+
+    putchar('\n');
+}
+```
+
+`main.c`
+
+```C
+int main()
+{
+    unsigned char data[256];
+    int b;
+    const int length = 16;
+
+    srand((unsigned)(time(NULL)));
+
+    for (b = 0; b < 256; b++)
+    {
+        data[b] = rand() % 256;
+    }
+
+    for (b = 0; b < 256; b += length)
+    {
+        line_out(b, length, data + b);
+    }
+    return 0;
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+00000  BA A3 19 01 F1 24 4F 5D  1A 8A DD 1A 07 65 4B EF       $O]     eK 
+00010  D9 AC 52 73 76 B9 BC 56  B8 0E 25 A3 BE 8B 18 78    Rsv  V  %    x
+00020  2E 31 7A 1F 56 C9 7D 70  53 5A 8B 5A BF D6 4A 99  .1z V }pSZ Z  J 
+00030  82 9C 0C F8 55 C8 4F 0D  D7 74 B1 95 FF C9 0E 2E      U O  t     .
+00040  FA 88 4D 50 51 CA C1 A5  24 4C FF E4 22 49 7D A4    MPQ   $L  "I} 
+00050  E5 89 9D 3B 51 EC 48 28  60 F9 BE 5F C2 CC 8D BD     ;Q H(`  _    
+00060  54 DB 0D A5 A5 CE 4A CA  1A 4A AE 3C 93 2B E1 79  T     J  J < + y
+00070  B4 7E B4 05 6A FC 2E CA  F6 EC 29 B8 B8 B7 75 0C   ~  j .   )   u 
+00080  92 83 B1 37 51 FC 01 6C  46 AF A8 D9 DA 89 52 8E     7Q  lF     R 
+00090  07 06 94 71 03 C2 3B F9  AE 65 B1 66 1C 27 72 AE     q  ;  e f 'r 
+000A0  AA 23 E5 FB 1F E7 67 65  96 10 3F 71 99 91 FF A1   #    ge  ?q    
+000B0  98 93 12 9B 55 4E 94 03  B3 45 69 CF 6C DB 7D 16      UN   Ei l } 
+000C0  FF 62 12 1E 49 79 84 E0  89 C3 51 23 54 50 C4 EC   b  Iy    Q#TP  
+000D0  E4 D6 87 39 24 1B 3D D7  61 A6 A6 CD 82 23 E4 81     9$ = a    #  
+000E0  86 F6 9F CF 6F 23 AF F9  E6 00 1C 3B 51 E0 27 35      o#     ;Q '5
+000F0  B6 AF 6E DB CA AB B2 2B  52 59 F9 D4 7C DD 55 02    n    +RY  | U 
+chan@CMA:~/C_Programming/test$ ./final
+00000  AB 5A 9F 73 61 3C C5 22  2B 2F 31 EB D5 3C 4A CE   Z sa< "+/1  <J 
+00010  25 81 8C AB 57 11 2D 04  1A E1 37 11 78 CD B5 23  %   W -   7 x  #
+00020  28 54 97 89 90 5C AB BC  8B DC A7 60 18 F1 2F 3D  (T   \     `  /=
+00030  72 BB E9 CA CD 16 CE E7  F7 05 F9 70 D3 AE 93 FB  r          p    
+00040  02 2A 84 92 86 2F 4E 12  0B F5 72 23 E7 A1 60 59   *   /N   r#  `Y
+00050  5D 49 23 2A 5F F2 11 57  F7 0A C7 CA B8 5A C5 BA  ]I#*_  W     Z  
+00060  85 49 4D 0B 78 9B 1D 83  91 90 A6 78 31 07 D1 8E   IM x      x1   
+00070  50 F5 B8 B0 E7 CA 07 DE  D4 CE A9 8D 28 6E 47 AD  P           (nG 
+00080  B8 94 B9 30 30 D6 B4 C1  66 5A 39 98 61 0A 26 B2     00   fZ9 a & 
+00090  FF DF 62 E6 A9 69 C5 7D  37 6E 0A 5F DC 52 0D 94    b  i }7n _ R  
+000A0  E6 C6 C5 16 9C 79 D7 03  D3 10 9B 35 1B C1 E7 1A       y     5    
+000B0  A0 49 01 49 B2 C6 C7 E9  34 D1 48 10 23 55 A5 0A   I I    4 H #U  
+000C0  1B 6A 20 B8 E3 F8 BB B6  08 56 EB 23 17 D2 3E B8   j       V #  > 
+000D0  1B 3F 01 CD 05 C8 B6 39  9A FF 49 BD 54 EE C7 70   ?     9  I T  p
+000E0  58 E8 28 3B E0 E3 F2 E8  39 DD 0C 50 B0 4A 08 CB  X (;    9  P J  
+000F0  89 0A 99 8E D2 4F C7 6C  4E 10 2A A3 FF F1 13 57       O lN * 
+```
+
+
+
+### Reading file data
+
+- A `dumpfile` utility could be written as a filter, just like Linux's `hexdump`.
+- As a filter, `hexdump` chews through all input whether it originates from a file or is the output from some program.
+- Utilities that read data from a file use two approaches.
+  - The first is to specify the filename at the command prompt - usually, as the first (and often only) argument.
+  - The second way is to prompt for a filename after the utility starts, or to prompt for the filename if it's missing as a command-line argument.
+- `bytes.dat` test file is used for the following listing and it contains sequential byte values from 0x00 through 0xFF.
+
+
+
+`hello.h`
+
+```C
+void line_out(int offset, int length, unsigned char *data);
+```
+
+`hello.c`
+
+```C
+void line_out(int offset, int length, unsigned char *data)
+{
+    int a;
+    printf("%05X ", offset);
+
+    for (a = 0; a < length; a++)
+    {
+        printf(" %02X", *(data + a));
+        if ((a + 1) % 8 == 0)
+        {
+            putchar(' ');
+        }
+    }
+    putchar(' ');
+
+    for (a = 0; a < length; a++)
+    {
+        if (*(data + a) >= ' ' && *(data + a) <= '~')
+        {
+            putchar(*(data + a));
+        }
+        else
+        {
+            putchar(' ');
+        }
+    }
+
+    putchar('\n');
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[])
+{
+    const int length = 16;
+    unsigned char buffer[length];
+    char *filename;
+    FILE *fp;
+    
+    // Variables for character reading, offset tracking, and buffer indexing
+    int ch, offset, index;
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Format: dumpfile filename\n");
+        exit(1);
+    }
+
+    filename = argv[1];
+
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+    
+    offset = 0; // Initialize the offset (starting byte index) to zero
+    index = 0;
+    
+    while (!feof(fp))
+    {
+        ch = fgetc(fp);
+        if (ch == EOF)
+        {
+            // If there are remaining bytes in the buffer
+            if (index != 0)
+            {
+                // Print the remaining bytes using line_out
+                line_out(offset, index, buffer);
+            }
+            // Exit the loop as the file has been fully read
+            break;
+        }
+
+        buffer[index] = ch; // Store the read byte into the buffer
+        index++;
+        
+        // If the buffer is full (16 bytes)
+        if (index == length)
+        {
+            // Print the buffer contents using line_out
+            line_out(offset, length, buffer);
+            
+            // Update the offset for the next chunk
+            offset += length;
+            
+            // Reset the buffer index for the next set of bytes
+            index = 0;
+        }
+    }
+
+    fclose(fp);
+
+    return 0;
+}
+
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final bytes.dat
+00000  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F                  
+00010  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F                  
+00020  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F   !"#$%&'()*+,-./
+00030  30 31 32 33 34 35 36 37  38 39 3A 3B 3C 3D 3E 3F  0123456789:;<=>?
+00040  40 41 42 43 44 45 46 47  48 49 4A 4B 4C 4D 4E 4F  @ABCDEFGHIJKLMNO
+00050  50 51 52 53 54 55 56 57  58 59 5A 5B 5C 5D 5E 5F  PQRSTUVWXYZ[\]^_
+00060  60 61 62 63 64 65 66 67  68 69 6A 6B 6C 6D 6E 6F  `abcdefghijklmno
+00070  70 71 72 73 74 75 76 77  78 79 7A 7B 7C 7D 7E 7F  pqrstuvwxyz{|}~ 
+00080  80 81 82 83 84 85 86 87  88 89 8A 8B 8C 8D 8E 8F                  
+00090  90 91 92 93 94 95 96 97  98 99 9A 9B 9C 9D 9E 9F                  
+000A0  A0 A1 A2 A3 A4 A5 A6 A7  A8 A9 AA AB AC AD AE AF                  
+000B0  B0 B1 B2 B3 B4 B5 B6 B7  B8 B9 BA BB BC BD BE BF                  
+000C0  C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF                  
+000D0  D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF                  
+000E0  E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF                  
+000F0  F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF 
+```
+
+
+
+### Fixing uneven output
 
