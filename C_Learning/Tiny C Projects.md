@@ -8501,20 +8501,29 @@ void line_out(int offset, int length, unsigned char *data);
 void line_out(int offset, int length, unsigned char *data)
 {
     int a;
+    
+    // Print the offset in hexadecimal (5 digits with leading zeros)
     printf("%05X ", offset);
 
+    // Iterate through each byte to format the ASCII representation
     for (a = 0; a < length; a++)
     {
         printf(" %02X", *(data + a));
+        
+        // Insert a space after every 8 bytes for readability
         if ((a + 1) % 8 == 0)
         {
             putchar(' ');
         }
     }
+    
+    // Additional space between hex and ASCII sections
     putchar(' ');
 
+    // Iterate through each byte again to print ASCII characters
     for (a = 0; a < length; a++)
     {
+        // Check if the byte is a printable ASCII character
         if (*(data + a) >= ' ' && *(data + a) <= '~')
         {
             putchar(*(data + a));
@@ -8528,6 +8537,13 @@ void line_out(int offset, int length, unsigned char *data)
     putchar('\n');
 }
 ```
+
+- The condition `*(data + a) >= ' '` **and** `*(data + a) <= '~'` is used to determine whether a given byte in the `data` array represents a **printable ASCII character**.
+- **Understanding the ASCII Range:**
+  - **' ' (Space):** ASCII value **32**
+  - **'~' (Tilde):** ASCII value **126**
+  - **ASCII Printable Characters:** Range from **32** to **126**
+  - This range includes all standard printable characters, such as letters, digits, punctuation marks, and common symbols.
 
 `main.c`
 
@@ -8602,6 +8618,266 @@ int main(int argc, char *argv[])
 `Output`
 
 ```sh
+ chan@CMA:~/C_Programming/test$ ./final
+Format: dumpfile filename
+chan@CMA:~/C_Programming/test$ ./final bytes.dat
+00000 00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F                  
+00010 10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F                  
+00020 20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F   !"#$%&'()*+,-./
+00030 30 31 32 33 34 35 36 37  38 39 3A 3B 3C 3D 3E 3F  0123456789:;<=>?
+00040 40 41 42 43 44 45 46 47  48 49 4A 4B 4C 4D 4E 4F  @ABCDEFGHIJKLMNO
+00050 50 51 52 53 54 55 56 57  58 59 5A 5B 5C 5D 5E 5F  PQRSTUVWXYZ[\]^_
+00060 60 61 62 63 64 65 66 67  68 69 6A 6B 6C 6D 6E 6F  `abcdefghijklmno
+00070 70 71 72 73 74 75 76 77  78 79 7A 7B 7C 7D 7E 7F  pqrstuvwxyz{|}~ 
+00080 80 81 82 83 84 85 86 87  88 89 8A 8B 8C 8D 8E 8F                  
+00090 90 91 92 93 94 95 96 97  98 99 9A 9B 9C 9D 9E 9F                  
+000A0 A0 A1 A2 A3 A4 A5 A6 A7  A8 A9 AA AB AC AD AE AF                  
+000B0 B0 B1 B2 B3 B4 B5 B6 B7  B8 B9 BA BB BC BD BE BF                  
+000C0 C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF                  
+000D0 D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF                  
+000E0 E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF                  
+000F0 F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF 
+```
+
+
+
+### Fixing uneven output
+
+![Screenshot from 2024-11-17 19-52-09](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-17 19-52-09.png)
+
+- At offset `0x00270` (the last line), the file's final byte, `0A` is immediately followed by the line's ASCII column,
+- The text "to thee" is several spaces to the left of where it should line up - if the file ended exactly at 16-byte boundary.
+- To resolve this problem, the `line_out()` function must know when a line of output doesn't match the default output length of 16 bytes.
+
+In the next listing, we see how enum `SIZE` is used in the `line_out()` function to help test when the final line of output is shorter than 16 bytes.
+
+- This change requires the addition of an `if` statement between the two existing `for` loops.
+- The `if` decision helps to balance out the remainder of the last row of output so that the ASCII column lines up.
+
+`hello.h`
+
+```C
+enum{
+    SIZE = 16,
+};
+
+void line_out(int offset, int length, unsigned char *data);
+```
+
+`hello.c`
+
+```C
+void line_out(int offset, int length, unsigned char *data){
+    int a;
+    
+    printf("%05X ", offset);
+    
+    for(a = 0; a < length; a++){
+        printf(" %02X", data[a]);
+        if((a + 1) % 8 == 0){
+            putchar(' ');
+        }
+    }
+    
+    // If the row has fewer than SIZE (16) bytes
+    if(length < SIZE){
+        
+        // Continue the loop using variable a
+        for(; a < SIZE; a++){
+            
+            // Outputs three spaces
+            printf("   ");
+            
+            if((a + 1) % 8 == 0){
+                putchar(' ');
+            }
+        }
+    }
+    
+    putchar(' ');
+    
+    for(a = 0; a < length, a++){
+        if(data[a] >= ' ' && data[a] <= '~'){
+            putchar(data[a]);
+        }else{
+            putchar(' ');
+        }
+    }
+    
+    putchar('\n');
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    unsigned char buffer[SIZE];
+    char *filename;
+    FILE *fp;
+    int ch, offset, index;
+    
+    if(argc < 2){
+        fprintf(stderr, "Format: dumpfile filename\n");
+        exit(1);
+    }
+    
+    filename = argv[1];
+    fp = fopen(filename, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+    
+    offset = 0;
+    index = 0;
+    while(!feof(fp)){
+        ch = fgetc(ch);
+        if(ch == EOF){
+            if(index != 0){
+                line_out(offset, index, buffer );
+                
+            }
+            break;
+        }
+        
+        buffer[index] = ch;
+        index++;
+        
+        // If the buffer is full (16 bytes)
+        if(index == SIZE){
+            
+            // Print the buffer contents using line_out
+            line_out(offset, SIZE, buffer);
+            // Update the offset for the next chunk
+            offset += SIZE;
+            index = 0;
+        }
+    }
+    
+    fclose(fp);
+    return 0;
+}
+```
+
+- Purpose of `offset` and `SIZE`
+
+  - **`offset`**: This variable keeps track of the current byte position in the file. It represents the starting byte index of each line in the hexdump.
+  - **`SIZE`**: This is a constant that defines the number of bytes to read and display per line. In our program, `SIZE` is typically set to `16`, meaning each line of the hexdump will display 16 bytes.
+
+- **Why `offset += SIZE`?**
+
+  - Every time we read a chunk of `SIZE` bytes from the file, we process and display those bytes in one line of the hexdump. 
+
+  - After processing, we need to update the `offset` to reflect the position of the next chunk of bytes to be read. 
+
+  - By adding `SIZE` to `offset`, we ensure that each subsequent line accurately represents the next set of bytes in the file.
+
+- **Example Flow:**
+
+  1. **First Line:**
+     - **Offset**: `0`
+     - **Bytes Displayed**: Bytes `0` to `15`
+     - **After Processing**: `offset += 16` → `offset = 16`
+  2. **Second Line:**
+     - **Offset**: `16`
+     - **Bytes Displayed**: Bytes `16` to `31`
+     - **After Processing**: `offset += 16` → `offset = 32`
+  3. **And so on...**
+
+- Visualizing the Process with `sonnet18.txt`
+
+  - **Step-by-Step Execution**
+
+    1. **Program Start:**
+
+       - Initial Variables:
+         - `offset = 0`
+         - `index = 0`
+         - `buffer[16]` is empty.
+
+    2. **Reading the First 16 Bytes:**
+
+       - **Bytes Read:**
+
+         ```
+         S h a l l   I   c o m p a r e
+         ```
+
+       - **Buffer Contents (Hex):**
+
+         ```
+         53 68 61 6C 6C 20 49 20 63 6F 6D 70 61 72 65
+         ```
+
+       - **Calling `line_out(offset, 16, buffer)`**
+
+         ```
+         00000  53 68 61 6C 6C 20 49 20  63 6F 6D 70 61 72 65     Shall I compare
+         ```
+
+       - Update Offset:
+
+         - `offset += 16` → `offset = 16`
+
+    3. **Reading the Next 16 bytes**:
+
+       - Bytes Read:
+
+         ```
+          t o   a   s u m m e r ' s   d a y 
+         ```
+
+       - **Buffer Contents (Hex):**
+
+         ```
+         20 74 6F 20 61 20 73 75 6D 6D 65 72 27 73 20 64
+         ```
+
+       - **Calling `line_out(offset, 16, buffer)`:**
+
+         - Prints:
+
+         ```
+         00010  20 74 6F 20 61 20 73 75  6D 6D 65 72 27 73 20 64   to a summer's d
+         ```
+
+       - Update Offset:
+
+         - `offset += 16` → `offset = 32`
+
+    4. **Continuing the Process:**
+
+       This process repeats, reading 16 bytes at a time, calling `line_out` to display each chunk, and updating the `offset` accordingly.
+
+    5. **Handling the Last Chunk:**
+
+       If the total number of bytes isn't a multiple of `SIZE`, the remaining bytes are processed similarly, ensuring the hexdump is complete.
+
+`sonnet18.txt`
+
+```
+Shall I compare thee to a summer's day?
+Thou art more lovely and more temperate:
+Rough winds do shake the darling buds of May,
+And summer's lease hath all too short a date;
+Sometime too hot the eye of heaven shines,
+And often is his gold complexion dimm'd;
+And every fair from fair sometime declines,
+By chance or nature's changing course untrimm'd;
+But thy eternal summer shall not fade,
+Nor lose possession of that fair thou ow'st;
+Nor shall death brag thou wander'st in his shade,
+When in eternal lines to time thou grow'st:
+So long as men can breathe or eyes can see,
+So long lives this, and this gives life to thee.
+```
+
+
+
+`Output`
+
+```sh
 chan@CMA:~/C_Programming/test$ ./final bytes.dat
 00000  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F                  
 00010  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F                  
@@ -8618,10 +8894,603 @@ chan@CMA:~/C_Programming/test$ ./final bytes.dat
 000C0  C0 C1 C2 C3 C4 C5 C6 C7  C8 C9 CA CB CC CD CE CF                  
 000D0  D0 D1 D2 D3 D4 D5 D6 D7  D8 D9 DA DB DC DD DE DF                  
 000E0  E0 E1 E2 E3 E4 E5 E6 E7  E8 E9 EA EB EC ED EE EF                  
-000F0  F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF 
+000F0  F0 F1 F2 F3 F4 F5 F6 F7  F8 F9 FA FB FC FD FE FF     
+
+
+han@CMA:~/C_Programming/test$ ./final sonnet18.txt
+00000  53 68 61 6C 6C 20 49 20  63 6F 6D 70 61 72 65 20  Shall I compare 
+00010  74 68 65 65 20 74 6F 20  61 20 73 75 6D 6D 65 72  thee to a summer
+00020  27 73 20 64 61 79 3F 0A  54 68 6F 75 20 61 72 74  's day? Thou art
+00030  20 6D 6F 72 65 20 6C 6F  76 65 6C 79 20 61 6E 64   more lovely and
+00040  20 6D 6F 72 65 20 74 65  6D 70 65 72 61 74 65 3A   more temperate:
+00050  0A 52 6F 75 67 68 20 77  69 6E 64 73 20 64 6F 20   Rough winds do 
+00060  73 68 61 6B 65 20 74 68  65 20 64 61 72 6C 69 6E  shake the darlin
+00070  67 20 62 75 64 73 20 6F  66 20 4D 61 79 2C 0A 41  g buds of May, A
+00080  6E 64 20 73 75 6D 6D 65  72 27 73 20 6C 65 61 73  nd summer's leas
+00090  65 20 68 61 74 68 20 61  6C 6C 20 74 6F 6F 20 73  e hath all too s
+000A0  68 6F 72 74 20 61 20 64  61 74 65 3B 0A 53 6F 6D  hort a date; Som
+000B0  65 74 69 6D 65 20 74 6F  6F 20 68 6F 74 20 74 68  etime too hot th
+000C0  65 20 65 79 65 20 6F 66  20 68 65 61 76 65 6E 20  e eye of heaven 
+000D0  73 68 69 6E 65 73 2C 0A  41 6E 64 20 6F 66 74 65  shines, And ofte
+000E0  6E 20 69 73 20 68 69 73  20 67 6F 6C 64 20 63 6F  n is his gold co
+000F0  6D 70 6C 65 78 69 6F 6E  20 64 69 6D 6D 27 64 3B  mplexion dimm'd;
+00100  0A 41 6E 64 20 65 76 65  72 79 20 66 61 69 72 20   And every fair 
+00110  66 72 6F 6D 20 66 61 69  72 20 73 6F 6D 65 74 69  from fair someti
+00120  6D 65 20 64 65 63 6C 69  6E 65 73 2C 0A 42 79 20  me declines, By 
+00130  63 68 61 6E 63 65 20 6F  72 20 6E 61 74 75 72 65  chance or nature
+00140  27 73 20 63 68 61 6E 67  69 6E 67 20 63 6F 75 72  's changing cour
+00150  73 65 20 75 6E 74 72 69  6D 6D 27 64 3B 0A 42 75  se untrimm'd; Bu
+00160  74 20 74 68 79 20 65 74  65 72 6E 61 6C 20 73 75  t thy eternal su
+00170  6D 6D 65 72 20 73 68 61  6C 6C 20 6E 6F 74 20 66  mmer shall not f
+00180  61 64 65 2C 0A 4E 6F 72  20 6C 6F 73 65 20 70 6F  ade, Nor lose po
+00190  73 73 65 73 73 69 6F 6E  20 6F 66 20 74 68 61 74  ssession of that
+001A0  20 66 61 69 72 20 74 68  6F 75 20 6F 77 27 73 74   fair thou ow'st
+001B0  3B 0A 4E 6F 72 20 73 68  61 6C 6C 20 64 65 61 74  ; Nor shall deat
+001C0  68 20 62 72 61 67 20 74  68 6F 75 20 77 61 6E 64  h brag thou wand
+001D0  65 72 27 73 74 20 69 6E  20 68 69 73 20 73 68 61  er'st in his sha
+001E0  64 65 2C 0A 57 68 65 6E  20 69 6E 20 65 74 65 72  de, When in eter
+001F0  6E 61 6C 20 6C 69 6E 65  73 20 74 6F 20 74 69 6D  nal lines to tim
+00200  65 20 74 68 6F 75 20 67  72 6F 77 27 73 74 3A 0A  e thou grow'st: 
+00210  53 6F 20 6C 6F 6E 67 20  61 73 20 6D 65 6E 20 63  So long as men c
+00220  61 6E 20 62 72 65 61 74  68 65 20 6F 72 20 65 79  an breathe or ey
+00230  65 73 20 63 61 6E 20 73  65 65 2C 0A 53 6F 20 6C  es can see, So l
+00240  6F 6E 67 20 6C 69 76 65  73 20 74 68 69 73 2C 20  ong lives this, 
+00250  61 6E 64 20 74 68 69 73  20 67 69 76 65 73 20 6C  and this gives l
+00260  69 66 65 20 74 6F 20 74  68 65 65 2E              ife to thee.
+
 ```
 
 
 
-### Fixing uneven output
+![Screenshot from 2024-11-17 20-00-18](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-17 20-00-18.png)
+
+**Exercise 9.4**
+
+To further update the source code for the above program, modify the `main()` function so that if the filename argument is missing, the program prompts for it.
+
+It's important that your code identify when the user just presses Enter or otherwise dismisses the filename prompt. There's no point in the program attempting to open a NULL string filename. Beyond this requirement, you don't need to otherwise validate the filename, because the `fopen()` statement does so automatically.
+
+**Solution**
+
+`hello.h`
+
+```C
+enum{
+    SIZE = 16,
+};
+
+void line_out(int offset, int length, unsigned char *data);
+```
+
+`hello.c`
+
+```C
+void line_out(int offset, int length, unsigned char *data){
+    int a;
+    
+    printf("%05X ", offset);
+    
+    for(a = 0; a < length; a++){
+        printf(" %02X", data[a]);
+        if((a + 1) % 8 == 0){
+            putchar(' ');
+        }
+    }
+    
+    // If the row has fewer than SIZE (16) bytes
+    if(length < SIZE){
+        
+        // Continue the loop using variable a
+        for(; a < SIZE; a++){
+            
+            // Outputs three spaces
+            printf("   ");
+            
+            if((a + 1) % 8 == 0){
+                putchar(' ');
+            }
+        }
+    }
+    
+    putchar(' ');
+    
+    for(a = 0; a < length, a++){
+        if(data[a] >= ' ' && data[a] <= '~'){
+            putchar(data[a]);
+        }else{
+            putchar(' ');
+        }
+    }
+    
+    putchar('\n');
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    unsigned char buffer[SIZE];
+    char *filename;
+    FILE *fp;
+    int ch, offset, index;
+    char fileinput[100];
+    
+    if(argc < 2){
+        printf("Enter the filename: ");
+        if(fgets(fileinput, sizeof(fileinput), stdin) != NULL){
+            
+            // ensures that the newline character from user input is removed properly
+            fileinput[strcspn(fileinput, "\n")] = '\0';
+        }
+    }
+    
+    filename = (argc >= 2) ? argv[1] : fileinput;
+    fp = fopen(filename, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open file '%s'\n");
+        exit(1);
+    }
+    
+    offset = 0;
+    index = 0;
+    
+    //Simplifed loop condition
+    while((ch = fgetc(fp)) != EOF){
+        buffer[index++] = (unsigned char)ch;
+        
+        if(index == SIZE){
+            line_out(offset, SIZE, buffer);
+            offset += SIZE;
+            index = 0;
+        }
+    }
+    
+    // Handle remaining bytes after EOF
+    if(index > 0){
+        line_out(offset, index, buffer);
+    }
+    fclose(fp);
+    return 0;
+}
+```
+
+`main.c` (Author's solution)
+
+```C
+int main(int argc, char *argv[]){
+    unsigned char buffer[SIZE];
+    
+    // the filename variable can now be an input buffer
+    // BUFSIZ is defined in stdio.
+    char filename[BUFSIZ];
+    
+    // For the fgets() function return value
+    char *r;
+    FILE *fp;
+    int ch, offset, index;
+    
+    if(argc < 2){
+        printf("Filename: ");
+        r = fgets(filename, BUFSIZ, stdin);
+        
+        // a NULL return = nothing valid typed
+        // if only '\n' in the buffer, nothing typed
+        if(r == NULL || filename[0] == '\n'){
+            exit(1);
+        }
+        
+        // Remove the newline
+        while(*r != '\n'){ // r = the string entered
+            r++;
+            
+            // Check for overflow
+            if(r - filename == BUFSIZ){
+                exit(1);
+            }
+        }
+        *r = '\0'l
+    }else{
+        strcpy(filename, argv[1]);
+    }
+    
+    fp = fopen(filename, "r");
+    if(fp == NULL){
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+    
+    offset = 0;
+    index = 0;
+    while((ch = fgetc(fp)) != EOF){
+        buffer[index++] = (unsigned char)ch;
+        
+        if(index == SIZE){
+            line_out(offset, SIZE, buffer);
+            offset += SIZE;
+            index = 0;
+        }
+    }
+    
+    if(index > 0){
+        line_out(offset, index, buffer);
+    }
+    
+    fclose(fp);
+    
+    return 0;
+    
+}
+```
+
+
+
+`Output`
+
+```sh
+han@CMA:~/C_Programming/test$ ./final
+Enter the filename: hey
+Unable to open file 'hey'
+
+chan@CMA:~/C_Programming/test$ ./final
+Enter the filename: sonnet18.txt
+00000  53 68 61 6C 6C 20 49 20  63 6F 6D 70 61 72 65 20  Shall I compare 
+00010  74 68 65 65 20 74 6F 20  61 20 73 75 6D 6D 65 72  thee to a summer
+00020  27 73 20 64 61 79 3F 0A  54 68 6F 75 20 61 72 74  's day? Thou art
+00030  20 6D 6F 72 65 20 6C 6F  76 65 6C 79 20 61 6E 64   more lovely and
+00040  20 6D 6F 72 65 20 74 65  6D 70 65 72 61 74 65 3A   more temperate:
+00050  0A 52 6F 75 67 68 20 77  69 6E 64 73 20 64 6F 20   Rough winds do 
+00060  73 68 61 6B 65 20 74 68  65 20 64 61 72 6C 69 6E  shake the darlin
+00070  67 20 62 75 64 73 20 6F  66 20 4D 61 79 2C 0A 41  g buds of May, A
+00080  6E 64 20 73 75 6D 6D 65  72 27 73 20 6C 65 61 73  nd summer's leas
+00090  65 20 68 61 74 68 20 61  6C 6C 20 74 6F 6F 20 73  e hath all too s
+000A0  68 6F 72 74 20 61 20 64  61 74 65 3B 0A 53 6F 6D  hort a date; Som
+000B0  65 74 69 6D 65 20 74 6F  6F 20 68 6F 74 20 74 68  etime too hot th
+000C0  65 20 65 79 65 20 6F 66  20 68 65 61 76 65 6E 20  e eye of heaven 
+000D0  73 68 69 6E 65 73 2C 0A  41 6E 64 20 6F 66 74 65  shines, And ofte
+000E0  6E 20 69 73 20 68 69 73  20 67 6F 6C 64 20 63 6F  n is his gold co
+000F0  6D 70 6C 65 78 69 6F 6E  20 64 69 6D 6D 27 64 3B  mplexion dimm'd;
+00100  0A 41 6E 64 20 65 76 65  72 79 20 66 61 69 72 20   And every fair 
+00110  66 72 6F 6D 20 66 61 69  72 20 73 6F 6D 65 74 69  from fair someti
+00120  6D 65 20 64 65 63 6C 69  6E 65 73 2C 0A 42 79 20  me declines, By 
+00130  63 68 61 6E 63 65 20 6F  72 20 6E 61 74 75 72 65  chance or nature
+00140  27 73 20 63 68 61 6E 67  69 6E 67 20 63 6F 75 72  's changing cour
+00150  73 65 20 75 6E 74 72 69  6D 6D 27 64 3B 0A 42 75  se untrimm'd; Bu
+00160  74 20 74 68 79 20 65 74  65 72 6E 61 6C 20 73 75  t thy eternal su
+00170  6D 6D 65 72 20 73 68 61  6C 6C 20 6E 6F 74 20 66  mmer shall not f
+00180  61 64 65 2C 0A 4E 6F 72  20 6C 6F 73 65 20 70 6F  ade, Nor lose po
+00190  73 73 65 73 73 69 6F 6E  20 6F 66 20 74 68 61 74  ssession of that
+001A0  20 66 61 69 72 20 74 68  6F 75 20 6F 77 27 73 74   fair thou ow'st
+001B0  3B 0A 4E 6F 72 20 73 68  61 6C 6C 20 64 65 61 74  ; Nor shall deat
+001C0  68 20 62 72 61 67 20 74  68 6F 75 20 77 61 6E 64  h brag thou wand
+001D0  65 72 27 73 74 20 69 6E  20 68 69 73 20 73 68 61  er'st in his sha
+001E0  64 65 2C 0A 57 68 65 6E  20 69 6E 20 65 74 65 72  de, When in eter
+001F0  6E 61 6C 20 6C 69 6E 65  73 20 74 6F 20 74 69 6D  nal lines to tim
+00200  65 20 74 68 6F 75 20 67  72 6F 77 27 73 74 3A 0A  e thou grow'st: 
+00210  53 6F 20 6C 6F 6E 67 20  61 73 20 6D 65 6E 20 63  So long as men c
+00220  61 6E 20 62 72 65 61 74  68 65 20 6F 72 20 65 79  an breathe or ey
+00230  65 73 20 63 61 6E 20 73  65 65 2C 0A 53 6F 20 6C  es can see, So l
+00240  6F 6E 67 20 6C 69 76 65  73 20 74 68 69 73 2C 20  ong lives this, 
+00250  61 6E 64 20 74 68 69 73  20 67 69 76 65 73 20 6C  and this gives l
+00260  69 66 65 20 74 6F 20 74  68 65 65 2E              ife to thee.
+```
+
+`Output` (Author's solution)
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Filename: Good News
+Unable to open file 'Good News'
+chan@CMA:~/C_Programming/test$ ./final
+Filename: sonnet18.txt
+00000  53 68 61 6C 6C 20 49 20  63 6F 6D 70 61 72 65 20  Shall I compare 
+00010  74 68 65 65 20 74 6F 20  61 20 73 75 6D 6D 65 72  thee to a summer
+00020  27 73 20 64 61 79 3F 0A  54 68 6F 75 20 61 72 74  's day? Thou art
+00030  20 6D 6F 72 65 20 6C 6F  76 65 6C 79 20 61 6E 64   more lovely and
+00040  20 6D 6F 72 65 20 74 65  6D 70 65 72 61 74 65 3A   more temperate:
+00050  0A 52 6F 75 67 68 20 77  69 6E 64 73 20 64 6F 20   Rough winds do 
+00060  73 68 61 6B 65 20 74 68  65 20 64 61 72 6C 69 6E  shake the darlin
+00070  67 20 62 75 64 73 20 6F  66 20 4D 61 79 2C 0A 41  g buds of May, A
+00080  6E 64 20 73 75 6D 6D 65  72 27 73 20 6C 65 61 73  nd summer's leas
+00090  65 20 68 61 74 68 20 61  6C 6C 20 74 6F 6F 20 73  e hath all too s
+000A0  68 6F 72 74 20 61 20 64  61 74 65 3B 0A 53 6F 6D  hort a date; Som
+000B0  65 74 69 6D 65 20 74 6F  6F 20 68 6F 74 20 74 68  etime too hot th
+000C0  65 20 65 79 65 20 6F 66  20 68 65 61 76 65 6E 20  e eye of heaven 
+000D0  73 68 69 6E 65 73 2C 0A  41 6E 64 20 6F 66 74 65  shines, And ofte
+000E0  6E 20 69 73 20 68 69 73  20 67 6F 6C 64 20 63 6F  n is his gold co
+000F0  6D 70 6C 65 78 69 6F 6E  20 64 69 6D 6D 27 64 3B  mplexion dimm'd;
+00100  0A 41 6E 64 20 65 76 65  72 79 20 66 61 69 72 20   And every fair 
+00110  66 72 6F 6D 20 66 61 69  72 20 73 6F 6D 65 74 69  from fair someti
+00120  6D 65 20 64 65 63 6C 69  6E 65 73 2C 0A 42 79 20  me declines, By 
+00130  63 68 61 6E 63 65 20 6F  72 20 6E 61 74 75 72 65  chance or nature
+00140  27 73 20 63 68 61 6E 67  69 6E 67 20 63 6F 75 72  's changing cour
+00150  73 65 20 75 6E 74 72 69  6D 6D 27 64 3B 0A 42 75  se untrimm'd; Bu
+00160  74 20 74 68 79 20 65 74  65 72 6E 61 6C 20 73 75  t thy eternal su
+00170  6D 6D 65 72 20 73 68 61  6C 6C 20 6E 6F 74 20 66  mmer shall not f
+00180  61 64 65 2C 0A 4E 6F 72  20 6C 6F 73 65 20 70 6F  ade, Nor lose po
+00190  73 73 65 73 73 69 6F 6E  20 6F 66 20 74 68 61 74  ssession of that
+001A0  20 66 61 69 72 20 74 68  6F 75 20 6F 77 27 73 74   fair thou ow'st
+001B0  3B 0A 4E 6F 72 20 73 68  61 6C 6C 20 64 65 61 74  ; Nor shall deat
+001C0  68 20 62 72 61 67 20 74  68 6F 75 20 77 61 6E 64  h brag thou wand
+001D0  65 72 27 73 74 20 69 6E  20 68 69 73 20 73 68 61  er'st in his sha
+001E0  64 65 2C 0A 57 68 65 6E  20 69 6E 20 65 74 65 72  de, When in eter
+001F0  6E 61 6C 20 6C 69 6E 65  73 20 74 6F 20 74 69 6D  nal lines to tim
+00200  65 20 74 68 6F 75 20 67  72 6F 77 27 73 74 3A 0A  e thou grow'st: 
+00210  53 6F 20 6C 6F 6E 67 20  61 73 20 6D 65 6E 20 63  So long as men c
+00220  61 6E 20 62 72 65 61 74  68 65 20 6F 72 20 65 79  an breathe or ey
+00230  65 73 20 63 61 6E 20 73  65 65 2C 0A 53 6F 20 6C  es can see, So l
+00240  6F 6E 67 20 6C 69 76 65  73 20 74 68 69 73 2C 20  ong lives this, 
+00250  61 6E 64 20 74 68 69 73  20 67 69 76 65 73 20 6C  and this gives l
+00260  69 66 65 20 74 6F 20 74  68 65 65 2E              ife to thee.
+
+```
+
+
+
+### Command-line options
+
+- As a command-line utility, options and features are controlled by **switches** - additional command-line arguments that activate, deactivate, or specify quantities and limits.
+- In Linux, these switches have a format: `-a`, where a letter is preceded by a dash or hyphen.
+
+- In Linux, we can specify multiple switches:
+
+  - ```sh
+    dumpfile -a -b -c
+    ```
+
+  - These can be bunched together:
+
+    - ```shell
+      dumpfile -abc
+      ```
+
+  - And some switches can have options:
+
+    ```sh
+    dumpfile -q:5
+    ```
+
+- We can also take advantage of a handy C library feature: the `getopt()` function. 
+
+  - It helps our program process switches so that we don't have to write the code.
+
+
+
+### Using the `getopt()` function
+
+- The `getopt()` function helps our code process command-line switches.
+
+```C
+int getopt(int argc, char* const argv[], const char *optstring);
+```
+
+- The first two arguments are identical to the `main()` function's `argc` and `*argv[]` arguments.
+
+- The final argument `optstring`, is a list of valid switch characters.
+
+- For example:
+
+  - ```C
+    getopt(argc, argv, "abc")
+    ```
+
+  - Valid switches here are `-a`, `-b` and `-c`.
+
+  - The function is called repeatedly, each time returning the ASCII code for a valid character (an int value), the character '?' for an unknown option, or -1 when the function has exhausted command-line options.
+
+- The companion `getopt_long()` function handles full word switches.
+
+- Both `getopt()` and `getopt_long()` require that the `unistd.h` header file be included in our code.
+
+
+
+In the next listing, shows code as a test before adding the `getopt()` function to our previous `dumpfile` code.
+
+- Global variable `opterr` is set to zero to ensure that `getopt()` doesn't output its own error messages.
+- The `getopt()` function itself resides inside a while loop's condition.
+- The function's return value is compared with -1, meaning that all command-line arguments have been examined, which stops the loop.
+- Otherwise, the value returned in variable `r` is used in a `switch-case` structure to indicate which option is set.
+- This setup is how the `getopt()` function is typically implemented.
+
+```C
+#include <stdio.h>
+#include <unistd.h>
+#include <getopt.h>
+
+int main(int argc, char *argv[]){
+    int r;
+    
+    // Suppresses error output from getopt()
+    opterr = 0;
+    
+    // Scans the arguments, repeating the loop until every argument is processed
+    while((r = getopt(argc, argv, "abc")) != -1){
+        // Examines the character returned
+        switch(r){
+            case 'a':
+            	puts("alfa option set");
+            	break;
+        	case 'b':
+            	puts("bravo option set");
+            	break;
+        	case 'c':
+            	puts("charlie option set");
+            	break;
+        	case '?':
+            	printf("Switche '%c' is 						invalid\n", optopt);
+        	default:
+            	puts("Unknown option");   
+        }
+    }
+    
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+chan@CMA:~/C_Programming/test$ ./final -a -b -c
+alfa option set
+bravo option set
+charlie option set
+
+chan@CMA:~/C_Programming/test$ ./final -c -a -b
+charlie option set
+alfa option set
+bravo option set
+
+chan@CMA:~/C_Programming/test$ ./final -cb
+charlie option set
+bravo option set
+
+chan@CMA:~/C_Programming/test$ ./final -u -a
+Switche 'u' is invalid
+Unknown option
+alfa option set
+
+
+```
+
+- The `getopt()` function allows us all the flexibility to read options in this manner without having to code the complex comparisons and processing ourselves.
+- The next step is too add variables that represent on-off switches for what  the options attempt to accomplish.
+
+```C
+int main(int argc, char *argv[])
+{
+    int r;
+
+    int alfa, bravo, charlie;
+
+    // Each variable is initialized before the getopt() statement in the while loop
+    opterr = 0;
+    alfa = 0;
+    bravo = 0;
+    charlie = 0;
+
+    while ((r = getopt(argc, argv, "abc")) != -1)
+    {
+        // Removes the puts() statement and replace them with statements that set the variables value to 1 (TRUE) for active
+        switch (r)
+        {
+        case 'a':
+            alfa = 1;
+            break;
+        case 'b':
+            bravo = 1;
+            break;
+        case 'c':
+            charlie = 1;
+            break;
+        case '?':
+            printf("Switch '%c' is invalid\n", optopt);
+            break;
+        default:
+            puts("Unknown option");
+        }
+    }
+
+    if (alfa)
+        puts("alfa option set");
+    if (bravo)
+        puts("bravo option set");
+    if (charlie)
+        puts("charlie option set");
+    if (alfa + bravo + charlie == 0)
+        puts("No options set");
+
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+No options set
+chan@CMA:~/C_Programming/test$ ./final -a -b -c
+alfa option set
+bravo option set
+charlie option set
+```
+
+- Because the switches can be examined in this new code, a lack of options is easily identified.
+- The remaining variations for the switches have the same output as the original program.
+- The difference is that the program is now aware of the settings and can examine the variables to perform whatever magic is requested.
+
+
+
+### Updating the `dumpfile` program code
+
+- To add command-line options to a utility, we must know what the options do.
+
+- Then we use a function like `getopt()` to scan for and set the options.
+
+- For the `dumpfile` program, the appropriate suggestions are:
+
+  - `-a` for abbreviated output
+  - `-o` for octal output
+  - `-h` for help
+
+- The following code checks to see whether the `-h` "help" switch is specified first.
+
+  - If not, the program may attempt to open the file `-h`.
+
+  - So, a quick comparison is made for `-h` as the first argument.
+
+  - If found, the `help()` function is called:
+
+  - ```C
+    filename = argv[1];
+    
+    if(strcmp(filename, "-h") == 0){
+        help();
+    }
+    ```
+
+  - Because the program assumes the first argument is a filename, this step is necessary even if we use the `getopt()` function elsewhere in the code to look for the `-h` switch.
+
+
+
+In the next listing for the updated code for `dumpfile` , each of the three valid switches `-a`, `-o` and `-h` are tested for in a while loop.
+
+- To process the rest of the switches, a single `int` variable `options`.
+- It is initialized to zero, along with other variables used elsewhere in the main() function.
+- For two of the switches, a macro alters the value of variable `options: set_abbr()` for `-a` and `set_oct()` for `-o`. 
+- If the help switch is specified, the `help()` function is called where text is output and the program terminates.
+
+`hello.h`
+
+```C
+int options;
+
+#define SIZE 16
+#define ABBR 1
+#define OCT 2
+#define set_abbr() options|=ABBR
+#define test_abbr() ((options&ABBR)==ABBR)
+#define set_oct() options|=OCT
+#define test_oct() ((options&OCT)==OCT)
+
+void line_out(int offset, int length, unsigned char *data);
+
+void help(void);
+```
+
+`hello.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+```
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+```
 
