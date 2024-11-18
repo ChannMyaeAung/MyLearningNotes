@@ -9458,23 +9458,54 @@ In the next listing for the updated code for `dumpfile` , each of the three vali
 - For two of the switches, a macro alters the value of variable `options: set_abbr()` for `-a` and `set_oct()` for `-o`. 
 - If the help switch is specified, the `help()` function is called where text is output and the program terminates.
 
+#### Setting abbreviated output
+
 `hello.h`
 
 ```C
-int options;
+#ifndef HELLO_H
+#define HELLO_H
 
-#define SIZE 16
-#define ABBR 1
-#define OCT 2
-#define set_abbr() options|=ABBR
-#define test_abbr() ((options&ABBR)==ABBR)
-#define set_oct() options|=OCT
-#define test_oct() ((options&OCT)==OCT)
+#include <stdio.h>
+
+extern int options;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+    SIZE = 16, // 16 bytes per line
+    ABBR = 1, // Abbreviation status is bit 1.
+    OCT = 2, // Octal output status is bit 2.
+};
+
+// Uses the bitwise logical OR to set bit 1 (ABBR) in variable options
+#define set_abbr() options |= ABBR
+
+// Uses the bitwise logical AND to test bit 1 (ABBR) in variable options
+#define test_abbr() ((options & ABBR) == ABBR)
+
+// Uses the bitwise logical OR to set bit 2 (OCT) in variable options
+#define set_oct() options |= OCT
+
+// Uses the bitwise logical AND to test bit 2 (OCT) in variable options
+#define test_oct() ((options & OCT) == OCT)
 
 void line_out(int offset, int length, unsigned char *data);
 
 void help(void);
+#endif
 ```
+
+- The defined constants `ABBR` and `OCT` represent bit positions in the variable `options` that don't overlap.
+- Each bit can be set or examined without changing the other bits.
+- The macro `set_abbr()` and `set_oct()` allow the code to modify the variable `options` by setting specific bits.
+  - **`set_abbr()`**: Activates the **abbreviated output** mode by setting the `ABBR` flag in the `options` variable.
+  - **`set_oct()`**: Activates the **octal output** mode by setting the `OCT` flag in the `options` variable.
+  - **`test_abbr()`**: Checks if the **abbreviated output** mode is active by verifying if the `ABBR` flag is set in `options`.
+  - **`test_oct()`**: Checks if the **octal output** mode is active by verifying if the `OCT` flag is set in `options`.
 
 `hello.c`
 
@@ -9483,6 +9514,71 @@ void help(void);
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+int options = 0;
+
+void line_out(int offset, int length, unsigned char *data)
+{
+    int a;
+	
+    // exectued when the test_abbr() returns zero
+    if (!test_abbr())
+    {
+
+        printf("%05X ", offset);
+    }
+
+    for (a = 0; a < length; a++)
+    {
+        printf(" %02X", data[a]);
+
+        if ((a + 1) % 8 == 0 && !test_abbr())
+        {
+            putchar(' ');
+        }
+    }
+
+    if (length < SIZE)
+    {
+        for (; a < SIZE; a++)
+        {
+            printf("   ");
+            if ((a + 1) % 8 == 0)
+            {
+                putchar(' ');
+            }
+        }
+    }
+
+    if (!test_abbr())
+    {
+
+        putchar(' ');
+        for (a = 0; a < length; a++)
+        {
+            if (data[a] >= ' ' && data[a] <= '~')
+            {
+                putchar(data[a]);
+            }
+            else
+            {
+                putchar(' ');
+            }
+        }
+    }
+    putchar('\n');
+}
+
+void help(void)
+{
+    puts("dumpfile - output a file's raw data");
+    puts("Format: dumpfile filename [options]");
+    puts("Options:");
+    puts("-a abbreviated output");
+    puts("-o output octal instead of hex");
+    puts("-h display this text");
+    exit(1);
+}
 ```
 
 `main.c`
@@ -9492,5 +9588,890 @@ void help(void);
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+int main(int argc, char *argv[])
+{
+    unsigned char buffer[SIZE];
+    char *filename;
+    FILE *fp;
+    int r, ch, offset, index;
+
+    if (argc < 2)
+    {
+        puts("Format: dumpfile filename [options]");
+        exit(1);
+    }
+
+    filename = argv[1];
+
+    if (strcmp(filename, "-h") == 0)
+    {
+        help();
+    }
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+
+    offset = index = opterr = options = 0;
+	
+    // Valid switches are a, o, s and h.
+    while ((r = getopt(argc, argv, "aosh")) != -1)
+    {
+        switch (r)
+        {
+        case 'a':
+            set_abbr();
+            break;
+        case 'o':
+            set_oct();
+            break;
+        case 'h':
+            help();
+            break;
+        case '?':
+            printf("Switch '%c' is invalid\n", optopt);
+            break;
+        default:
+            puts("Unknown option");
+        }
+    }
+
+    while ((ch = fgetc(fp)) != EOF)
+    {
+        buffer[index++] = ch;
+
+        if (index == SIZE)
+        {
+            line_out(offset, SIZE, buffer);
+            offset += SIZE;
+            index = 0;
+        }
+    }
+
+    // Handles remaining bytes after EOF
+    if (index > 0)
+    {
+        line_out(offset, index, buffer);
+    }
+
+    fclose(fp);
+
+    return 0;
+}
 ```
+
+- **Variables Initialized:**
+  - `offset = 0`: Tracks the current byte position.
+  - `index = 0`: Tracks the position within the buffer.
+  - `buffer[16]`: Stores 16 bytes from the file.
+- **Reading Loop:**
+  - The program reads the file **one byte at a time** using `fgetc`.
+  - Each byte is stored in `buffer[index]`.
+  - When `index` reaches `16`:
+    - Calls `line_out(offset, SIZE, buffer)` to process and print the chunk.
+    - Updates:
+      - `offset += SIZE` → Moves to the next byte position.
+      - `index = 0` → Resets the buffer index.
+- **End of File:**
+  - After reading all bytes, if `index > 0` (last partial chunk), it calls `line_out(offset, index, buffer)` to process remaining bytes.
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt -h
+dumpfile - output a file's raw data
+Format: dumpfile filename [options]
+Options:
+-a abbreviated output
+-o output octal instead of hex
+-h display this text
+
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt -a
+ 53 68 61 6C 6C 20 49 20 63 6F 6D 70 61 72 65 20
+ 74 68 65 65 20 74 6F 20 61 20 73 75 6D 6D 65 72
+ 27 73 20 64 61 79 3F 0A 54 68 6F 75 20 61 72 74
+ 20 6D 6F 72 65 20 6C 6F 76 65 6C 79 20 61 6E 64
+ 20 6D 6F 72 65 20 74 65 6D 70 65 72 61 74 65 3A
+ 0A 52 6F 75 67 68 20 77 69 6E 64 73 20 64 6F 20
+ 73 68 61 6B 65 20 74 68 65 20 64 61 72 6C 69 6E
+ 67 20 62 75 64 73 20 6F 66 20 4D 61 79 2C 0A 41
+ 6E 64 20 73 75 6D 6D 65 72 27 73 20 6C 65 61 73
+ 65 20 68 61 74 68 20 61 6C 6C 20 74 6F 6F 20 73
+ 68 6F 72 74 20 61 20 64 61 74 65 3B 0A 53 6F 6D
+ 65 74 69 6D 65 20 74 6F 6F 20 68 6F 74 20 74 68
+ 65 20 65 79 65 20 6F 66 20 68 65 61 76 65 6E 20
+ 73 68 69 6E 65 73 2C 0A 41 6E 64 20 6F 66 74 65
+ 6E 20 69 73 20 68 69 73 20 67 6F 6C 64 20 63 6F
+ 6D 70 6C 65 78 69 6F 6E 20 64 69 6D 6D 27 64 3B
+ 0A 41 6E 64 20 65 76 65 72 79 20 66 61 69 72 20
+ 66 72 6F 6D 20 66 61 69 72 20 73 6F 6D 65 74 69
+ 6D 65 20 64 65 63 6C 69 6E 65 73 2C 0A 42 79 20
+ 63 68 61 6E 63 65 20 6F 72 20 6E 61 74 75 72 65
+ 27 73 20 63 68 61 6E 67 69 6E 67 20 63 6F 75 72
+ 73 65 20 75 6E 74 72 69 6D 6D 27 64 3B 0A 42 75
+ 74 20 74 68 79 20 65 74 65 72 6E 61 6C 20 73 75
+ 6D 6D 65 72 20 73 68 61 6C 6C 20 6E 6F 74 20 66
+ 61 64 65 2C 0A 4E 6F 72 20 6C 6F 73 65 20 70 6F
+ 73 73 65 73 73 69 6F 6E 20 6F 66 20 74 68 61 74
+ 20 66 61 69 72 20 74 68 6F 75 20 6F 77 27 73 74
+ 3B 0A 4E 6F 72 20 73 68 61 6C 6C 20 64 65 61 74
+ 68 20 62 72 61 67 20 74 68 6F 75 20 77 61 6E 64
+ 65 72 27 73 74 20 69 6E 20 68 69 73 20 73 68 61
+ 64 65 2C 0A 57 68 65 6E 20 69 6E 20 65 74 65 72
+ 6E 61 6C 20 6C 69 6E 65 73 20 74 6F 20 74 69 6D
+ 65 20 74 68 6F 75 20 67 72 6F 77 27 73 74 3A 0A
+ 53 6F 20 6C 6F 6E 67 20 61 73 20 6D 65 6E 20 63
+ 61 6E 20 62 72 65 61 74 68 65 20 6F 72 20 65 79
+ 65 73 20 63 61 6E 20 73 65 65 2C 0A 53 6F 20 6C
+ 6F 6E 67 20 6C 69 76 65 73 20 74 68 69 73 2C 20
+ 61 6E 64 20 74 68 69 73 20 67 69 76 65 73 20 6C
+ 69 66 65 20 74 6F 20 74 68 65 65 2E    
+```
+
+**Macro Execution:**
+
+- `-a` Switch Detected:
+
+  - The program calls the macro `set_abbr()`.
+
+  - Macro Definition (`hello.h`):
+
+    ```C
+    #define set_abbr() options |= ABBR
+    ```
+
+  - Effect:
+
+    - Sets the `ABBR` flag in the `options` variable.
+    - **`options` Before:** `0000` (binary)
+    - **`ABBR` Value:** `0001` (binary)
+    - **`options` After:** `0001` (binary)
+
+**Macro Checks:**
+
+- **`test_abbr()` Macro (`hello.h`):**
+
+- ```C
+  #define test_abbr() ((options & ABBR) == ABBR)
+  ```
+
+- **Result:** Returns `true` since `ABBR` flag is set.
+
+- ```C
+  if (!test_abbr())
+  {
+      printf("%05X ", offset);
+  }
+  ```
+
+- Since `test_abbr()` is `true`:
+
+  - Offset (`%05X`) and ASCII Representation are not printed.
+
+- **Hexadecimal Printing:**
+
+  - Iterates through each byte in `buffer` and prints its hexadecimal value.
+
+  - Extra Space After 8 Bytes:
+
+    ```C
+    if ((a + 1) % 8 == 0 && !test_abbr())
+    
+    {
+    
+      putchar(' ');
+    
+    }
+    ```
+
+  - Since `test_abbr()` is `true`:
+
+    - **No extra space added.**
+
+
+
+#### Activating octal output
+
+- To specify octal, we use the zero prefix: `01` is octal 1, `010` is octal 10 (decimal 8), and so on.
+
+- The `printf()` and `scanf()` placeholder for octal values is `%o`.
+
+- Like other placeholders, it features width values and zero-padding.
+
+- Three changes are required to activate the `-o` switch.
+
+  1. When the octal switch is active, the first column needs to output octal values instead of hex. The decision is in addition to whether the column is output when `test_abbr()` macro is true (or false).
+
+     ```C
+     if(!test_abbr()){
+         if(test_oct()){
+             printf("%05o ", offset);
+         }else{
+             printf("%05X ", offset);
+         }
+     }
+     ```
+
+     - The `%05o` placeholder outputs the value of variable offset as an octal number five digits wide with zeros padded on the left.
+
+  2. The next change takes place in the `for` loop that outputs the bytes.
+
+     - When the `test_oct()` macro returns TRUE, octal values are output instead of decimal:
+
+     ```C
+     if(test_oct()){
+         printf(" %03o", data[a]);
+     }else{
+         printf(" %02X", data[a]);
+     }
+     ```
+
+     - The placeholder `%03o` outputs an octal value three digits wide with zeros padded on the left.
+
+  3. The final change is made when the last line of output is shorter than 16 bytes. 
+
+     - Because the octal values are output three characters wide instead of two, four spaces are needed for each missing byte to line up the ASCII column.
+
+     ```C
+     if(test_oct()){
+         printf("    ");
+     }else{
+         printf("   ");
+     }
+     ```
+
+     
+
+`hello.h`
+
+```C
+#ifndef HELLO_H
+#define HELLO_H
+
+#include <stdio.h>
+
+extern int options;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+    SIZE = 16,
+    ABBR = 1,
+    OCT = 2,
+};
+
+#define set_abbr() options |= ABBR
+#define test_abbr() ((options & ABBR) == ABBR)
+#define set_oct() options |= OCT
+#define test_oct() ((options & OCT) == OCT)
+
+void line_out(int offset, int length, unsigned char *data);
+
+void help(void);
+#endif
+```
+
+`hello.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+int options = 0;
+
+void line_out(int offset, int length, unsigned char *data)
+{
+    int a;
+
+    if (!test_abbr())
+    {
+        if (test_oct())
+        {
+            printf("%05o ", offset);
+        }
+        else
+        {
+
+            printf("%05X ", offset);
+        }
+    }
+
+    for (a = 0; a < length; a++)
+    {
+        if (test_oct())
+        {
+            printf(" %03o", data[a]);
+        }
+        else
+        {
+
+            printf(" %02X", data[a]);
+        }
+
+        if ((a + 1) % 8 == 0 && !test_abbr())
+        {
+            putchar(' ');
+        }
+    }
+
+    if (length < SIZE)
+    {
+        for (; a < SIZE; a++)
+        {
+            if (test_oct())
+            {
+                printf("    ");
+            }
+            else
+            {
+
+                printf("   ");
+            }
+            if ((a + 1) % 8 == 0)
+            {
+                putchar(' ');
+            }
+        }
+    }
+
+    if (!test_abbr())
+    {
+
+        putchar(' ');
+        for (a = 0; a < length; a++)
+        {
+            if (data[a] >= ' ' && data[a] <= '~')
+            {
+                putchar(data[a]);
+            }
+            else
+            {
+                putchar(' ');
+            }
+        }
+    }
+    putchar('\n');
+}
+
+void help(void)
+{
+    puts("dumpfile - output a file's raw data");
+    puts("Format: dumpfile filename [options]");
+    puts("Options:");
+    puts("-a abbreviated output");
+    puts("-o output octal instead of hex");
+    puts("-h display this text");
+    exit(1);
+}
+```
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+int main(int argc, char *argv[])
+{
+    unsigned char buffer[SIZE];
+    char *filename;
+    FILE *fp;
+    int r, ch, offset, index;
+
+    if (argc < 2)
+    {
+        puts("Format: dumpfile filename [options]");
+        exit(1);
+    }
+
+    filename = argv[1];
+
+    if (strcmp(filename, "-h") == 0)
+    {
+        help();
+    }
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+
+    offset = index = opterr = options = 0;
+
+    while ((r = getopt(argc, argv, "aoh")) != -1)
+    {
+        switch (r)
+        {
+        case 'a':
+            set_abbr();
+            break;
+        case 'o':
+            set_oct();
+            break;
+        case 'h':
+            help();
+            break;
+        case '?':
+            printf("Switch '%c' is invalid\n", optopt);
+            break;
+        default:
+            puts("Unknown option");
+        }
+    }
+
+    while ((ch = fgetc(fp)) != EOF)
+    {
+        buffer[index++] = ch;
+
+        if (index == SIZE)
+        {
+            line_out(offset, SIZE, buffer);
+            offset += SIZE;
+            index = 0;
+        }
+    }
+
+    // Handles remaining bytes after EOF
+    if (index > 0)
+    {
+        line_out(offset, index, buffer);
+    }
+
+    fclose(fp);
+
+    return 0;
+}
+```
+
+
+
+`Output`
+
+![Screenshot from 2024-11-18 19-40-21](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-18 19-40-21.png)
+
+**Exercise 9.5**
+
+How about adding one more switch to the dumpfile program? The `-v` switch is commonly used to output the program’s version number. I would recommend setting these values as defined constants: separate major and minor version numbers, or a complete version number string. Add both the -v switch as well as the code (the version() function) to output the
+version number. The program can quit after performing this task. And remember that
+some users may use the -v switch as the program’s only argument.
+
+**Solution**
+
+`hello.h`
+
+```C
+#ifndef HELLO_H
+#define HELLO_H
+
+#include <stdio.h>
+
+extern int options;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+    SIZE = 16,
+    ABBR = 1,
+    OCT = 2,
+    VERSION_MAJOR = 1,
+    VERSION_MINOR = 0,
+};
+
+#define set_abbr() options |= ABBR
+#define test_abbr() ((options & ABBR) == ABBR)
+#define set_oct() options |= OCT
+#define test_oct() ((options & OCT) == OCT)
+
+void line_out(int offset, int length, unsigned char *data);
+
+void help(void);
+
+void version(void);
+#endif
+```
+
+`hello.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+int options = 0;
+
+void line_out(int offset, int length, unsigned char *data)
+{
+    int a;
+
+    if (!test_abbr())
+    {
+        if (test_oct())
+        {
+            printf("%05o ", offset);
+        }
+        else
+        {
+
+            printf("%05X ", offset);
+        }
+    }
+
+    for (a = 0; a < length; a++)
+    {
+        if (test_oct())
+        {
+            printf(" %03o", data[a]);
+        }
+        else
+        {
+
+            printf(" %02X", data[a]);
+        }
+
+        if ((a + 1) % 8 == 0 && !test_abbr())
+        {
+            putchar(' ');
+        }
+    }
+
+    if (length < SIZE)
+    {
+        for (; a < SIZE; a++)
+        {
+            if (test_oct())
+            {
+                printf("    ");
+            }
+            else
+            {
+
+                printf("   ");
+            }
+            if ((a + 1) % 8 == 0)
+            {
+                putchar(' ');
+            }
+        }
+    }
+
+    if (!test_abbr())
+    {
+
+        putchar(' ');
+        for (a = 0; a < length; a++)
+        {
+            if (data[a] >= ' ' && data[a] <= '~')
+            {
+                putchar(data[a]);
+            }
+            else
+            {
+                putchar(' ');
+            }
+        }
+    }
+    putchar('\n');
+}
+
+void help(void)
+{
+    puts("dumpfile - output a file's raw data");
+    puts("Format: dumpfile filename [options]");
+    puts("Options:");
+    puts("-a abbreviated output");
+    puts("-o output octal instead of hex");
+    puts("-h display this text");
+    exit(1);
+}
+
+void version(void){
+    printf("DumpFile Utility Version %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    exit(1);
+}
+```
+
+`main.c`
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+int main(int argc, char *argv[])
+{
+    unsigned char buffer[SIZE];
+    char *filename;
+    FILE *fp;
+    int r, ch, offset, index;
+
+    if (argc < 2)
+    {
+        puts("Format: dumpfile filename [options]");
+        exit(1);
+    }
+
+    filename = argv[1];
+
+    if (strcmp(filename, "-h") == 0)
+    {
+        help();
+    }
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Unable to open file '%s'\n", filename);
+        exit(1);
+    }
+
+    offset = index = opterr = options = 0;
+
+    while ((r = getopt(argc, argv, "aohv")) != -1)
+    {
+        switch (r)
+        {
+        case 'a':
+            set_abbr();
+            break;
+        case 'o':
+            set_oct();
+            break;
+        case 'h':
+            help();
+            break;
+        case 'v':
+            version();
+            break;
+        case '?':
+            printf("Switch '%c' is invalid\n", optopt);
+            break;
+        default:
+            puts("Unknown option");
+        }
+    }
+
+    while ((ch = fgetc(fp)) != EOF)
+    {
+        buffer[index++] = ch;
+
+        if (index == SIZE)
+        {
+            line_out(offset, SIZE, buffer);
+            offset += SIZE;
+            index = 0;
+        }
+    }
+
+    // Handles remaining bytes after EOF
+    if (index > 0)
+    {
+        line_out(offset, index, buffer);
+    }
+
+    fclose(fp);
+
+    return 0;
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt -v
+DumpFile Utility Version 1.0
+```
+
+
+
+---
+
+## Chapter 10 - Directory tree
+
+- The point of the directory tree utility is to output a map of the directory structure.
+- The map details which directories are parents and children of each other.
+
+
+
+### The filesystem
+
+- The filesystem's duty is to organize storage.
+- It takes a file's data and writes it to one or more locations on the media.
+- This information is recorded along with other file details, such as the file's name, size, dates (created, modified, accessed), permissions, and so on.
+- In a Linux terminal window, use the `man fs` command to review details on how Linux uses a filesystem and the different filesystems available.
+- The `/proc/filesystems` directory lists available filesystems for your Linux installation.
+
+
+
+### File and directory details
+
+- To gather directory details at the command prompt, use the `ls` command.
+- The output is a list of filenames in the current directory.
+- For more details, the `-l` (long) switch is specified.
+
+```shell
+chan@CMA:~/C_Programming/test$ ls
+alphabeta.wtxt  cyrillic.wtxt  hello.c  libs    Makefile  sonnet18.txt
+bytes.dat       final          hello.h  main.c  obj
+chan@CMA:~/C_Programming/test$ ls -l
+total 64
+-rw-rw-r-- 1 chan chan    49 Nov 13 22:56 alphabeta.wtxt
+-rw-rw-r-- 1 chan chan   256 Nov 16 22:31 bytes.dat
+-rw-rw-r-- 1 chan chan    65 Nov 14 20:07 cyrillic.wtxt
+-rwxrwxr-x 1 chan chan 21216 Nov 18 21:00 final
+-rw-rw-r-- 1 chan chan  1717 Nov 18 21:00 hello.c
+-rw-rw-r-- 1 chan chan   497 Nov 18 21:00 hello.h
+drwxrwxr-x 2 chan chan  4096 Nov 18 21:00 libs
+-rw-rw-r-- 1 chan chan  1857 Nov 18 20:59 main.c
+-rw-rw-r-- 1 chan chan   949 Nov 12 14:23 Makefile
+drwxrwxr-x 2 chan chan  4096 Nov 18 21:00 obj
+-rw-rw-r-- 1 chan chan   620 Nov 17 19:48 sonnet18.txt
+
+```
+
+- The details output by the `ls -l` command are stored in the directory like a database.
+- In face, directories on storage media are really database.
+- Their records aren't specifically files, but rather inodes.
+- `inodes` is a collection of data that describes a file.
+
+
+
+### Gathering file info
+
+- To obtain details about a file, as well as to read a directory, we need to access inode data.
+- The command-line program that does so is called `stat`.
+- Below is the sample output on the `stat` program file `libs` inside my current directory `test`.
+
+```shell
+chan@CMA:~/C_Programming/test$ ls
+alphabeta.wtxt  cyrillic.wtxt  hello.c  libs    Makefile  sonnet18.txt
+bytes.dat       final          hello.h  main.c  obj
+chan@CMA:~/C_Programming/test$ stat libs
+  File: libs
+  Size: 4096      	Blocks: 8          IO Block: 4096   directory
+Device: 8,4	Inode: 2102431     Links: 2
+Access: (0775/drwxrwxr-x)  Uid: ( 1000/    chan)   Gid: ( 1000/    chan)
+Access: 2024-11-18 21:00:54.003506081 +0700
+Modify: 2024-11-18 21:00:53.554497165 +0700
+Change: 2024-11-18 21:00:53.554497165 +0700
+ Birth: 2024-11-12 14:11:39.733013969 +0700
+```
+
+
+
+- To read this same information in our C programs, we use the `stat()` function.
+
+  - It's prototyped in the `sys/stat.h` header file.
+
+  ```C
+  int stat(const char *pathname, struct stat *statbuf);
+  ```
+
+  - The `pathname` is a filename or a full pathname.
+  - Argument `statbuf` is the address of a `stat` structure.
+  - Here is a typical `stat()` function statement, with the `filename` `char` pointer containing the filename, `fs` as a `stat` structure, and `int` variable `r` capturing the return value.
+
+  ```C
+  r = stat(filename, &fs);
+  ```
+
+  - Upon failure, value -1 is returned.
+  - Otherwise, 0 is returned and the `stat` structure `fs` is joyously filled with details about the file - inode data.
+
+- The following table lists the common members of the `stat` structure, though different filesystems and operating systems add or change specific members.
+
+![Screenshot from 2024-11-18 21-32-58](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-18 21-32-58.png)
+
+- Most of the `stat` structure members are integers.
+- They are all `unsigned`, though some values are `unsigned long`.
+
+
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
+int main(int argc, char *argv[])
+{
+    char *filename;
+    struct stat fs;
+    int r;
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Specify a filename\n");
+        exit(1);
+    }
+
+    filename = argv[1];
+    printf("Info for file '%s'\n", filename);
+    r = stat(filename, &fs);
+    if (r == -1)
+    {
+        fprintf(stderr, "Error reading '%s'\n", filename);
+        exit(1);
+    }
+
+    // Outputs the members of the stat structure fs
+    printf("Media ID: %lu\n", fs.st_dev);
+    printf("Inode number: %lu\n", fs.st_ino);
+    printf("Type and mode: %u\n", fs.st_mode);
+    printf("Hard links = %lu\n", fs.st_nlink);
+    printf("Owner ID: %u\n", fs.st_uid);
+    printf("Group ID: %u\n", fs.st_gid);
+    printf("Device ID: %lu\n", fs.st_rdev);
+    printf("File size %lu bytes\n", fs.st_size);
+    printf("Block size = %lu\n", fs.st_blksize);
+    printf("Allocated blocks = %lu\n", fs.st_blocks);
+    
+    // The time structures use the ctime() function to output their values.
+    printf("Access: %s", ctime(&fs.st_atime));
+    printf("Modified: %s", ctime(&fs.st_mtime));
+    printf("Changed: %s", ctime(&fs.st_ctime));
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final libs
+Info for file 'libs'
+Media ID: 2052
+Inode number: 2102431
+Type and mode: 16893
+Hard links = 2
+Owner ID: 1000
+Group ID: 1000
+Device ID: 0
+File size 4096 bytes
+Block size = 4096
+Allocated blocks = 8
+Access: Mon Nov 18 21:40:43 2024
+Modified: Mon Nov 18 21:40:43 2024
+Changed: Mon Nov 18 21:40:43 2024
+```
+
+
+
+### Exploring file type and permissions
 
