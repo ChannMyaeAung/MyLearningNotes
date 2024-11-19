@@ -10403,6 +10403,31 @@ Change: 2024-11-18 21:00:53.554497165 +0700
 - Most of the `stat` structure members are integers.
 - They are all `unsigned`, though some values are `unsigned long`.
 
+### **`struct stat` Definition**
+
+Defined in the `<sys/stat.h>` header, **`struct stat`** typically includes the following members (note that actual implementations may have additional members):
+
+```C
+struct stat {
+    dev_t     st_dev;     // ID of device containing file
+    ino_t     st_ino;     // Inode number
+    mode_t    st_mode;    // File type and mode (permissions)
+    nlink_t   st_nlink;   // Number of hard links
+    uid_t     st_uid;     // User ID of owner
+    gid_t     st_gid;     // Group ID of owner
+    dev_t     st_rdev;    // Device ID (if special file)
+    off_t     st_size;    // Total size, in bytes
+    blksize_t st_blksize; // Block size for filesystem I/O
+    blkcnt_t  st_blocks;  // Number of 512B blocks allocated
+    time_t    st_atime;   // Time of last access
+    time_t    st_mtime;   // Time of last modification
+    time_t    st_ctime;   // Time of last status change
+};
+
+```
+
+
+
 
 
 ```C
@@ -10474,4 +10499,777 @@ Changed: Mon Nov 18 21:40:43 2024
 
 
 ### Exploring file type and permissions
+
+- Examining a file's (or inode's) `st_mode` is how we determine whether a file is a regular old file, a directory, or some other special type of file.
+- In the Linux environment, everything is a file.
+- Using the `stat()` function is how our code can determine which type of file the inode represents.
+- The bit fields in the `st_mode` member of the `stat` structure describe the file's permissions.
+- The `S_ISREG()` macro returns TRUE for regular files.
+
+```C
+printf("Type and mode: %X\n", fs.st_mode);
+if(S_ISREG(fs.st_mode)){
+    printf("%s is a regular file\n", filename);
+}else{
+    printf("%s is not a regular file\n", filename);
+}
+```
+
+- A directory isn't a regular file.
+
+
+
+**Short definition of `fs.st_mode`**
+
+"In C programming, particularly when dealing with file system operations, **`fs.st_mode`** refers to the **`st_mode`** member of the **`struct stat`** structure. This member plays a crucial role in providing information about a file's type and its permission settings. Understanding **`st_mode`** is essential for tasks such as checking if a file is a regular file, directory, symbolic link, or for verifying its read/write/execute permissions."
+
+
+
+
+
+Table 10.2 Macros defined in `sys/stat.h` to help determine file type
+
+| Macro        | True for this type of file                                  |
+| ------------ | ----------------------------------------------------------- |
+| `S_ISBLK()`  | Block special, such as mass storage in the `/dev` directory |
+| `S_ISCHR()`  | Character special, such as a pipe or the `/dev/null` device |
+| `S_ISDIR()`  | Directories                                                 |
+| `S_ISFIFO()` | A FIFO (named pipe) or socket                               |
+| `S_ISREG()`  | Regular files                                               |
+| `S_ISLNK()`  | Symbolic link                                               |
+| `S_ISSOCK()` | Socket                                                      |
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ls -l sonnet18.txt
+-rw-rw-r-- 1 chan chan 620 Nov 17 19:48 sonnet18.txt
+
+```
+
+- The first chunk of info `-rw-rw-r--` indicates the file type and permissions.
+- Next is the number of hard links `1`.
+- The owner `chan`.
+- The group `chan`.
+- The `620` is the file size in bytes.
+- And then comes the date and timestamp, and finally the filename.
+
+
+
+Three sets of file permissions octets are used for a file. These sets are based on user classification:
+
+- Owner
+- Group
+- Other
+
+You are the owner of the files you create.
+
+As a user on the computer, you are also a member of a group.
+
+We can use the `id` command to view our username and ID number, as well as the groups we belong to.
+
+- View the `/etc/group` file to see the full list of groups on the system.
+
+```shell
+cat /etc/group
+```
+
+
+
+- The value (a file's owner and group) is interpreted from the `st_mode` member of the file's `stat` structure.
+
+
+
+| Defined constant | Permission octet         |
+| ---------------- | ------------------------ |
+| `S_IRUSR`        | Owner read permission    |
+| `S_IWUSR`        | Owner write permission   |
+| `S_IXUSR`        | Owner execute permission |
+| `S_IRGRP`        | Group read permission    |
+| `S_IWGRP`        | Group write permission   |
+| `S_IXGRP`        | Group execute permission |
+| `S_IROTH`        | Other read permission    |
+| `S_IWOTH`        | Other write permission   |
+| `S_IXOTH`        | Other execute permission |
+
+- These defined constants follow a naming pattern: 
+  - each defined constants start with `S_I`.
+  - The `I` is followed by `R`, `W`, or `X` for read, write or execute, respectively.
+  - This letter is followed by `USR`, `GRP`, `OTH` for Owner(user), Group, and Other.
+- For example, if we want to test the read permission for a group user, we use the `S_IRGRP` defined constant.
+- This defined constant is used in an `if` test  with a bitwise `AND` operator to test the permission bit on the `st_mode` member.
+
+```C
+if(fs.st_mode & S_IRGRP)
+```
+
+- The line `if (fs.st_mode & S_IRGRP)` checks whether the **group** associated with the file has **read** permissions.
+
+- **Bitwise AND Operation**:
+
+  - `fs.st_mode & S_IRGRP` performs a bitwise AND between the file's mode and the group read permission bitmask.
+  - This operation **isolates** the group read permission bit.
+
+- **Condition Evaluation**:
+
+  - **Non-Zero Result**: Indicates that the **group read permission** is **set**.
+  - **Zero Result**: Indicates that the **group read permission** is **not set**.
+
+- **Example**:
+
+  - Suppose `fs.st_mode` has the value `0754` (in octal), which translates to:
+    - **Owner**: Read, Write, Execute (`7` -> `rwx`)
+    - **Group**: Read, Execute (`5` -> `r-x`)
+    - **Others**: Read (`4` -> `r--`)
+  - **`S_IRGRP`** corresponds to the bitmask for group read permission (`0040` in octal).
+
+- **Operation**:
+
+- `0754` in octal is `111 101 100` in binary.
+
+- **`S_IRGRP`** (`0040` in octal) corresponds to the binary `000 100 000`.
+
+  ```C
+    111 101 100   (0754 - fs.st_mode)
+  & 000 100 000   (0040 - S_IRGRP)
+  = 000 100 000   (0040 - Non-zero, permission granted)
+  ```
+
+  
+
+  ```C
+  fs.st_mode = 0754;        // File permissions: rwxr-xr--
+  S_IRGRP    = 0040;        // Group read permission bitmask
+  
+  fs.st_mode & S_IRGRP = 0754 & 0040 = 0040 (non-zero)
+  ```
+
+- **Result**:
+
+  - Since the result is `0040` (non-zero), the condition `if (fs.st_mode & S_IRGRP)` evaluates to **true**, indicating that the group **has read permission** for this file.
+
+#### The `st_mode` Member
+
+##### **What is `st_mode`?**
+
+- **Type:** `mode_t` (an integer type)
+- **Purpose:** Encodes both the **file type** and the **file mode (permissions)**
+
+##### **Components Encoded in `st_mode`:**
+
+1. **File Type:** Indicates whether the file is a regular file, directory, symbolic link, etc.
+2. **Permissions:** Specifies read, write, and execute permissions for the owner, group, and others.
+
+```C
+int main(int argc, char *argv[])
+{
+    char *filename;
+    struct stat fs;
+    int r;
+
+    if (argc < 2)
+    {
+        puts("Filename required");
+        exit(1);
+    }
+
+    filename = argv[1];
+
+    printf("Obtaining permission mode for '%s'\n", filename);
+
+    r = stat(filename, &fs);
+    if (r == -1)
+    {
+        fprintf(stderr, "File error\n");
+        exit(1);
+    }
+
+    printf("Permission bits: %X\n", fs.st_mode);
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt
+Obtaining permission mode for 'sonnet18.txt'
+Permission bits: 81B4
+```
+
+- #### **Steps:**
+
+  1. **Hex to Binary:**
+
+     - `8` → `1000`
+     - `1` → `0001`
+     - `B` → `1011`
+     - `4` → `0100`
+
+     **Combined Binary:** `1000 0001 1011 0100`
+
+  2. **Binary to Octal:**
+
+     - Group the binary digits into sets of three (from the right):
+
+       ```C
+       1 000 000 110 110 100
+       ```
+
+     - Add leading zeros if necessary
+
+       ```C
+       001 000 000 110 110 100
+       ```
+
+     - Convert each group to its octal equivalent:
+
+       - `001` → `1`
+       - `000` → `0`
+       - `000` → `0`
+       - `110` → `6`
+       - `110` → `6`
+       - `100` → `4`
+
+     **Combined Octal:** `0100664`
+
+  3. **Decoding the Octal Value `0100664`**:
+
+     - File Type (`0100000`):
+
+     - **Octal Prefix:** `01`
+
+     - **Meaning:** Represents a **regular file**.
+
+     | Octal | File Type                |
+     | ----- | ------------------------ |
+     | `01`  | Regular File (`S_IFREG`) |
+
+     - #### **File Permissions (`00664`):**
+
+       - **Owner Permissions (`6`):**
+         - **Read (`4`) + Write (`2`) = `6`** → `rw-`
+       - **Group Permissions (`6`):**
+         - **Read (`4`) + Write (`2`) = `6`** → `rw-`
+       - **Others Permissions (`4`):**
+         - **Read (`4`) = `4`** → `r--`
+       - **Combined Permissions:** `rw-rw-r--`
+
+     - **File Type:** Regular File
+
+     - **Permissions:**
+
+       - **Owner:** Read and Write
+       - **Group:** Read and Write
+       - **Others:** Read Only
+
+     - **Symbolic Representation:** `-rw-rw-r--`
+
+     ```shell
+     chan@CMA:~/C_Programming/test$ ls -l sonnet18.txt
+     -rw-rw-r-- 1 chan chan 620 Nov 17 19:48 sonnet18.txt
+     ```
+
+     
+
+```C
+int main(int argc, char *argv[])
+{
+    char *filename;
+    struct stat fs;
+    int r;
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Specify a filename\n");
+        exit(1);
+    }
+
+    filename = argv[1];
+    printf("Info for file '%s'\n", filename);
+    r = stat(filename, &fs);
+    if (r == -1)
+    {
+        fprintf(stderr, "Error reading '%s'\n", filename);
+        exit(1);
+    }
+
+    printf("File '%s' is a ", filename);
+	
+    // Determines the file type
+    if (S_ISBLK(fs.st_mode))
+    {
+        printf("block special\n");
+    }
+    else if (S_ISCHR(fs.st_mode))
+    {
+        printf("character special\n");
+    }
+    else if (S_ISDIR(fs.st_mode))
+    {
+        printf("directory\n");
+    }
+    else if (S_ISFIFO(fs.st_mode))
+    {
+        printf("named pipe or socket\n");
+    }
+    else if (S_ISREG(fs.st_mode))
+    {
+        printf("regular file\n");
+    }
+    else if (S_ISLNK(fs.st_mode))
+    {
+        printf("symbolic link\n");
+    }
+    else if (S_ISSOCK(fs.st_mode))
+    {
+        printf("socket\n");
+    }
+    else
+    {
+        printf("type unknown\n");
+    }
+	
+    // Tests owner permission bits
+    printf("Owner permissions: ");
+    if (fs.st_mode & S_IRUSR)
+    {
+        printf("read ");
+    }
+    if (fs.st_mode & S_IWUSR)
+    {
+        printf("write ");
+    }
+    if (fs.st_mode & S_IXUSR)
+    {
+        printf("execute");
+    }
+    putchar('\n');
+	
+    // Tests group permission bits
+    printf("Group permissions: ");
+    if (fs.st_mode & S_IRGRP)
+    {
+        printf("read ");
+    }
+    if (fs.st_mode & S_IWGRP)
+    {
+        printf("write ");
+    }
+    if (fs.st_mode & S_IXGRP)
+    {
+        printf("execute");
+    }
+    putchar('\n');
+	
+    // Tests other permission bits
+    printf("Other permissions: ");
+    if (fs.st_mode & S_IROTH)
+    {
+        printf("read ");
+    }
+    if (fs.st_mode & S_IWOTH)
+    {
+        printf("write ");
+    }
+    if (fs.st_mode & S_IXOTH)
+    {
+        printf("execute");
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Specify a filename
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt
+Info for file 'sonnet18.txt'
+File 'sonnet18.txt' is a regular file
+Owner permissions: read write 
+Group permissions: read write 
+Other permissions: read 
+
+chan@CMA:~/C_Programming/test$ ./final libs
+Info for file 'libs'
+File 'libs' is a directory
+Owner permissions: read write execute
+Group permissions: read write execute
+Other permissions: read execute
+```
+
+
+
+**Exercise 10.1**
+
+The `if-else` structures contain a lot of repetition. The task for this exercise is to write a  function that outputs a file's permissions.
+
+Call the function `permissions_out()`. It takes a `mode_t` argument of the `st_mode` member in a `stat` structure.
+
+```C
+void permissions_out(mode_t stm);
+```
+
+Use the function to output a string of permissions for each of the three access levels, owner, group, other. Use characters r,w,x, for read, write and execute access if a bit is set; use a dash (-) for unset items. The output is the same as shown in the `ls -l` listing, but without the leading character identifying the file type.
+
+**Solution**
+
+```C
+void permissions_out(mode_t stm)
+{
+    putchar(stm & S_IRUSR ? 'r' : '-');
+    putchar(stm & S_IWUSR ? 'w' : '-');
+    putchar(stm & S_IXUSR ? 'x' : '-');
+    putchar(stm & S_IRGRP ? 'r' : '-');
+    putchar(stm & S_IWGRP ? 'w' : '-');
+    putchar(stm & S_IXGRP ? 'x' : '-');
+    putchar(stm & S_IROTH ? 'r' : '-');
+    putchar(stm & S_IWOTH ? 'w' : '-');
+    putchar(stm & S_IXOTH ? 'x' : '-');
+    putchar('\n');
+}
+
+
+int main(int argc, char *argv[])
+{
+    char *filename;
+    struct stat fs;
+    int r;
+
+    if (argc < 2)
+    {
+        fprintf(stderr, "Specify a filename\n");
+        exit(1);
+    }
+
+    filename = argv[1];
+    printf("Info for file '%s'\n", filename);
+    r = stat(filename, &fs);
+    if (r == -1)
+    {
+        fprintf(stderr, "Error reading '%s'\n", filename);
+        exit(1);
+    }
+
+    printf("File '%s' is a ", filename);
+
+    permissions_out(fs.st_mode);
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final sonnet18.txt
+Info for file 'sonnet18.txt'
+File 'sonnet18.txt' is a rw-rw-r--
+chan@CMA:~/C_Programming/test$ ./final libs
+Info for file 'libs'
+File 'libs' is a rwxrwxr-x
+
+```
+
+
+
+### Reading a directory
+
+- A directory is a database of files.
+- Just like a file, a directory database is stored on media.
+- But we can't use the `fopen()` to open and read the contents of a directory.
+- Instead, we use the `opendir()` function.
+
+```C
+DIR *opendir(const char *filename);
+```
+
+- The `opendir()` function accepts a single argument, a string representing the pathname of the directory to examine.
+- Specifying the shortcuts . and .. for the current and parent directory are also valid.
+- The function returns a pointer to a `DIR` handle, similar to the `FILE` handle used by the `fopen()` command.
+- As the `FILE` handle represents a file stream, the `DIR` handle represents a directory stream.
+- Upon an error, the NULL pointer is returned.
+- The global `errno` value is set, indicating the specific booboo the function encountered.
+- The `opendir()` features a companion `closedir()` function.
+- The `closedir()` requires a single argument, the `DIR` handle of an open directory stream, humorously called "dirp" in the `man` page format example:
+
+```C
+int closedir(DIR *dirp);
+```
+
+- `dirp` can be remembered as "directory pathname".
+- Upon success, the `closedir()` returns 0. Otherwise the value -1 is returned and the global `errno` value is set.
+- Both the `opendir()` and `closedir()` are prototyped in the `dirent.h` header file.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+
+int main(){
+    // Directory handle
+    DIR *dp;
+    
+    // Opens the current directory, whatever it may be
+    dp = opendir(".");
+    
+    if(dp == NULL){
+        puts("Unable to read directory");
+        exit(1);
+    }
+    
+    puts("Directory is opened!");
+    
+    closedir(dp);
+    
+    puts("Directory is closed!");
+    
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Directory is opened!
+Directory is closed!
+
+```
+
+- To access the files stored in the directory, we use another function, `readdir()`.
+- This function is also prototyped in the `dirent.h` header file.
+
+```C
+struct dirent *readdir(DIR *dirp);
+```
+
+- The function consumes an open DIR handle as its only argument.
+- The return value is the address of a `dirent` structure, which contains details about a directory entry.
+- This function is called repeatedly to read file entries (inodes) from the directory stream.
+- The value NULL is returned after the final entry in the directory has been read.
+
+
+
+Table 10.4 Common members of the `dirent` structure
+
+| Member     | Data type (placeholder) | Description   |
+| ---------- | ----------------------- | ------------- |
+| `d_ino`    | `ino_t` (%lu)           | inode number  |
+| `d_reclen` | `unsigned short` (%u)   | Record length |
+
+- The best structure member to use, and one that's consistently available across all compilers and platforms, is `d_name`.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+
+int main(){
+    DIR *dp;
+    
+    // The dirent structure is created as a pointer, a memory address.
+    struct dirent *entry;
+    
+    dp = opendir(".");
+    
+    if(dp == NULL){
+        puts("Unable to read directory");
+        exit(1);
+    }
+    
+    // The entry is read and stored in the dirent structure entry.
+    entry = readdir(dp);
+    
+    // The d_name member is output
+    printf("File %s\n", entry->d_name);
+    
+    closedir(dp);
+    
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+File alphabeta.wtxt
+```
+
+- The program outputs only one file, most likely, the entry for the current directory itself, the single dot.
+- If we want a real directory-reading program, we must modify the code.
+- As with using the `fread()` function to read data from a regular file, the `readdir()` function is called repeatedly.
+- When the function returns a pointer to a `dirent` structure, another entry is available in the directory.
+- Only when the function returns NULL has the full directory been read.
+- To achieve this, we must change the `readdir()` statement into a `while` loop condition.
+
+```C
+while( (entry = readdir(dp)) != NULL){
+    printf("File %s\n", entry->d_name);
+}
+```
+
+- With this update, the program now outputs all files in the current directory.
+- To gather more information about files in a directory, use the `stat()` function.
+- The `readdir()` function's `dirent` structure contains the file's name in the `d_name` member.
+- When this detail is known, we use the `stat()` function to gather details on the file's type as well as other information.
+
+```C
+#include <stdio.h>
+#include <stlib.h.
+#include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
+
+int main(){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    int r;
+    char *filename;
+    
+    dp = opendir(".");
+    if(dp == NULL){
+        puts("Unable to read directory");
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        // Saves the directory entry's name for readibility and easy access.
+        filename = entry->d_name;
+        
+        // Fills the stat structure for the current filename/directory entry
+        r = stat(filename, &fs);
+        
+        if(r == -1){
+            fprintf(stderr, "Error reading '%s'\n", filename);
+            exit(1);
+        }
+        
+        // Calls out directories from other file types
+        if(S_ISDIR(fs.st_mode)){
+            
+            // Output the directory filename left-justified in a 16-character width
+            printf(" Dir %-16s ",filename);
+        }else{
+            printf("File %-16s ", filename);
+        }
+        
+        // Outputs the file size in an 8-character width
+        printf("%8lu bytes ", fs.st_size);
+        
+        // Outputs the access time which automatically adds a newline
+        printf("%s", ctime(&fs.st_atime));
+    }
+    
+    closedir(dp);
+    
+    return 0;
+}
+```
+
+- `r = stat(filename, &fs)` - The `stat()` function retrieves information about the file specified by `filename` and populates the provided `struct stat` structure with this data.
+  - **Parameters:**
+    1. **`filename`** (`char *`):
+       - The name (path) of the file we want to inspect.
+    2. **`&fs`** (`struct stat *`):
+       - A pointer to a `struct stat` where the function will store the file's metadata.
+  - **Return Value:**
+    - **`0`**: Success. The file information has been successfully retrieved and stored in `fs`.
+    - **`-1`**: Failure. An error occurred (e.g., the file does not exist), and `errno` is set to indicate the specific error.
+- `-16%s` - Specifies the **minimum field width** ensuring that the string occupies at least **16 characters** in the output.
+- If the string is shorter than 16 characters, it's padded with spaces.
+- If the string is longer, it extends beyond 16 characters without truncation.
+- The minus (-) sign indicates **left-justification** within the specified field width.
+  - Aligns the string to the **left**, padding spaces to the **right** if necessary.
+  - Without the minus sign(-), the string would be **right-justified**, padding spaces to the left.
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+File alphabeta.wtxt         49 bytes Sat Nov 16 22:29:34 2024
+ Dir libs                4096 bytes Tue Nov 19 14:55:53 2024
+File final               19136 bytes Tue Nov 19 15:23:56 2024
+File main.c               1293 bytes Tue Nov 19 15:23:46 2024
+File Makefile              949 bytes Mon Nov 18 20:58:48 2024
+File sonnet18.txt          620 bytes Mon Nov 18 20:58:54 2024
+ Dir ..                  4096 bytes Mon Nov 18 19:04:16 2024
+File cyrillic.wtxt          65 bytes Sun Nov 17 19:47:36 2024
+File hello.c               144 bytes Tue Nov 19 14:52:20 2024
+ Dir obj                 4096 bytes Tue Nov 19 15:23:55 2024
+ Dir .                   4096 bytes Tue Nov 19 15:23:55 2024
+File hello.h               151 bytes Tue Nov 19 14:52:25 2024
+File bytes.dat             256 bytes Sat Nov 16 22:32:09 2024
+
+```
+
+- To truly read a directory, we need both the `readdir()` and `stat()` functions.
+- Together, they pull in details about files in the directory.
+
+
+
+### Subdirectory exploration
+
+Directories are referenced in three ways:
+
+- As a named path
+- As the ... shortcut to the parent directory
+- As a directory entry in the current directory, a subdirectory
+- Whatever the approach, pathnames are either direct or relative.
+- A direct path is a fully named path, starting at the root directory, our home directory, or the current directory.
+- A relative pathname uses the ... shortcut for the parent directory - sometimes a lot of them.
+
+As an example, a full pathname could be:
+
+```shell
+/home/chan/documents/finances/bank/statements
+```
+
+- This direct pathname shows the directories as they branch from the root, through my home directory, down to the `statments` directory.
+- If I have another directory, `/home/chan/documents/vacations`, but I'm using the `statements` directory, the relative path from `statements` to `vacations` is:
+
+```shell
+../../../vacations
+```
+
+- The first .. represents the `bank` directory. The second .. represents the `finances` directory. The third .. represents the `documents` directory, where `vacations` exists as a subdirectory.
+
+
+
+### Using directory exploration tools
+
+- Two C library functions that tells the program in which directory it's currently running: `chdir()` and `getcwd()`.
+
+- The `getcwd()` function obtains the directory in which the program is operating.
+
+  - Think of the name as Get the Current Working Directory.
+
+  - It works like the `pwd` command in the terminal window.
+
+  - This function is prototyped in the `unistd.h` header file.
+
+  - ```C
+    char *getcwd(char *buf, size_t size);
+    ```
+
+  - Buffer `buf` is a character array or buffer of `size` characters.
+
+  - It's where the current directory string is saved, an absolute path from the root.
+
+  - We can also use the `BUFSIZ` defined constant for the size of the buffer as well as the second argument to `getcwd()`.
+
+  - The return value from `getcwd()` is the same character string saved in `buf`, or NULL upon an error.
+
+  - For the specific error, check the global `errno` variable.
+
+```C
+#include <stdio.h>
+#include <unistd.h>
+
+int main(){
+    char cwd[BUFSIZ];
+    getcwd(cwd, BUFSIZ);
+    printf("The current working directory is %s\n", cwd);
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+The current working directory is /home/chan/C_Programming/test
+```
 
