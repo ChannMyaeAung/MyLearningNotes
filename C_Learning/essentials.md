@@ -2432,3 +2432,72 @@ Choosing between `enum` and `#define` in C depends on the specific needs of your
 By adhering to these best practices, we can write more robust, maintainable, and error-resistant C code.
 
 ---
+
+## **Understanding the `continue` Statement in C**
+
+### **1. What Is the `continue` Statement?**
+
+- **Purpose:**
+  The `continue` statement is used within looping constructs (`for`, `while`, `do-while`) to **skip the remainder of the current loop iteration** and **proceed directly to the next iteration** of the loop.
+- **Scope of Effect:**
+  - **Within Loops Only:** The `continue` statement **only** affects the **nearest enclosing loop**.
+  - **Cannot Be Used Elsewhere:** Using `continue` outside of loops results in a compilation error.
+
+### **2. How Does `continue` Work?**
+
+When a `continue` statement is encountered inside a loop:
+
+1. **Current Iteration Stops:**
+   - The program **immediately stops executing** the remaining code within the current loop iteration.
+2. **Next Iteration Begins:**
+   - The loop **proceeds to the next iteration** based on its loop condition.
+   - For `for` loops, it moves to the **increment/decrement step**.
+   - For `while` and `do-while` loops, it re-evaluates the **loop condition**.
+
+### **3. Visual Diagram of `continue`**
+
+Consider the following simplified loop:
+
+```C
+for (int i = 0; i < 5; i++) {
+    if (i == 2)
+        continue;
+    printf("%d\n", i);
+}
+```
+
+**Execution Flow:**
+
+```
+i = 0
+- i != 2, so print 0
+
+i = 1
+- i != 2, so print 1
+
+i = 2
+- i == 2, execute `continue`
+- Skip printing, move to i = 3
+
+i = 3
+- i != 2, so print 3
+
+i = 4
+- i != 2, so print 4
+```
+
+
+
+**Output:**
+
+```sh
+0
+1
+3
+4
+```
+
+*Notice that `2` is skipped.*
+
+------
+

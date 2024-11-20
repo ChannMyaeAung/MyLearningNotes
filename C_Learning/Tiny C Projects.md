@@ -11273,3 +11273,683 @@ chan@CMA:~/C_Programming/test$ ./final
 The current working directory is /home/chan/C_Programming/test
 ```
 
+
+
+#### `chdir()`
+
+The second useful directory function is `chdir()` . 
+
+- This function works like the `cd` command in Linux.
+- Like `getcwd()`, the `chdir()` function is prototyped in the `unistd.h` header file.
+
+```C
+int chdir(const char *path);
+```
+
+- The sole argument is a string representing the directory (path) to change to.
+- The return value is 0 upon success, with -1 indicating an error.
+
+#### **What Is `struct dirent`?**
+
+`struct dirent` is a structure defined in the `<dirent.h>` header file. It represents a directory entry, providing information about files and directories within a directory.
+
+```C
+struct dirent {
+    ino_t          d_ino;       // Inode number
+    off_t          d_off;       // Offset to the next dirent
+    unsigned short d_reclen;    // Length of this record
+    unsigned char  d_type;      // Type of file
+    char           d_name[256]; // Null-terminated filename
+};
+```
+
+### **Member Breakdown:**
+
+1. **`d_ino` (`ino_t`):**
+   - **Purpose:** Represents the inode number of the file.
+   - **Inode Number:** A unique identifier for a file within a filesystem. It points to metadata about the file, such as permissions, ownership, and data block locations.
+2. **`d_off` (`off_t`):**
+   - **Purpose:** Indicates the offset to the next `dirent` structure in the directory stream.
+   - **Usage:** Primarily used internally by the system; not commonly manipulated directly by user programs.
+3. **`d_reclen` (`unsigned short`):**
+   - **Purpose:** Specifies the length of this directory record.
+   - **Usage:** Useful for systems that support variable-length records, ensuring correct traversal of directory entries.
+4. **`d_type` (`unsigned char`):**
+   - **Purpose:** Denotes the type of the file.
+   - Common Values:
+     - `DT_REG`: Regular file
+     - `DT_DIR`: Directory
+     - `DT_LNK`: Symbolic link
+     - `DT_FIFO`: FIFO/pipe
+     - `DT_SOCK`: Socket
+     - `DT_CHR`: Character device
+     - `DT_BLK`: Block device
+     - `DT_UNKNOWN`: Unknown file type
+5. **`d_name` (`char[256]`):**
+   - **Purpose:** Stores the null-terminated name of the entry (file or directory).
+   - **Note:** The maximum length (`256` in this example) can vary based on the system's `NAME_MAX` value.
+
+##### **Common Usage**
+
+`struct dirent` is primarily used with directory handling functions to read entries within a directory. Here's how it's typically used:
+
+##### **1. Opening a Directory**
+
+Before reading directory entries, you need to open the directory using `opendir()`:
+
+```C
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    DIR *dir;
+    struct dirent *entry;
+
+    dir = opendir("/path/to/directory");
+    if (dir == NULL) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+
+    // ... (reading entries)
+
+    closedir(dir);
+    return 0;
+}
+```
+
+##### **2. Reading Directory Entries**
+
+Use `readdir()` in a loop to read each entry:
+
+```C
+while ((entry = readdir(dir)) != NULL) {
+    printf("Name: %s\n", entry->d_name);
+    printf("Type: ");
+    
+    switch (entry->d_type) {
+        case DT_REG:
+            printf("Regular File\n");
+            break;
+        case DT_DIR:
+            printf("Directory\n");
+            break;
+        case DT_LNK:
+            printf("Symbolic Link\n");
+            break;
+        // Add cases for other types as needed
+        default:
+            printf("Other\n");
+    }
+}
+```
+
+
+
+### Diving into a subdirectory
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+int main(int argc, char *argv[]){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    int r;
+    char *dirname, *filename;
+    
+    if(argc < 2){
+        fprintf(stderr, "Missing directory name\n");
+        exit(1);
+    }
+    
+    dirname = argv[1];
+    
+    r = chdir(dirname);
+    
+    if(r == -1){
+        fprintf(stderr, "Unable to change to '%s'\n", dirname);
+        exit(1);
+    }
+    
+    dp = opendir(dirname);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirname);
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        
+        // Obtain inode details
+        r = stat(filename, &fs);
+        if(r == -1){
+            fprintf(stderr, "Error on '%s'\n", filename);
+            exit(1);
+        }
+        
+        // Test to see whether the file is a directory (subdirectory)
+        if(S_ISDIR(fs.st_mode)){
+            
+            // Outputs the directory's name
+            printf("Found directory: %s\n", filename);
+        }
+    }
+    
+    closedir(dp);
+    
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final /home
+Found directory: chan
+Found directory: vincent
+Found directory: ..
+Found directory: .
+chan@CMA:~/C_Programming/test$ ./final /home/chan
+Found directory: .pki
+Found directory: .gnupg
+Found directory: Downloads
+Found directory: Music
+Found directory: .wallaby
+Found directory: directory...
+Found directory: .thunderbird
+Found directory: .cache
+Found directory: Photos
+Found directory: .dotnet
+Found directory: ..
+Found directory: Pictures
+Found directory: .ssh
+Found directory: exercise_2
+Found directory: .quokka
+Found directory: .gphoto
+Found directory: Desktop
+Found directory: .mozilla
+Found directory: C_Programming
+Found directory: .fontconfig
+Found directory: .
+Found directory: Videos
+Found directory: .vscode
+Found directory: .local
+Found directory: Documents
+Found directory: Templates
+Found directory: .gnome
+Found directory: test
+Found directory: .config
+Found directory: github.com
+Found directory: Public
+Found directory: snap
+
+```
+
+**Exercise 10.2**
+
+Every directory has the dot and dot-dot entries. Plus, many directories host hidden subdirectories. All hidden files in Linux start with a single dot. Your task for this exercise is to modify the source code to have the program not output any file that starts with a single dot. 
+
+
+
+**Solution**
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <dirent.h>
+
+int main(int argc, char *argv[]){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    int r;
+    char *dirname, *filename;
+    
+    if(argc < 2){
+        fprintf(stderr, "Missing directory name\n");
+        exit(1);
+    }
+    
+    dirname = argv[1];
+    r = chdir(dirname);
+    
+    if(r == -1){
+        fprintf(stderr, "Unable to change to %s\n", dirname);
+        exit(1);
+    }
+    
+    dp = opendir(dirname);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirname);
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        
+        // Skip hiiden files (those starting with a dot)
+        if(filename[0] == '.'){
+            continue;
+        }
+        
+        r = stat(filename, &fs);
+        if(r == -1){
+            fprintf(stderr,"Error on '%s'\n", filename);
+            exit(1);
+        }
+        
+        if(S_ISDIR(fs.st_mode)){
+            printf("Found directory: %s\n", filename);
+        }
+    }
+    
+    closedir(dp);
+    return 0;
+}
+```
+
+**The Author's Solution**
+
+```C
+filename = entry->d_name;
+/* after obtaining the entry/filename, compare
+		   the first character with the dot */
+		if( strncmp( filename,".",1)==0 )
+			/* continue the while loop */
+			continue;
+```
+
+- `strncmp` Function:
+
+   
+
+  Compares up to `n` characters of two strings.
+
+  - **Syntax:** `strncmp(const char *s1, const char *s2, size_t n)`
+
+- Parameters:
+
+  - **`filename`**: The first string (file name).
+  - **`"."`**: The second string (a single dot).
+  - **`1`**: Number of characters to compare.
+
+- **Comparison:** It **compares the first character** of `filename` with `'.'`.
+
+- **Outcome:** If the first character is a dot, the `continue` statement **skips** the current iteration, thus **excluding hidden files**.
+
+### **Step-by-Step Explanation:**
+
+1. **Loop Begins:**
+   - **`while ((entry = readdir(dp)) != NULL)`**
+     Iterates over each directory entry in the opened directory `dp`.
+2. **Retrieve Filename:**
+   - **`filename = entry->d_name;`**
+     Extracts the name of the current directory entry.
+3. **Check for Hidden Files:**
+   - **Condition:**
+     **`if (filename[0] == '.')`**
+     Checks if the first character of the filename is a dot (`.`), which signifies a hidden file in Unix-like systems.
+   - **Action if True:**
+     **`continue;`**
+     - Effect:
+       - **Skips Remaining Code in Loop Body:** The program **does not** execute any further statements within the loop for this iteration.
+       - **Proceeds to Next Iteration:** The loop **moves directly** to fetch the next directory entry.
+4. **Process Non-Hidden Files:**
+   - If the filename does not start with a dot, the program proceeds to:
+     - **Retrieve File Metadata:**
+       **`r = stat(filename, &fs);`**
+     - Error Handling:
+       - If `stat` fails, print an error and exit.
+     - Check if Entry Is a Directory:
+       - If it is, print the directory name.
+
+### **Why Use `continue` Here?**
+
+- **Selective Processing:**
+  By using `continue`, the program **excludes all hidden files** from being processed further. This ensures that only visible (non-hidden) files and directories are considered for actions like printing.
+- **Efficiency:**
+  - **Avoid Unnecessary Operations:**
+    Skipping hidden files **prevents** the program from performing operations (like `stat` and printing) on files that the user might not be interested in viewing.
+  - **Streamlined Output:**
+    Results in a **cleaner and more relevant output**, focusing only on the files and directories that are visible to the user.
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Missing directory name
+chan@CMA:~/C_Programming/test$ ./final /home/chan
+Found directory: Downloads
+Found directory: Music
+Found directory: directory...
+Found directory: Photos
+Found directory: Pictures
+Found directory: exercise_2
+Found directory: Desktop
+Found directory: C_Programming
+Found directory: Videos
+Found directory: Documents
+Found directory: Templates
+Found directory: test
+Found directory: github.com
+Found directory: Public
+Found directory: snap
+```
+
+
+
+### Mining deeper with recursion
+
+`hello.h`
+
+- The first is the full pathname to the directory to scan.
+- The second is the full pathname to the parent directory.
+- Both are const char types because neither string is modified within the function.
+
+```C
+void dir(const char *dirpath, const char *parentpath);
+```
+
+`hello.c`
+
+```C
+void dir(const char *dirpath, const char *parentpath){
+    
+    DIR *dp; // Directory pointer
+    struct dirent *entry; // Directory entry structure
+    struct stat fs; // Structure to hold file information
+    
+    // Storage for the new directory to change to, storing the full pathname
+    char subdirpath[BUFSIZ];
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    // Outputs the current directory path
+    printf("%s\n", dirpath);
+    
+    while((entry = readdir(dp)) != NULL){
+        if(stncmp(entry->d_name, ".", 1) == 0){
+            continue;
+        }
+        
+        // Get info for each directory entry (inode)
+        stat(entry->d_name, &fs);
+        
+        // Checks for a subdirectory entry
+        if(S_ISDIR(fs.st_mode)){
+            // Changes to the subdirectory
+            if(chdir(entry->d_name) == -1){
+                fprintf(stderr, "Unable o change to %s\n", entry->d_name);
+                exit(1);
+            }
+            
+            // Gets the subdirectory's full pathname for the recursive call
+            getcwd(subdirpath, BUFSIZ);
+            
+            // Recursively calls the function with the subdirectory and current directory as arguments
+            dir(subdirpath, dirpath);
+        }
+    }
+    
+    closedir(dp);
+    
+    // Changes back to the parent directory - full pathname
+    if(chdir(parentpath) == -1){
+        
+        // Checks for NULL, in which case, just returns
+        if(parentpath == NULL){
+            return;
+        }
+        
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+}
+```
+
+- `void dir(const char *dirpath, const char *parentpath)`
+
+  - **Purpose:** Recursively traverses directories starting from `dirpath`, ignoring hidden files, and prints directory paths.
+  - Parameters:
+    - `dirpath`: Path of the current directory to process.
+    - `parentpath`: Path of the parent directory to return to after processing subdirectories.
+
+- ```C
+  stat(entry->d_name, &fs);
+          
+   
+  if(S_ISDIR(fs.st_mode)){
+              
+      if(chdir(entry->d_name) == -1){
+           fprintf(stderr, "Unable o change to %s\n", entry->d_name);
+           exit(1);
+      }
+              
+              
+  getcwd(subdirpath, BUFSIZ);
+              
+  dir(subdirpath, dirpath);
+  ```
+
+  - Uses `stat` to retrieve information about the entry.
+  - Checks if the entry is a **directory** using `S_ISDIR`.
+  - If it's a directory:
+    - Attempts to **change to the subdirectory** using `chdir`.
+    - If unable to change, it prints an error and exits.
+    - Retrieves the **absolute path** of the subdirectory.
+    - **Recursively calls** `dir` on the subdirectory to process its contents.
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    
+    // Buffer to store the current directory path
+    char current[BUFSIZ];
+    
+    if(argc < 2){
+        // For no arguments obtains and stores the full path to the current directory
+        getcwd(current, BUFSIZ);
+    }else{
+        
+        // copies the first argument
+        strcpy(current, argv[1]);
+        
+        // Change to the directory and check for errors
+        if(chdir(current) == -1){
+            fprintf(stderr, "Unable to access directory %s\n", current);
+            exit(1);
+        }
+        
+        // Get the directory full pathname
+        getcwd(current, BUFSIZ);
+    }
+    
+    // Calls the function; NULL is checked in dir()
+    dir(current, NULL);
+    
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+/home/chan/C_Programming/test
+/home/chan/C_Programming/test/libs
+/home/chan/C_Programming/test/obj
+```
+
+##### **Detailed Step-by-Step Visualization on the output**
+
+1. **Determine Current Directory**
+
+- **Action:**
+  - Since no command-line argument is provided, the program retrieves the **current working directory**.
+- **Code Snippet (`main.c`):**
+
+```C
+if (argc < 2)
+{
+    getcwd(current, BUFSIZ); // Get current directory
+}
+```
+
+- Result:
+  - `current` is set to `test`.
+
+2. **Traverse Directories Recursively**
+
+   - Action:
+     - The program calls the `dir` function to start traversing directories from the `current` path.
+   - Code Snippet (`main.c`):
+
+   ```C
+   dir(current, NULL);
+   ```
+
+   - Function call (`hello.c`):
+     - `void dir(const char *dirpath, const char *parentpath)`
+
+3. **First Call:** `dir("/home/chan/C_Programming/test", NULL)`
+
+   - Opening Directory:
+     - Opens `test`
+   - **Reading Entries**:
+     - Iterates over each entry in the directory.
+   - **Skipping Hidden Files:**
+     - Skips any file or directory starting with a dot(`.`)
+   - **Identifying Subdirectories:**
+     - Finds:
+       - `libs` (Directory)
+       - `obj` (Directory)
+   - **Recursion**:
+     - For each subdirectory (`libs` and `obj` ), the program:
+       - **Changes Directory**:
+         - `chdir("libs")` and `chdir("obj")`
+       - **Gets Absolute Path**:
+         - libs
+         - obj
+       - **Recursive Call**:
+         - `dir("/home/chan/C_Programming/test/libs", "/home/chan/C_Programming/test")`
+         - `dir("/home/chan/C_Programming/test/obj", "/home/chan/C_Programming/test")`
+
+4. **Recursive Calls**:
+
+   - For `libs` :
+     - **Opening Directory**:
+       - Opens `libs`
+     - **Reading Entries**:
+       - No subdirectories found or subdirectores are hidden.
+     - **Output**:
+       - libs
+   - For `obj`:
+     - **Opening Directory**:
+       - Opens `obj`
+     - **Reading Entries**:
+       - No subdirectories found or subdirectories are hidden.
+     - **Output**:
+       - obj
+
+5. **Output Directory Paths**:
+
+```sh
+/home/chan/C_Programming/test
+/home/chan/C_Programming/test/libs
+/home/chan/C_Programming/test/obj
+```
+
+
+
+### Pulling out the directory name
+
+`hello.h`
+
+```C
+const char *extract(const char *path);
+```
+
+`hello.c`
+
+```C
+const char *extract(const char *path){
+    const char *p;
+    int len;
+    
+    len = strlen(path);
+    
+    // If the string is empyt, return NULL
+    if(len == 0){
+        return NULL;
+    }
+    
+    // Perform a special test for the root directory
+    if(len == 1 & path[0] == '/'){
+        return path;
+    }
+    
+    // Positions pointer p at the end of string path
+    p = path+len;
+    
+    // Backs up p to find the separator; for Windows, uses \\ as the separator
+    while(*p != '/'){
+        p--;
+        
+        // If p backs up too far, returns NULL
+        if(p == path){
+            return NULL;
+        }
+    }
+    
+    // Increments p over the separator character
+    p++;
+    
+    // Test to see if the string is empty or malformed and returns NULL
+    if(*p == '\0'){
+        return NULL;
+    }else{
+        // Returns the address where the final directory name starts
+        return p;
+    }
+}
+```
+
+`main.c`
+
+```C
+#define COUNT 4
+
+int main(){
+    const char *pathname[COUNT] = {
+        "/home/chan", "/usr/local", "/", "nothing here"
+    };
+    int x;
+    for(x = 0; x < COUNT; x++){
+        printf("%s -> %s\n", pathname[x], extract(pathname[x]));
+    }
+    return 0;
+}
+```
+
+`Output`
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+/home/chan -> chan
+/usr/local -> local
+/ -> /
+nothing here -> (null)
+
+```
+
