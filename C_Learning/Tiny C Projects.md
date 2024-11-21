@@ -11791,6 +11791,8 @@ chan@CMA:~/C_Programming/test$ ./final
 /home/chan/C_Programming/test/obj
 ```
 
+##### Explanation of `dir()` function
+
 ##### **Detailed Step-by-Step Visualization on the output**
 
 1. **Determine Current Directory**
@@ -11889,7 +11891,7 @@ const char *extract(const char *path){
     
     len = strlen(path);
     
-    // If the string is empyt, return NULL
+    // If the string is empty, return NULL
     if(len == 0){
         return NULL;
     }
@@ -11953,3 +11955,1120 @@ nothing here -> (null)
 
 ```
 
+- The `extract()` function successfully processes each string, returning the last part, the directory name. 
+- It even catches the malformed string, properly returning NULL.
+
+
+
+### Adding `extract()` function to the `dir()` program
+
+`hello.h`
+
+```C
+const char *extract(const char *path);
+
+void dir(const char *dirpath, const char *parentpath);
+```
+
+`hello.c`
+
+```C
+const char *extract(const char *path){
+    const char *p;
+    int len;
+    
+    len = strlen(path);
+    
+    if(len == 0){
+        return NULL;
+    }
+    if(len == 1 && path[0] == '/'){
+        return path;
+    }
+    
+    p = path + len;
+    while(*p != '/'){
+        p--;
+        
+        if(p == path){
+            return NULL;
+        }
+    }
+    
+    p++;
+    
+    if(*p == '\0'){
+        return NULL;
+    }else{
+        return p;
+    }
+}
+
+
+
+void dir(const char *dirpath, const char *parentpath){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[BUFSIZ];
+    
+    dp = opendir(dp);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    printf("%s\n", extract(dirpath));
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        if(strncmp(filename, ".", 1) == 0){
+            continue;
+        }
+        
+        stat(filename, &fs);
+        
+        if(S_ISDIR(fs_st_mode)){
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change directory to '%s'\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            dir(subdirpath, dirpath);
+        }
+    }
+    
+    closedir(dp);
+    
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return;
+        }
+        fprintf(stderr, "Parent direcotry lost\n");
+        exit(1);
+    }
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    char current[BUFSIZ];
+    
+    if(argc < 2){
+        getcwd(current, BUFSIZ);
+    }else{
+        strcpy(current, argv[1]);
+        if(chdir(current) == -1){
+            fprintf(stderr, "Unable to access %s\n", current);
+            exit(1);
+        }
+        getcwd(current, BUFSIZ);
+    }
+    dir(current, NULL);
+    return 0;
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+test
+libs
+obj
+```
+
+
+
+### Monitoring directory depth
+
+- To monitor the directory depth (make the directory output a bit more "tree-like"), the `dir()` function is updated:
+
+```C
+void dir(const char *dirpath, const char *parentpath, int depth);
+```
+
+- Three arguments is the maximum for a function.
+- Any more arguments and it becomes obvious that what should really be passed to the function is a structure.
+- To complete the modification, three more changes are required. 
+- First, in the `main()` function, the `dir()` function is originally called with zero as its third argument:
+
+```C
+dir(current, NULL, 0);
+```
+
+- The zero sets the indent depth as the program starts: the first directory is the top level.
+- The second, the recursive call within the `dir()` function must be modified, adding the third argument `depth`:
+
+```C
+dir(subdirpath, dirpath, depth+1);
+```
+
+- For the recursive call, which means the program is diving down one directory level, the indent level `depth` is increased by one.
+- Finally, something must be done with the `depth` variable within the `dir()` function. Adding a loop that outputs a chunk of three spaces for every depth level.
+
+```C
+for(i = 0; i < depth; i++){
+    printf("   ");
+}
+```
+
+- This loop appears before the `printf()` statement that outputs the directory's name, just before the `while` loop.
+- The result is that each subdirectory is indented three spaces as the directory tree is output.
+
+
+
+`hello.h`
+
+```C
+const char *extract(const char *path);
+
+void dir(const char *dirpath, const char *parentpath, int depth);
+```
+
+`hello.c`
+
+```C
+const char *extract(const char *path){
+    const char *p;
+    int len;
+    
+    len = strlen(path);
+    
+    // If the string is empty, return NULL
+    if(len == 0){
+        return NULL;
+    }
+    
+    // Perform a special test for the root directory
+    if(len == 1 && path[0] == '/'){
+        return path;
+    }
+    
+    // Positions pointer p at the end of string path
+    p = path + len;
+    
+    // Backs up p to find the separator;
+    while(*p != '/'){
+        p--;
+        
+        // If p backs up too far, returns NULL
+        if(p == path){
+            return NULL;
+        }
+    }
+    
+    // Increments p over the separator character
+    p++;
+    
+    
+    // Test to see if the string is empty or malformed and returns NULL
+    if(*p == '\0'){
+        return NULL;
+    }else{
+        // Returns the address where the final directory name starts
+        return p;
+    }
+}
+
+
+void dir(const char *dirpath, const char *parentpath, int depth){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[BUFSIZ];
+    int i;
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    for(i = 0; i < depth; i++){
+        printf("   "); // 3 spaces for each depth level
+    }
+    
+    printf("%s\n", extract(dirpath));
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        if(strncmp(filename, ".", 1) == 0){
+            continue;
+        }
+        
+        stat(filename, &fs);
+        if(S_ISDIR(fs.st_mode)){
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change directory to '%s'\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            dir(subdirpath, dirpath, depth + 1);
+        }
+    }
+    closedir(dp);
+    
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return;
+        }
+        
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+}
+```
+
+- **Functionality:**
+  - **`chdir(parentpath)`:**
+    Attempts to **change the current working directory back** to the **parent directory** after finishing the traversal of a subdirectory.
+- **Reasoning:**
+  - **Recursive Traversal Needs:**
+    After entering a subdirectory and completing its processing, the program needs to **return to the parent directory** to continue processing other entries.
+  - **Maintaining Directory State:**
+    Ensures that each recursive call to `dir` operates within the correct directory context.
+
+### **2. **Handling Edge Cases and Errors**
+
+- **`if (chdir(parentpath) == -1)`:**
+  Checks if changing back to the parent directory **fails**.
+- **Sub-Conditions:**
+  - **`if (parentpath == NULL)`:**
+    - Scenario:
+      - This condition is **true** when the `dir` function was initially called from `main` with `parentpath` set to `NULL`.
+      - Implication:
+        - Since there's **no parent directory** to return to (the initial call), the function simply **returns**, effectively ending the traversal.
+  - **`else` Block:**
+    - Scenario:
+      - Occurs when `parentpath` is **not `NULL`**, meaning the function was called recursively for a subdirectory.
+    - Implication:
+      - Error Handling:
+        - Indicates a critical failure in changing back to the parent directory, which disrupts the traversal process.
+      - Actions Taken:
+        - **`fprintf`:**
+          Prints an error message indicating that the program **cannot return to the parent directory**.
+        - **`exit(1)`:**
+          **Terminates the program** with a failure status, preventing further undefined behavior.
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    char current[BUFSIZ];
+    
+    if(argc < 2){
+        getcwd(current, BUFSIZ);
+    }else{
+        strcpy(current, argv[1]);
+        if(chdir(current) == -1){
+            fprintf(stderr, "Unable to access directory %s\n", current);
+            exit(1);
+        }
+        getcwd(current, BUFSIZ);
+    }
+    
+    dir(current, NULL, 0);
+    return 0;
+}
+```
+
+**Visualization of Execution Flow**
+
+```
+main.c
+  |
+  |-- Calls dir("/home/chan/C_Programming/test", NULL, 0)
+        |
+        |-- Opens "/home/chan/C_Programming/test"
+        |-- Prints extracted path
+        |-- Iterates through entries:
+              |-- Entry: "libs" (Directory)
+                    |-- chdir("libs")
+                    |-- Calls dir("/home/chan/C_Programming/test/libs", "/home/chan/C_Programming/test", 1)
+                          |
+                          |-- Opens "/home/chan/C_Programming/test/libs"
+                          |-- Prints extracted path
+                          |-- Iterates through entries:
+                                |-- (Assume no subdirectories)
+                          |-- closedir(dp)
+                          |-- chdir("/home/chan/C_Programming/test")
+          |-- Entry: "obj" (Directory)
+                    |-- chdir("obj")
+                    |-- Calls dir("/home/chan/C_Programming/test/obj", "/home/chan/C_Programming/test", 1)
+                          |
+                          |-- Opens "/home/chan/C_Programming/test/obj"
+                          |-- Prints extracted path
+                          |-- Iterates through entries:
+                                |-- (Assume no subdirectories)
+                          |-- closedir(dp)
+                          |-- chdir("/home/chan/C_Programming/test")
+        |-- closedir(dp)
+        |-- chdir(NULL) --> Fails
+              |-- Since parentpath == NULL
+                    |-- return;
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final /home/chan/github.com
+github.com
+   MyLearningNotes
+      Data Structures & Algorithms
+      Databases
+         Supabase
+         MongoDB
+      Next.js
+      C_Learning
+      CS
+      Linux
+chan@CMA:~/C_Programming/test$ ./final 
+test
+   libs
+   obj
+
+```
+
+- The output shows the directory and Subdirectory in a tree-like structure.
+- Each subdirectory is indented three spaces. The sub-directories of the `MyLearningNotes` are further indented.
+- In the second output, there is a test directory, inside the test directory, two subdirectories `libs` and `obj` are displayed with three spaces from the left forming a tree like structure.
+
+
+
+**Exercise 10.3**
+
+Modify the source code above so that instead of indenting with blanks, the subdirectories appear with text mode graphics.
+
+`hello.h`
+
+```C
+const char *extract(const char *path);
+
+void dir(const char *dirpath, const char *parentpath, int depth);
+```
+
+`hello.c`
+
+```C
+const char *extract(const char *path){
+    const char *p;
+    int len;
+    
+    len = strlen(path);
+    
+    // If the string is empty, return NULL
+    if(len == 0){
+        return NULL;
+    }
+    
+    // Perform a special test for the root directory
+    if(len == 1 && path[0] == '/'){
+        return path;
+    }
+    
+    // Positions pointer p at the end of string path
+    p = path + len;
+    
+    // Backs up p to find the separator;
+    while(*p != '/'){
+        p--;
+        
+        // If p backs up too far, returns NULL
+        if(p == path){
+            return NULL;
+        }
+    }
+    
+    // Increments p over the separator character
+    p++;
+    
+    
+    // Test to see if the string is empty or malformed and returns NULL
+    if(*p == '\0'){
+        return NULL;
+    }else{
+        // Returns the address where the final directory name starts
+        return p;
+    }
+}
+
+
+void dir(const char *dirpath, const char *parentpath, int depth){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[BUFSIZ];
+    int i;
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    for(i = 0; i < depth; i++){
+        printf("   "); // 3 spaces for each depth level
+    }
+    
+    printf("%s\n", extract(dirpath));
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        if(strncmp(filename, ".", 1) == 0){
+            continue;
+        }
+        
+        stat(filename, &fs);
+        if(S_ISDIR(fs.st_mode)){
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change directory to '%s'\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            dir(subdirpath, dirpath, depth + 1);
+        }
+    }
+    closedir(dp);
+    
+    // If no further subdirectories are found, change the directory back to the parentpath to furthur process the directories inside the parent.
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return;
+        }
+        
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[]){
+    char current[BUFSIZ];
+    
+    if(argc < 2){
+        getcwd(current, BUFSIZ);
+    }else{
+        strcpy(current, argv[1]);
+        if(chdir(current) == -1){
+            fprintf(stderr, "Unable to access directory %s\n", current);
+            exit(1);
+        }
+        getcwd(current, BUFSIZ);
+    }
+    
+    dir(current, NULL, 0);
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+test
++--libs
++--obj
+chan@CMA:~/C_Programming/test$ ./final /home/chan/github.com
+github.com
++--MyLearningNotes
+|  +--Data Structures & Algorithms
+|  +--Databases
+|  |  +--Supabase
+|  |  +--MongoDB
+|  +--Next.js
+|  +--C_Learning
+|  +--CS
+|  +--Linux
+
+```
+
+**Visual Representation of the output**:
+
+- **Root Directory (`test`):**
+
+  - **`depth = 0`**: No indentation or connectors.
+  - **Output:** `test`
+
+- **First Level (`libs`, `obj`):**
+
+  - `depth = 1`:
+    - Iteration (`i = 0`):
+      - **`i == depth - 1`**: True
+      - **Output:** `+--`
+  - **Output:** `+--libs`, `+--obj`
+
+  
+
+- **Root Directory (`github.com`):**
+
+  - **`depth = 0`**: No indentation or connectors.
+  - **Output:** `github.com`
+
+- **First Level (`MyLearningNotes`):**
+
+  - `depth = 1`:
+    - Iteration (`i = 0`):
+      - **`i == depth - 1`**: True
+      - **Output:** `+--`
+  - **Output:** `+--MyLearningNotes`
+
+- **Second Level (`Data Structures & Algorithms`, `Databases`, `Next.js`, `C_Learning`, `CS`, `Linux`):**
+
+  - `depth = 2`:
+    - Iteration (`i = 0`):
+      - **`i == depth - 1`**: False
+      - **Output:** `|`
+    - Iteration (`i = 1`):
+      - **`i == depth - 1`**: True
+      - **Output:** `+--`
+  - **Output:** `| +--Data Structures & Algorithms`, `| +--Databases`, `| +--Next.js`, `| +--C_Learning`, `| +--CS`, `| +--Linux`
+
+- **Third Level (`Supabase`, `MongoDB` under `Databases`):**
+
+  - `depth = 3`:
+    - Iteration (`i = 0`):
+      - **`i == depth - 1`**: False
+      - **Output:** `|`
+    - Iteration (`i = 1`):
+      - **`i == depth - 1`**: False
+      - **Output:** `|`
+    - Iteration (`i = 2`):
+      - **`i == depth - 1`**: True
+      - **Output:** `+--`
+  - **Output:** `| | +--Supabase`, `| | +--MongoDB`
+
+---
+
+
+
+## Chapter 11 - File Finder
+
+- Suppose we want to locate a file named `budget.csv`, located somewhere in our home directory tree.
+
+```bash
+find ~ -name budget.csv -print
+```
+
+- The pathname is `~`, shortcut for our home directory.
+- The `-name` switch identifies the file to locate, `budget.csv`.
+- The final switch, `-print` (the one everyone forgets), directs the `find` command to send the results to standard output.
+- The other file-finding command is `grep`.
+
+```shell
+grep -r "time_t" *
+```
+
+- The `-r` switch directs `grep` to recursively look through directories.
+- The string to find is `time_t` and the `*` wildcard directs the program to search all filenames.
+
+
+
+### Coding the Find File utility
+
+`hello.h`
+
+```C
+#ifndef HELLO_H
+#define HELLO_H
+
+#include <stdio.h>
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
+
+extern int count;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+};
+
+void findFile(char *dirpath, char *parentpath, char *match);
+
+#endif // HELLO_H
+```
+
+`hello.c`
+
+```C
+int count = 0;
+
+void findFile(char *dirpath, char *parentpath, char *match){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[PATH_MAX];
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        
+        // Performs a comparison for the filename found with the passed filename
+        if(strcmp(filename, match) == 0){
+            printf("%s/%s\n", dirpath, match);
+            count++;
+        }
+        
+        stat(filename, &fs);
+        if(S_ISDIR(fs.st_mode)){
+            
+            // Avoid checking the hidden files
+            if(strncmp(filename, ".", 1) == 0){
+                continue;
+            }
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change to %s\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            
+            // The recursive call, again with the passed filename to match as the third argument
+            findFile(subdirpath, dirpath, match);
+        }
+    }
+    
+    closedir(dp);
+    
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return;
+        }
+        
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+}
+```
+
+`main.c`
+
+- The `main()` function's job is to fetch the filename from the command line, retrieve the current path, make the call to the `find()` function, and then report the results.
+
+```C
+int main(int argc, char *argv[]){
+    char current[PATH_MAX];
+    if(argc < 2){
+        fprintf(stderr, "Format: ff filename\n");
+        exit(1);
+    }
+    
+    getcwd(current, PATH_MAX);
+    if(chdir(current) == -1){
+        fprintf(stderr, "Unable to access directory %s\n", current);
+        exit(1);
+    }
+    
+    count = 0;
+    printf("Searching for '%s'\n", argv[1]);
+    findFile(current, NULL, argv[1]);
+    
+    // Report the results
+    printf(" Found %d match", count);
+    
+    // Adds "es" for any count value other than 1
+    if(count != 1){
+        print("es");
+    }
+    
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final *.c
+Searching for 'hello.c'
+/home/chan/C_Programming/test/hello.c
+ Found 1 match
+chan@CMA:~/C_Programming/test$ ./final libs
+Searching for 'libs'
+/home/chan/C_Programming/test/libs
+ Found 1 match
+```
+
+- The utility attempts to locate all files with the `.c` extension in the current directory.
+- Rather than return them all, we see only the first match reported: `hello.c`.
+- The problem here is that the code doesn't recognize wildcards; it finds only specific filenames.
+- To match files with wildcards, we must understand something known as the glob.
+
+
+
+### Understanding the glob
+
+- `glob` is short for `global` in the computer world.
+- Specifically, `glob` is a way to use wildcards to specify or match filenames.
+- The term is `glob`, the process is `globbing`.
+- The C library function worthy of attention is `glob()`.
+
+As a review, the filename wildcards are:
+
+- `?` to match a single character
+- `*` to match a group of more than one character
+
+
+
+- In Windows, globbing takes place automatically. But in the Linux environment, the glob feature must be activated for wildcards to expand.
+- If not, the `*` and `?` wildcards are interpreted literally, which isn't what most users expect.
+- To ensure that globbing is active, type the `set -o` command. In the output, the `noglob` option should be set to `off`:
+
+```shell
+noglob         	off
+```
+
+- When globbing is active, the shell expands the `?` and `*` wildcards to match files.
+
+
+
+```C
+int main(int argc, char *argv[]){
+    int x;
+    
+    if(argc > 1){
+        for(x = 1; x < argc; x++){
+            printf("%s\n", argv[x]);
+        }
+    }
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final this that the other
+this
+that
+the
+other
+chan@CMA:~/C_Programming/test$ ./final *.c
+hello.c
+main.c
+```
+
+- We can see the the program dutifully echoes all command-line options in the first run.
+- In the second run, with a wildcard specified, the program outputs all the files in that directory which ends with `.c` extension.
+- The `*.c`  wildcard(globby thing) is expanded by the shell, which feeds each matching filename from the current directory to the program as a command-line argument.
+- Instead of a single argument, `*.c`, multiple arguments are supplied.
+
+
+
+```C
+int glob(const char *pattern, int flags, int (*errfunc) (const char *epath, int eerrno), glob_t *pglob);
+```
+
+- `const char *pattern` is a pathname wildcard pattern to match.
+- `int flags` are options to customize the function's behavior, usually a series of defined constants logically OR'd together.
+- `int (*errfunc)` is the name of an error-handling function (along with its two arguments), which is necessary because the `glob()` function can be quirky. Specify NULL to use the default error handler.
+- `glob_t *pglob` is a structure containing details about the matching files. 
+  - Two useful members are `gl_pathc`, which lists the number of matching files.
+  - `gl_pathv`, which serves as the base of a pointer list referencing matching filenames in the current directory.
+- The `glob()` function returns zero on success. Other return values include defined constants we can test to determine whether the function screwed up or failed to find any matching files.
+- We must include `glob.h` header file.
+
+```C
+typedef struct {
+    size_t gl_pathc;    // Count of paths matched by the pattern
+    char **gl_pathv;    // List of matched pathnames
+    size_t gl_offs;     // Slots to reserve at the beginning of gl_pathv
+    // Other members...
+} glob_t;
+```
+
+
+
+`hello.h`
+
+```C
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
+```
+
+
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <glob.h>
+#include <limits.h>
+
+int main(){
+    char filename[PATH_MAX]; // Pointer to the result of fgets
+    char *r; // Pointer to the result of fgets
+    int g; // the return value of glob()
+    glob_t gstruct; // The structure specified in the glob() func
+    char **found; // A double-pointer to the list of matching filenames
+    
+    printf("Filename or wildcard: ");
+    r = fgets(filename, PATH_MAX, stdin);
+    if(r == NULL){
+        exit(1);
+    }
+    
+    // Remove the newline character from the input
+    while(*r != '\0'){
+        if(*r == '\n'){
+            *r = '\0';
+            break;
+        }
+        r++;
+    }
+    
+     // Use glob to find matching filenames
+    // The call to the glob() function, mostly defaults except for the GLOB_ERR flag
+    g = glob(filename, GLOB_ERR, NULL, &gstruct);
+    
+    // Checks for errors, specifically no matching filename
+    if(g != 0){
+        if(g == GLOB_NOMATCH){
+            fprintf(stderr, "No matches for '%s'\n", filename);
+        }else{
+            fprintf(stderr, "Some kinda glob error\n");
+        }
+        exit(1);
+    }
+    
+    // Outputs the matches using structure member gl_pathc; the placeholder %zu is used for a size_t value
+    printf("Found %zu filename matches\n", gstruct.gl_pathc); // Print the number of matches found
+    
+    // The gl_pathv member is the base of a pointer list, assigned to double pointer found
+    found = gstruct.gl_pathv; // Get the list of matched filenames
+    
+    // Loops as long as the string referenced by *found isn't NULL
+    // Iterate over the matched filenames and print each one
+    while(*found){
+        
+        // Outputs the matching filename
+        printf("%s\n", *found);
+        
+        // Increments the found pointer to reference the next item in the list
+        found++;
+    }
+    
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Filename or wildcard: hello*
+Found 2 filename matches
+hello.c
+hello.h
+```
+
+
+
+### Using wildcards to find files
+
+`hello.h`
+
+```C
+#include <stdio.h>
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
+
+extern int count;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+};
+
+void findFile(char *dirpath, char *parentpath, char *match);
+```
+
+`hello.c`
+
+```C
+int count = 0;
+
+void findFile(char *dirpath, char *parentpath, char *match)
+{
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[PATH_MAX];
+    int g;
+    glob_t gstruct;
+    char **found;
+
+    dp = opendir(dirpath);
+    if (dp == NULL)
+    {
+        fprintf(stderr, "Cannot open directory %s\n", dirpath);
+        exit(1);
+    }
+
+    // Uses glob() to find matching files in the directory
+    g = glob(match, GLOB_ERR, NULL, &gstruct);
+    
+    // Upon success, outputs the found files
+    if (g == 0)
+    {
+        found = gstruct.gl_pathv;
+        while (*found)
+        {
+            printf("%s/%s\n", dirpath, *found);
+            found++;
+            count++;
+        }
+    }
+
+    // This loop is still necessary to find and explore subdirectories
+    while ((entry = readdir(dp)) != NULL)
+    {
+        filename = entry->d_name;
+        stat(filename, &fs);
+        if (S_ISDIR(fs.st_mode))
+        {
+            if (strncmp(filename, ".", 1) == 0)
+            {
+                continue;
+            }
+
+            if (chdir(filename) == -1)
+            {
+                fprintf(stderr, "Cannot change directory to %s\n", filename);
+                exit(1);
+            }
+
+            getcwd(subdirpath, PATH_MAX);
+            findFile(subdirpath, dirpath, match);
+        }
+    }
+
+    closedir(dp);
+
+    // Go back to the parent directory to futher process another directories inside the parent's directory.
+    if (chdir(parentpath) == -1)
+    {
+        if (parentpath == NULL)
+        {
+            return;
+        }
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+}
+```
+
+`main.c`
+
+```C
+int main(int argc, char *argv[])
+{
+    char current[PATH_MAX];
+    char filename[PATH_MAX];
+    char *r;
+
+    printf("Filename or wildcard: ");
+
+    r = fgets(filename, PATH_MAX, stdin);
+
+    if (r == NULL)
+    {
+        exit(1);
+    }
+
+    while (*r != '\0')
+    {
+        if (*r == '\n')
+        {
+            *r = '\0';
+            break;
+        }
+        r++;
+    }
+
+    getcwd(current, PATH_MAX);
+    if (chdir(current) == -1)
+    {
+        fprintf(stderr, "Unable to access directory %s\n", current);
+        exit(1);
+    }
+
+    count = 0;
+    printf("Searching for '%s'\n", filename);
+    findFile(current, NULL, filename);
+    printf("Found %d match\n", count);
+    if (count != 1)
+    {
+        printf("es");
+    }
+
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Filename or wildcard: *.c
+Searching for '*.c'
+/home/chan/C_Programming/test/hello.c
+/home/chan/C_Programming/test/main.c
+Found 2 match
+es
+chan@CMA:~/C_Programming/test$ ./final
+Filename or wildcard: *.txt
+Searching for '*.txt'
+/home/chan/C_Programming/test/sonnet18.txt
+Found 1 match
+
+chan@CMA:~/C_Programming/test$ ./final
+Filename or wildcard: *.wtxt
+Searching for '*.wtxt'
+/home/chan/C_Programming/test/alphabeta.wtxt
+/home/chan/C_Programming/test/cyrillic.wtxt
+Found 2 match
+es
+```
+
+- Having the `glob()` function in the program allows wildcards to be used effectively.
