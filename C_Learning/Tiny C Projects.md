@@ -12922,7 +12922,7 @@ void findFile(char *dirpath, char *parentpath, char *match);
 `hello.c`
 
 ```C
-int count = 0;
+int count = 0; // Global variable to count the number of matches
 
 void findFile(char *dirpath, char *parentpath, char *match)
 {
@@ -12964,6 +12964,7 @@ void findFile(char *dirpath, char *parentpath, char *match)
         stat(filename, &fs);
         if (S_ISDIR(fs.st_mode))
         {
+            // Skip hidden files
             if (strncmp(filename, ".", 1) == 0)
             {
                 continue;
@@ -12975,7 +12976,10 @@ void findFile(char *dirpath, char *parentpath, char *match)
                 exit(1);
             }
 
+            // Get the current working directory
             getcwd(subdirpath, PATH_MAX);
+            
+            // Recursively search in subdirectories
             findFile(subdirpath, dirpath, match);
         }
     }
@@ -12999,9 +13003,9 @@ void findFile(char *dirpath, char *parentpath, char *match)
 
 ```C
 int main(int argc, char *argv[])
-{
-    char current[PATH_MAX];
-    char filename[PATH_MAX];
+{ 
+    char current[PATH_MAX]; // Buffer to store the current directory path
+    char filename[PATH_MAX]; // Buffer to store the filename or wildcard input
     char *r;
 
     printf("Filename or wildcard: ");
@@ -13013,6 +13017,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // Loop thru each character in the input & Remove the newline character from the input
     while (*r != '\0')
     {
         if (*r == '\n')
@@ -13023,6 +13028,7 @@ int main(int argc, char *argv[])
         r++;
     }
 
+    // Get the current working directory
     getcwd(current, PATH_MAX);
     if (chdir(current) == -1)
     {
@@ -13032,6 +13038,8 @@ int main(int argc, char *argv[])
 
     count = 0;
     printf("Searching for '%s'\n", filename);
+    
+     // Call the function to find files
     findFile(current, NULL, filename);
     printf("Found %d match\n", count);
     if (count != 1)
@@ -13072,3 +13080,712 @@ es
 ```
 
 - Having the `glob()` function in the program allows wildcards to be used effectively.
+
+
+
+### The duplicate file finder
+
+- The process of creating a `Find Dupe` utility borrows heavily from the subdirectory scanning tools presented in chapter 10 and used earlier in this chapter.
+- But the rest of the code - recording and scanning the list of saved files - is a new territory: a list of files must be created.
+- The list must be scanned for duplicates and then the duplicates output, along with their pathnames.
+
+
+
+### Building a file list
+
+- The option to build a list of files found in subdirectories is to create a linked list.
+- A linked list structure must have as a member a pointer to the next item, or node, in the list.
+- This member becomes part of the structure that stores found filenames and their paths.
+
+```C
+struct finfo{
+    int index;
+    char name[BUFSIZ];
+    char path[PATH_MAX];
+    struct finfo *next;
+}
+```
+
+This structure contains four members:
+
+- `index`, which keeps a count of the files found (avoiding an external variable)
+- `name`, which contains the name of the found file
+- `path`, which contains the full path to the file
+- `next`, which references the next node in the linked list, or NULL for the end of the list
+
+This structure must be declared externally so that all functions in the code understand its definition.
+
+In the next listing, the `main()` function allocates the first node in the linked list. 
+
+- The structure must be empty; it's the recursive function `findFile()` that builds the linked list.
+- The `main()` function fetches the starting directory for a call to the recursive function.
+- Upon completion, a `while` loop outputs the names of the files referenced by the linked list.
+
+`main.c`
+
+```C
+int main(){
+    char startdir[PATH_MAX];
+    
+    // A pointer is needed for the base (first) and for examining the items in the list (current)
+    struct finfo *first, *current;
+    
+    first = malloc(sizeof(struct finfo) * 1);
+    if(first == NULL){
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+    
+    // Fills the first node with empty values
+    first->index = 0;
+    strcpy(first->name, "");
+    strcpy(first->path, "");
+    first->next = NULL;
+    
+    // Obtail the current directory for the findFile() call
+    getcwd(startdir, PATH_MAX);
+    
+    if(chdir(startdir) == -1){
+        fprintf(stderr, "Unable to access directory %s\n", startdir);
+        exit(1);
+    }
+    
+    // Calls the recursive function
+    findFile(startdir, NULL, first);
+    
+    // Sets the current pointer to the start of the list
+    current = start;
+    
+    // Loops as long as the current pointer isn't NULL
+    while(current){
+        // Skip over the first item in the list, zero
+        if(current->index > 0){
+            
+            // Output the index value, pathname, and filename
+            printf("%d:%s/%s\n", current->index, current->path, current->name);
+        }
+        
+        // Reference the next item in the list
+        current = current->next;
+    }
+    
+    return 0;
+}
+```
+
+
+
+- The third argument of the `findFile()` function is replaced by a pointer to the current node in the linked list.
+- The function's job is to create new nodes, filling their structures as it finds files in the current directory.
+
+`hello.h`
+
+```C
+struct finfo{
+    int index;
+    char name[BUFSIZ];
+    char path[PATH_MAX];
+    struct finfo *next;
+};
+
+struct finfo *findFile(char *dirpath, char *parentpath, struct finfo *f){
+    
+}
+```
+
+`hello.c`
+
+```C
+struct finfo *find(char *dirpath, char *parentpath, struct finfo *f){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[PATH_MAX];
+    int i;
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        stat(filename, &fs);
+        
+        // Test for a subdirectory and recursion
+        if(S_ISDIR(fs.st_mode)){
+            // Skip the hidden files
+            if(strncmp(filename, ".", 1) == 0){
+                continue;
+            }
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change to %s\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            
+            // The recursive call must capture the function's return value
+            f = findFile(subdirpath, dirpath, f);
+        }else{ // If not a subdirectory, saves the file information
+            // Allocates the next node in the linked list
+            f->next = malloc(sizeof(struct finfo) * 1);
+            if(f->next == NULL){
+                fprintf(stderr, "Unable to allocate new structure\n");
+                exit(1);
+            }
+            
+            // Saves the current index value
+            i = f->index;
+            
+            // Reference the freshly allocated node
+            f = f->next;
+            
+            // update the index value
+            f->index = i + 1;
+            
+            // Saves the filename
+            strcpy(f->name, filename);
+            
+            // Saves the pathname
+            strcpy(f->path, dirpath);
+            
+            // Initiate the next pointer;
+            f->next = NULL;
+        }
+    }
+    
+    closedir(dp);
+    
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return f;
+        }
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+    
+    return f;
+}
+```
+
+- The `findFile()` function makes a simple decision based on whether a directory entry is a subdirectory or a file.
+- When a subdirectory is found, the function is recursively called.
+- Otherwise, a new node in the linked list is allocated and the file entry information is recorded.
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+1:/home/chan/C_Programming/test/alphabeta.wtxt
+2:/home/chan/C_Programming/test/libs/libhello.a
+3:/home/chan/C_Programming/test/final
+4:/home/chan/C_Programming/test/main.c
+5:/home/chan/C_Programming/test/Makefile
+6:/home/chan/C_Programming/test/sonnet18.txt
+7:/home/chan/C_Programming/test/cyrillic.wtxt
+8:/home/chan/C_Programming/test/hello.c
+9:/home/chan/C_Programming/test/obj/main.o
+10:/home/chan/C_Programming/test/obj/hello.o
+11:/home/chan/C_Programming/test/hello.h
+12:/home/chan/C_Programming/test/bytes.dat
+```
+
+
+
+### Locating the duplicates
+
+- The purpose of creating a linked list in the Find Dupe program is to find duplicates.
+- At some point, the list must be scanned and a determination made as to which filenames are repeated and in which directories the duplicates are found.
+
+```C
+struct finfo{
+    int index;
+    int repeat; // New member to track repeated filenames
+    char name[BUFSIZ];
+    char path[PATH_MAX];
+    struct finfo *next;
+}
+```
+
+- The `repeat` member tracks how many times a name repeats.
+- Its value is initialized to one in the `findFile()` function as each node is created.
+- After all, every filename found exists at least once.
+- To track repeated filenames, the `repeat` member is incremented as the list is scanned after its creation.
+- In the `main()` function, a nested loop works like a bubble sort. 
+- It compares each node in the list sequentially with the rest of the nodes.
+- To perform the second scan, we need another `struct finfo` variable declared in the `main()` function.
+- This variable, `*scan`,  is used in addition to `*first` and `*current` to scan the linked list:
+
+```C
+struct finfo *first, *current, *scan;
+```
+
+- The nested `while` loop is added just before the `while` loop that outputs the list. This nested loop uses the `*current` pointer to process the entire linked list.
+- The `*scan` pointer is used in an inner `while` loop to compare the `current->name` member with subsequent `name` members.
+- When a match is found, the `current->repeat` structure member for the file with the repeated name is incremented.
+
+```C
+current = first;
+
+while(current){
+    if(current->index > 0){
+        // obtain the address of the next entry, where the scanning starts
+        scan = current->next;
+        
+        // Loop until scan references the final (NULL) node in the list
+        while(scan){
+            
+            // Compares the filenames
+            if(strncmp(current->name, scan->name) == 0){
+                // If the names are identical, increments the repeat counter for the current entry.
+                current->repeat++;
+            }
+            
+            // Continues the scan
+            scan = scan->next;
+        }
+    }
+    
+    // Continue incrementing through the entire list, comparing each node with the rest of the list
+    current = current->next;
+}
+```
+
+- These nested loops update the `repeat` member of structures containing identical filenames.
+- They are followed by the existing `while` loop that outputs the list.
+- The `printf()` statement in that second loop is updated to output the `repeat` value:
+
+```C
+printf("%d:%s/%s (%d)\n", current->index, current->path, current->name, current->repeat);
+```
+
+
+
+`hello.h`
+
+```C
+#include <stdio.h>
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
+
+extern int count;
+
+enum
+{
+    ERROR_CODE = -1,
+    BSIZE = 32,
+    TRUE,
+    FALSE,
+};
+
+struct finfo
+{
+    int index;
+    int repeat;
+    char name[BUFSIZ];
+    char path[PATH_MAX];
+    struct finfo *next;
+};
+
+struct finfo *findFile(char *dirpath, char *parentpath, struct finfo *f);
+```
+
+`hello.c`
+
+```C
+struct finfo *find(char *dirpath, char *parentpath, struct finfo *f){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat fs;
+    const char *filename;
+    char subdirpath[PATH_MAX];
+    int i;
+    
+    dp = opendir(dirpath);
+    if(dp == NULL){
+        fprintf(stderr, "Unable to read directory '%s'\n", dirpath);
+        exit(1);
+    }
+    
+    while((entry = readdir(dp)) != NULL){
+        filename = entry->d_name;
+        stat(filename, &fs);
+        
+        // Test for a subdirectory and recursion
+        if(S_ISDIR(fs.st_mode)){
+            // Skip the hidden files
+            if(strncmp(filename, ".", 1) == 0){
+                continue;
+            }
+            if(chdir(filename) == -1){
+                fprintf(stderr, "Unable to change to %s\n", filename);
+                exit(1);
+            }
+            
+            getcwd(subdirpath, BUFSIZ);
+            
+            // The recursive call must capture the function's return value
+            f = findFile(subdirpath, dirpath, f);
+        }else{ // If not a subdirectory, saves the file information
+            // Allocates the next node in the linked list
+            f->next = malloc(sizeof(struct finfo) * 1);
+            if(f->next == NULL){
+                fprintf(stderr, "Unable to allocate new structure\n");
+                exit(1);
+            }
+            
+            // Saves the current index value
+            i = f->index;
+            
+            // Reference the freshly allocated node
+            f = f->next;
+            
+            // update the index value
+            f->index = i + 1;
+            
+            // Saves the filename
+            strcpy(f->name, filename);
+            
+            // Saves the pathname
+            strcpy(f->path, dirpath);
+            
+            // Initiate the next pointer;
+            f->next = NULL;
+        }
+    }
+    
+    closedir(dp);
+    
+    if(chdir(parentpath) == -1){
+        if(parentpath == NULL){
+            return f;
+        }
+        fprintf(stderr, "Parent directory lost\n");
+        exit(1);
+    }
+    
+    return f;
+}
+```
+
+`main.c`
+
+```C
+int main()
+{
+    char startdir[PATH_MAX];
+    struct finfo *first, *current, *scan;
+    int found = 0;
+
+    first = malloc(sizeof(struct finfo) * 1);
+
+    if (first == NULL)
+    {
+        fprintf(stderr, "Unable to allocate memory\n");
+        exit(1);
+    }
+
+    first->index = 0;
+    strcpy(first->name, "");
+    strcpy(first->path, "");
+    first->next = NULL;
+
+    getcwd(startdir, PATH_MAX);
+
+    if (chdir(startdir) == -1)
+    {
+        fprintf(stderr, "Unable to access directory %s\n", startdir);
+        exit(1);
+    }
+
+    findFile(startdir, NULL, first);
+
+    puts("Locating duplicate files in this directory tree: ");
+    current = first;
+	
+    
+    // Loopt thru the list until the value of current is NULL
+    while (current)
+    {
+        // Skip the first, empty entry
+        if (current->index > 0)
+        {
+            
+            // Obtain the address of the `next` entry, where the scanning starts
+            scan = current->next;
+            
+            // Loops until scan references the final (NULL) node in the list
+            while (scan)
+            {
+                if (strcmp(current->name, scan->name) == 0)
+                {
+                    // If the names are identical, increments the `repeat` counter for the current entry
+                    current->repeat++;
+                    found = 1;
+                }
+                
+                // Continue the scan
+                scan = scan->next;
+            }
+        }
+        
+        // Continue incrementing through the entire list, comparing each node with the rest of the list
+        current = current->next;
+    }
+
+   	// The value of found need not accumulate, it's effectively a Boolean variable. When it stays at 0, no duplicate filenames are found and vice versa.
+    if (!found)
+    {
+        puts("No duplicates found");
+        return 1;
+    }
+
+    // Churns thru the entire list of files just as before
+    current = first;
+    while (current)
+    {
+        if (current->index > 0)
+        {
+            // Look for items with a repeat count higher than 1
+            if (current->repeat > 1)
+            {
+                
+                // Output the number of duplicates for the given filename
+                printf("%d duplicates found of %s:\n", current->repeat, current->name);
+				
+                // Output the current filename and its path
+                printf(" %s/%s\n", current->path, current->name);
+                
+                // Starts the nested loop to t output the names and paths of matching filenames
+                scan = current->next;
+                while (scan)
+                {
+                    if (strcmp(scan->name, current->name) == 0)
+                    {
+                        printf(" %s/%s\n", scan->path, scan->name);
+                        // prevent a repeated filename from appearing later in the output
+                        scan->repeat = 0;
+                    }
+                    scan = scan->next;
+                }
+            }
+        }
+        current = current->next;
+    }
+
+    return 0;
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Locating duplicate files in this directory tree: 
+2 duplicates found of main.c:
+ /home/chan/C_Programming/test/test_folder/main.c
+ /home/chan/C_Programming/test/main.c
+2 duplicates found of sonnet18.txt:
+ /home/chan/C_Programming/test/test_folder/sonnet18.txt
+ /home/chan/C_Programming/test/sonnet18.txt
+2 duplicates found of hello.c:
+ /home/chan/C_Programming/test/test_folder/hello.c
+ /home/chan/C_Programming/test/hello.c
+
+
+```
+
+---
+
+## Holiday detector
+
+- The reason the `main()` function is cast as an `int` is that it must return a value to the operating system.
+
+```C
+int main(int argc, char *argv[]){
+    if(argc > 1){
+        return strtol(argv[1], NULL, 10);
+    }else{
+        return 0;
+    }
+}
+```
+
+- The `strtol()` function converts the string held in `argv[1]`, the first argument at the command prompt, into an integer value, base 10.
+- If the string can't be converted (it contains no digits), the value 0 is returned.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice 27
+chan@CMA:~/C_Programming/practice$ echo $?
+27
+chan@CMA:~/C_Programming/practice$ ./practice 1
+chan@CMA:~/C_Programming/practice$ echo $?
+1
+chan@CMA:~/C_Programming/practice$ ./practice "Hello"
+chan@CMA:~/C_Programming/practice$ echo $?
+0
+
+```
+
+
+
+### Using the preset return values
+
+```C
+EXIT_FAILURE
+EXIT_SUCCESS
+```
+
+- These two values are defined as 1 and 0 for failure and success, respectively.
+- The following listing shows the program which generates a random integer, 0 or 1. This value is used to determine which defined constant is returned as an exit status: `EXIT_FAILURE` or `EXIT_SUCCESS`.
+
+```C
+int main(){
+    int r;
+    srand((unsigned)time(NULL));
+    
+    r = rand() % 2;
+    
+    // Use r to test success (zero) or failure (one)
+    if(r){
+        fprintf(stderr, "Welp, this program screwed up!\n");
+        return EXIT_FAILURE;
+    }else{
+        printf("Everything went ducky\n");
+        return EXIT_SUCCESS;
+    }
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ ./practice
+Welp, this program screwed up!
+chan@CMA:~/C_Programming/practice$ echo $?
+1
+chan@CMA:~/C_Programming/practice$ ./practice
+Everything went ducky!
+chan@CMA:~/C_Programming/practice$ echo $?
+0
+
+```
+
+- Return values need not be limited to 0 and 1.
+- Many programs and utilities return different values, each of which can be interpreted by a shell script to determine what happened.
+- The interpretation of these values is up to whatever purpose the program has, to help it fulfill its function.
+
+### Getting today's date
+
+The following listing shows the typical time code for the C language.
+
+- The current epoch value - the number of seconds ticked since January 1, 1970 - is obtained from the `time()` function and stored in `time_t` variable `now`. 
+- This variable is used in the `localtime()` function to fill a `tm` structure, `today`. 
+- The `tm` structure's members contain individual time tidbit values, which are output.
+
+```C
+int main(){
+    time_t now;
+    struct tm *today;
+    int month, day, year, weekday;
+    
+    // Obtains the number of seconds elapsed since January 1, 1970 - the Unix epoch
+    now = time(NULL);
+    
+    // Fills the `tm` structure today with time tidbits
+    today = localtime(&now);
+    
+    // The `tm mon` member starts with 0 for January.
+    month = today->tm_mon + 1;
+    day = today->tm_mday;
+    weekday = today->tm_wday;
+    
+    // The tm_year member starts with 1901.
+    year = today->tm_year + 1900;
+    
+    // Output the values obtained from the tm structure
+    printf("Today is %d, %d, %d, %d\n", weekday, month, day, year);
+    
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 5, 11, 22, 2024
+```
+
+- `5` means Friday. `11` = November, 22 = `day`, 2024 = `year`.
+
+
+
+**Exercise 12.1**
+
+Update the code to output strings for the days of the week and months. This improvement requires adding two string arrays to the code and other updates, including to the `printf()` function.
+
+```C
+int main(){
+    time_t now;
+    struct tm *today;
+    int month, day, year, weekday;
+    
+    const char *months[] = {
+        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+
+    const char *days[] = {
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+    
+    // Obtains the number of seconds elapsed since January 1, 1970 - the Unix epoch
+    now = time(NULL);
+    
+    // Fill the tm structure today with time tidbits
+    today = localtime(&now);
+    
+    month = today->tm_mon;
+    day = today->tm_mday;
+    weekday = today->tm_wday;
+    year = today->tm_year + 1900;
+    
+    printf("Today is %s, %s, %d, %d\n", days[weekday], months[month], day, year);
+    
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is Friday, November, 22, 2024
+```
+
+
+
+### Obtaining any old date
+
+- The `time()` function obtains the current time, a `time_t` value containing the number of seconds elapsed from January 1, 1970.
+- This value is useless by itself, which is why functions like `localtime()` help sort out the details for us.
+- It's possible to backfill a `tm` structure.
+- We assign values to the various members, then use the `mktime()` function to translate these time tidbits into a `time_t` value.
+- Further, the `mktime()` function fills in unknown details for us, such as the day of the week.
+- This information is vital if we plan to determine upon which date a holiday falls.
+
+```C
+time_t mktime(struct tm *tm);
+```
+
+- The function is passed the address of a partially filled `tm` structure. A `time_t` value is returned, but more importantly, the rest of the `tm` structure is filled with key details.

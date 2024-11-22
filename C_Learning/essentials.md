@@ -884,6 +884,8 @@ These conventions are widely used in C and many other programming languages.
 
 #### C Concepts
 
+- The reason the `main()` function is cast as an `int` is that it must return a value to the operating system.
+
 - An array in C is essentially a constant pointer to its first element, we can represent an array of strings as an array of character pointers.
 
 - In C, `array[index]` is equivalent to `*(array + index)`.
