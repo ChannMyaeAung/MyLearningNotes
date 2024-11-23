@@ -13449,6 +13449,8 @@ struct finfo *find(char *dirpath, char *parentpath, struct finfo *f){
             // update the index value
             f->index = i + 1;
             
+            f->repeat = 1;
+            
             // Saves the filename
             strcpy(f->name, filename);
             
@@ -13789,3 +13791,1124 @@ time_t mktime(struct tm *tm);
 ```
 
 - The function is passed the address of a partially filled `tm` structure. A `time_t` value is returned, but more importantly, the rest of the `tm` structure is filled with key details.
+- The `mktime()` function is prototyped in the `time.h` header file.
+
+
+
+##### Table 12.1 Members of the `tm` structure
+
+| Member     | References           | Range/ Notes                                                 |
+| ---------- | -------------------- | ------------------------------------------------------------ |
+| `tm_sec`   | Seconds              | 0 to 60 (60 allows for a leap second)                        |
+| `tm_min`   | Minutes              | 0 to 59                                                      |
+| `tm_hour`  | Hours                | 0 to 23                                                      |
+| `tm_mday`  | Day of the month     | 1 to 31                                                      |
+| `tm_mon`   | Month                | 0 to 11                                                      |
+| `tm_year`  | Year                 | Current year minus 1900                                      |
+| `tm_wday`  | Day of the week      | 0 to 6, Sunday to Saturday                                   |
+| `tm_yday`  | Day of the year      | 0 to 365; zero is January 1                                  |
+| `tm_isdst` | Daylight saving time | Positive values indicate daylight saving time; zero indicates not; negative values indicate that the data is unavailable |
+
+
+
+Let's say we want to find out the day of the week for November 29, 2024. 
+
+The next listing attempts to do so by filling in three members of the `tm` structure: `tm_mon`, `tm_day`, and `tm_year`.
+
+```C
+int main(){
+    struct tm day;
+    const char *days[] = {
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    };
+    
+    // Filling the six `tm` struct members
+    day.tm_mon = 11 - 1; // November (months are 0-based in struct tm)
+    day.tm_mday = 29; // The 29th day of the month
+    day.tm_year = 2024 - 1900;
+    day.tm_hour = 0;
+    day.tm_min = 0;
+    day.tm_sec = 0;
+    
+    mktime(&day);
+    
+    // mm/dd/yyyy format
+    printf("%02d/%02d/%04d is on a %s\n", day.tm_mon+1, day.tm_mday, day.tm_year + 1900, days[day.tm_wday]);
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+11/29/2024 is on a Friday
+```
+
+- We can obtain details about a date if we know the month, day, and year, by filling the six `tm` structure members and calling the `mktime()` function.
+
+- In the provided file, the `mktime()` function plays a crucial role in **determining the day of the week for a specific date**. 
+
+- **Purpose of `mktime()`**:
+
+  - The primary purpose of using the `mktime()` function in this context is to **convert a `struct tm` structure, which represents a calendar date and time, into a `time_t` value**. 
+  - Additionally, `mktime()` **normalizes the `struct tm` structure** by computing the corresponding `tm_wday` (day of the week) and `tm_yday` (day of the year) fields based on the provided date information.
+
+- **Calling `mktime(&day);`:**
+
+  - This function takes the `struct tm` pointer and converts it to `time_t`, which represents the calendar time.
+
+  - **Normalization:**
+
+    Beyond conversion, `mktime()` adjusts the `struct tm` fields to ensure they represent a valid date and time. This includes calculating:
+
+    - `tm_wday`: The day of the week (0 = Sunday, 6 = Saturday).
+    - `tm_yday`: The day of the year.
+
+  - **Setting `tm_wday`:** After calling `mktime()`, the `tm_wday` field in the `day` structure is populated with the correct day of the week for the specified date.
+
+
+
+### Is today a holiday?
+
+- For a computer holiday detector, three timely tidbits are necessary:
+  - The month number
+  - The day of the month
+  - The day of the week
+
+
+
+### Reporting regular date holidays
+
+- New Year's Day, January 1
+- Juneteenth, June 19
+- Independence Day, July 4
+- Veterans Day, November 11
+- Christmas Day, December 25
+
+
+
+To report these dates, we will use the `isholiday()` function.
+
+```C
+int isholiday(struct tm *d);
+```
+
+- The function's only argument is the address of a `tim` structure, the same structure returned from the `localtime()` function and used by the `mktime()` function.
+- The `isholiday()` function returns an integer value: 0 for nonholiday days and 1 for a holiday.
+- The function does a straight-up comparison of month-and-day values to report the regular date holidays.
+
+```C
+int isholiday(struct tm *d){
+    // New Year's Day (Jan 1)
+    if( d->tm_mon==0 && d->tm_mday==1)
+		return 1;
+	
+    // Juneteenth (June 19)
+	if( d->tm_mon==5 && d->tm_mday==19)
+		return 1;
+	
+    // Independence Day(July 4)
+	if( d->tm_mon==6 && d->tm_mday==4)
+		return 1;
+	
+    // Veterans Day (Nov 11)
+	if( d->tm_mon==10 && d->tm_mday==11)
+		return 1;
+	
+    // Christmas (Dec 25)
+	if( d->tm_mon == 11 && d->tm_mday == 25)
+		return 1;
+
+	return 0;
+}
+
+int main(){
+    time_t now;
+    struct tm *today;
+    int r;
+    
+    now = time(NULL);
+    today = localtime(&now);
+    
+    printf("Today is %d/%02d/%d, ",
+			today->tm_mon+1,
+			today->tm_mday,
+			today->tm_year+1900
+		  );
+    r = isholiday(today);
+    
+    if(r){
+        puts("a holiday");
+    }else{
+        puts("not a holiday");
+    }
+    
+    return r;
+}
+```
+
+- The `main()` function calls the `time()` and `localtime()` functions to obtain the current time info and pack it into the `tm` structure.
+- This structure is passed to `isholiday()` and the results reported.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/23/2024, not a holiday
+```
+
+
+
+First update to the `isholiday()` function, we can make it to report the holiday's name.
+
+- To make this improvement, the `tm` structure must be ditched as the `isholiday()` function's argument.
+- Instead, we will use a new structure `holiday`, defined with these members:
+
+```C
+struct holiday{
+    int month;
+    int day;
+    char *name;
+}
+```
+
+- The `month` and `day` members match up to the `tm_mon` and `tm_mday` members of the `tm` structure.
+- The `name` member is a `char` pointer to hold the holiday's name.
+- The strings assigned to this pointer are declared in the `isholiday()` function.
+
+#### Holiday Detector Program
+
+`practice.h`
+
+```C
+struct holiday{
+    int month;
+    int day;
+    char *name;
+}
+
+int isholiday(struct holiday *h);
+```
+
+`functions.c`
+
+```C
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Year's Day",
+        "Juneteenth",
+        "Independence Day",
+        "Veterans Day",
+        "Christmas"};
+
+    if (h->month == 0 && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    if (h->month == 5 && h->day == 19)
+    {
+        h->name = n[1];
+        return 1;
+    }
+
+    if (h->month == 6 && h->day == 4)
+    {
+        h->name = n[2];
+        return 1;
+    }
+
+    if (h->month == 10 && h->day == 11)
+    {
+        h->name = n[3];
+        return 1;
+    }
+
+    if (h->month == 11 && h->day == 25)
+    {
+        h->name = n[4];
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+
+
+`practice.c (main)`
+
+```C
+int main(){
+    time_t now;
+    struct tm *today;
+    struct holiday h;
+    int r;
+    
+    now = time(NULL);
+    today = localtime(&now);
+    
+    h.month = today->tm_mon;
+    h.day = today->tm_mday;
+    h.name = NULL;
+    
+    printf("Today is %d/%02d/%d, ", today->tm_mon + 1, today->tm_mday, today->tm_year + 1900);
+    
+    r = isholiday(&h);
+    
+    // if(r) == if(r == 1)
+    if(r){
+        puts(h.name);
+    }else{
+        puts("Not a holiday");
+    }
+    
+    return r;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/23/2024, Not a holiday
+```
+
+- To set and test a specific date instead of using the current date in our program,
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    struct holiday h;
+    int r;
+
+    h.month = 5;
+    h.day = 19;
+    h.name = NULL;
+
+    printf("Today is %d/%02d/%d, ", h.month + 1, h.day, 2024);
+
+    r = isholiday(&h);
+
+    if (r)
+    {
+        puts(h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+
+    return r;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 6/19/2024, Juneteenth
+```
+
+
+
+Specifically, when one of these holidays falls on a weekend, it's often the Friday before or the Monday after that everyone takes a day off.
+
+- When Independence Day (July 4) is on a Sunday, the country takes off Monday, July 5.
+
+- Though when this type of holiday falls on a Tuesday, Wednesday, or Thursday, the day before or after isn't considered a holiday.
+
+- To update our program, we will add a new member to our `holiday` structure, `wday`.
+
+  - This member echoes the `tm_wday` member of the `tm` structure.
+  - It indicates a day of the week - 0 for Sunday thru 6 for Saturday.
+
+  ```C
+  struct holiday{
+      int month;
+      int day;
+      int wday;
+      char *name;
+  }
+  ```
+
+- Because only two days are required for testing, two enum constants are added.
+
+  ```C
+  enum{
+      FRIDAY = 5,
+      MONDAY = 1
+  };
+  ```
+
+- When New Year's Day is observed on a Friday, the date is December 31 of the prior year.
+
+- This difference makes the New Year's Day test a bit more complex than other Friday/Monday tests.
+
+
+
+`practice.h`
+
+```C
+enum
+{
+    ERROR_CODE = -1,
+    FRIDAY = 5,
+    MONDAY = 1,
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int wday;
+    char *name;
+};
+
+int isholiday(struct holiday *h);
+```
+
+`functions.c`
+
+```C
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Year's Day",
+        "Juneteenth",
+        "Independence Day",
+        "Veterans Day",
+        "Christmas"};
+
+    // Specifically check for Friday, December 31
+    if (h->month == 11 && h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        
+        // Return 2 for "celebration" holidays
+        return 2;
+    }
+	
+    // Check for New Year's Day
+    if (h->month == 0 && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+	
+    // Specifically check for Monday, Jan 2
+    if (h->month == 0 && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Juneteenth is always in June
+    if (h->month == 5)
+    {
+        
+        // Focuses on the relevant days, before (18), the day (19), and after (20)
+        if (h->day > 17 && h->day < 21)
+        {
+            // Check for the day before celebration
+            if (h->day == 18 && h->wday == FRIDAY)
+            {
+                h->name = n[1];
+                // Return 2 for celebration days
+                return 2;
+            }
+            
+            // Checks for the day after celebration
+            if (h->day == 20 && h->wday == MONDAY)
+            {
+                h->name = n[1];
+                return 2;
+            }
+            
+            // Check for the actual holiday
+            if (h->day == 19)
+            {
+                h->name = n[1];
+                
+                // Return 1 for the holiday
+                return 1;
+            }
+        }
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == 6)
+    {
+        if (h->day > 2 && h->day < 6)
+        {
+            // Check for the day before celebration
+            if (h->day == 3 && h->wday == FRIDAY)
+            {
+                h->name = n[2];
+                return 2;
+            }
+                        
+            // Checks for the day after celebration
+            if (h->day == 5 && h->wday == MONDAY)
+            {
+                h->name = n[2];
+                return 2;
+            }
+
+             // Check for the actual holiday
+            if (h->day == 4)
+            {
+                h->name = n[2];
+                return 1;
+            }
+        }
+    }
+	
+    //Check for Veterans Day (Nov 11th)
+    if (h->month == 10)
+    {
+        if (h->day > 9 && h->day < 13)
+        {
+            // Check for the day before celebration
+            if (h->day == 10 && h->wday == FRIDAY)
+            {
+                h->name = n[3];
+                return 2;
+            }
+            
+            // Checks for the day after celebration
+            if (h->day == 12 && h->wday == MONDAY)
+            {
+                h->name = n[3];
+                return 2;
+            }
+            
+             // Check for the actual holiday
+            if (h->day == 11)
+            {
+                h->name = n[3];
+                return 1;
+            }
+        }
+    }
+	
+    
+    // Check for Christmas Day (Dec 25th)
+    if (h->month == 11)
+    {
+        
+        if (h->day > 23 && h->day < 27)
+        {
+            // Check for the day before celebration
+            if (h->day == 24 && h->wday == FRIDAY)
+            {
+                h->name = n[4];
+                return 2;
+            }
+            
+            // Checks for the day after celebration
+            if (h->day == 26 && h->wday == MONDAY)
+            {
+                h->name = n[4];
+                return 2;
+            }
+            
+             // Check for the actual holiday
+            if (h->day == 25)
+            {
+                h->name = n[4];
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+`practice.c (main)`
+
+```C
+#define _XOPEN_SOURCE 700
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <math.h>
+#include <pthread.h>
+#include "practice.h"
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <stdbool.h>
+#include <tgmath.h>
+#include <stdint.h>
+#include <complex.h>
+#include <assert.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <ctype.h>
+
+int main()
+{
+    struct holiday h;
+    int r;
+
+    h.month = 11; // December
+    h.day = 26;
+    h.name = NULL;
+    h.wday = MONDAY; // Assuming December 26, 2024, is a Monday
+
+    printf("Today is %d/%02d/%d, ", h.month + 1, h.day, 2024);
+
+    r = isholiday(&h);
+
+    if (r == 1)
+    {
+        puts(h.name);
+    }
+    else if (r == 2)
+    {
+        printf("%s observed\n", h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+
+    return r;
+}
+
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 12/26/2024, Christmas observed
+```
+
+**Scenario 2: Holiday Observed on Different Day**
+
+- **Date Set:** December 24, 2024 (Christmas Observed on Friday)
+- **Assumed `wday`:** FRIDAY (`5`)
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 12/24/2024, Christmas observed
+```
+
+### **Scenario 3: Not a Holiday**
+
+- **Date Set:** April 27, 2024
+- **Assumed `wday`:** Wednesday (`3`)
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 4/27/2024, Not a holiday
+```
+
+
+
+However there are so many repetition in the code which cries out for a function.
+
+```C
+int weekend(int holiday, int mday, int wday);
+```
+
+- Integer `holiday` is the day of the month on which the holiday occurs.
+- Integers `mday` and `wday` are the day of the month and day of the week values, respectively.
+
+
+
+```C
+int weekend(int holiday, int mday, int wday){
+    
+    // Narrows down the days to search (2 days before and after the holiday)
+    if(mday > holiday - 2 && mday < holiday + 2){
+        // Test for the Friday before the holiday
+        if(mday == holiday - 1 && wday == FRIDAY){
+            return 2;
+        }
+        
+        // Test for the Monday after the holiday
+        if(mday == holiday + 1 && wday == MONDAY){
+            return 2;
+        }
+        
+        // Test for the holiday date itself
+        if(mday == holiday){
+            return 1;
+        }
+    }
+    
+    // Return zero for no matches
+    return 0;
+}
+```
+
+
+
+**Full Program**
+
+`practice.h`
+
+```C
+enum
+{
+    ERROR_CODE = -1,
+    FRIDAY = 5,
+    MONDAY = 1,
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int wday;
+    char *name;
+};
+
+int weekend(int holiday, int mday, int wday);
+
+int isholiday(struct holiday *h);
+```
+
+`functions.c`
+
+```C
+int weekend(int holiday, int mday, int wday){
+    
+    // Narrows down the days to search (2 days before and after the holiday)
+    if(mday > holiday - 2 && mday < holiday + 2){
+        // Test for the Friday before the holiday
+        if(mday == holiday - 1 && wday == FRIDAY){
+            return 2;
+        }
+        
+        // Test for the Monday after the holiday
+        if(mday == holiday + 1 && wday == MONDAY){
+            return 2;
+        }
+        
+        // Test for the holiday date itself
+        if(mday == holiday){
+            return 1;
+        }
+    }
+    
+    // Return zero for no matches
+    return 0;
+}
+
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Year's Day",
+        "Juneteenth",
+        "Independence Day",
+        "Veterans Day",
+        "Christmas"};
+    int r;
+
+    if (h->month == 11 & h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    if (h->month == 0 && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    if (h->month == 0 && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    if (h->month == 5)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[1];
+        return r;
+    }
+
+    if (h->month == 6)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[2];
+        return r;
+    }
+
+    if (h->month == 10)
+    {
+        r = weekend(11, h->day, h->wday);
+        h->name = n[3];
+        return r;
+    }
+
+    if (h->month == 11)
+    {
+        r = weekend(25, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+    return 0;
+}
+```
+
+`practice.c (main)`
+
+```C
+nt main()
+{
+    time_t now;
+    struct tm *today;
+    struct holiday h;
+    int r;
+
+    now = time(NULL);
+    today = localtime(&now);
+	
+    // Test for Friday before the holiday
+    h.month = 5;
+    h.day = 18;
+    h.name = NULL;
+    h.wday = FRIDAY; //test for Friday
+
+    printf("Today is %d/%02d/%d, ", h.month + 1, h.day, today->tm_year + 1900);
+
+    r = isholiday(&h);
+
+    if (r == 1)
+    {
+        puts(h.name);
+    }
+    else if (r == 2)
+    {
+        printf("%s observed\n", h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+
+    return r;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 6/18/2024, Juneteenth observed
+```
+
+
+
+With `h.wday = MONDAY` and `h.day = 20`,
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 6/20/2024, Juneteenth observed
+```
+
+With `h.wday = 0` and `h.day = 19`,
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 6/19/2024, Juneteenth
+```
+
+
+
+### Dealing with irregular holidays
+
+- Unlike specific date holidays, irregular holidays occur on specific weeks and days of the month.
+- These holidays are irregular in that they fall within a range of dates each year.
+- The irregular holidays in the United States:
+  - Martin Luther King Jr. Day, third Monday of January
+  - Presidents Day, third Monday of February
+  - Memorial Day, last Monday of May
+  - Labor Day, first Monday of September
+  - Columbus Day, second Monday of October
+  - Thanksgiving, fourth Thursday of November
+- Unlike the regular date holidays, we don't need to worry about a shifting observance day; these are all specific day-of-the-week holidays.
+- This consistency means that it's possible to calculate a day-of-the-month range for each holiday.
+
+
+
+**Table 12.4 Day ranges for Monday holidays on a given week**
+
+| Week of month | Monday range  |
+| ------------- | ------------- |
+| First         | 1 to 7        |
+| Second        | 8 to 14       |
+| Third         | 15 to 21      |
+| Fourth        | 22 to 28      |
+| Last          | 25 and higher |
+
+- The difference between the fourth and last week occurs in those months with five Mondays, such as May, as shown in figure 12.1.
+
+![Screenshot from 2024-11-23 22-10-14](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-23 22-10-14.png)
+
+- when the 31st of May falls on a Monday, it's the fifth Monday.
+- The 24th of May is still in the fourth week, but in this month configuration, where the 31st is on a Monday, it's the last day.
+- This reason is why the last week has a different range than the fourth week.
+- For Thanksgiving, the final Thursday of the month could fall on any day from the 22nd through the 28th.
+
+
+
+`practice.h`
+
+```C
+// Macros to determine the week of the month based on the day
+#define FIRST_WEEK h->day < 8
+#define SECOND_WEEK h->day > 7 && h->day < 15
+#define THIRD_WEEK h->day > 14 && h->day < 22
+#define FOURTH_WEEK h->day > 21 && h->day < 29
+#define LAST_WEEK h->day > 24 && h->day < 32
+
+enum
+{
+    ERROR_CODE = -1,
+    FRIDAY = 5,
+    MONDAY = 1,
+    THURSDAY = 4,
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int wday;
+    char *name;
+};
+
+int weekend(int holiday, int mday, int wday);
+
+int isholiday(struct holiday *h);
+```
+
+`functions.c`
+
+```C
+
+int weekend(int holiday, int mday, int wday)
+{
+    if (mday > holiday - 2 && mday < holiday + 2)
+    {
+        if (mday == holiday - 1 && wday == FRIDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday + 1 && wday == MONDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday)
+        {
+            return 1;
+        }
+    }
+}
+
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Years Day",
+        "Martin Luther King Day",
+        "Presidents Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving",
+        "Christmas"};
+    int r;
+
+    // Check for New Year's Day observed on Friday, December 31st
+    if (h->month == 11 & h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for New Year's Day on January 1st
+    if (h->month == 0 && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    // Check for New Year's Day observed on Monday, January 2nd
+    if (h->month == 0 && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for Martin Luther King Jr. Day (third Monday of January)
+    if (h->month == 0 && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[1];
+            return 1;
+        }
+    }
+
+    // Check for Presidents' Day (third Monday of February)
+    if (h->month == 1 && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[2];
+            return 1;
+        }
+    }
+
+    // Check for Memorial Day (last Monday of May)
+    if (h->month == 4 && h->wday == MONDAY)
+    {
+        if (LAST_WEEK)
+        {
+            h->name = n[3];
+            return 1;
+        }
+    }
+
+    // Check for Juneteenth (June 19th)
+    if (h->month == 5)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == 6)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[5];
+        return r;
+    }
+
+    // Check for Labor Day (first Monday of September)
+    if (h->month == 8 && h->wday == MONDAY)
+    {
+        if (FIRST_WEEK)
+        {
+            h->name = n[6];
+            return 1;
+        }
+    }
+
+    // Check for Columbus Day (second Monday of October)
+    if (h->month == 9 && h->wday == MONDAY)
+    {
+        if (SECOND_WEEK)
+        {
+            h->name = n[7];
+            return 1;
+        }
+    }
+
+    // Check for Thanksgiving (fourth Thursday of November)
+    if (h->month == 10)
+    {
+        if (h->wday == THURSDAY && FOURTH_WEEK)
+        {
+            h->name = n[9];
+            return 1;
+        }
+        // Check for Veterans Day observed on a different day
+        r = weekend(11, h->day, h->wday);
+        h->name = n[8];
+        return r;
+    }
+
+    // Check for Christmas Day (December 25th)
+    if (h->month == 11)
+    {
+        r = weekend(25, h->day, h->wday); // Determine if Christmas is observed on a different day
+        h->name = n[10];
+        return r;
+    }
+    
+    // If no holiday matches, return 0
+    return 0;
+}
+```
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    time_t now;
+    struct tm *today;
+    struct holiday h;
+    int r;
+
+    now = time(NULL);
+    today = localtime(&now);
+	
+    // Test for the third Monday of Jan
+    h.month = 0;
+    h.day = 16;
+    h.name = NULL;
+    h.wday = MONDAY;
+
+    printf("Today is %d/%02d/%d, ", h.month + 1, h.day, today->tm_year + 1900);
+
+    r = isholiday(&h);
+
+    if (r == 1)
+    {
+        puts(h.name);
+    }
+    else if (r == 2)
+    {
+        printf("%s observed\n", h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+
+    return r;
+}
+
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 1/16/2024, Martin Luther King Day
+```
+
+
+
+```C
+h.month = 10;
+    h.day = 24;
+    h.name = NULL;
+    h.wday = THURSDAY;
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/24/2024, Thanksgiving
+
+```
+
