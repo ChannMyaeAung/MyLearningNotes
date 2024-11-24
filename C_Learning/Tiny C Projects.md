@@ -14912,3 +14912,1178 @@ Today is 11/24/2024, Thanksgiving
 
 ```
 
+
+
+**Exercise 12.2**
+
+In a major update to the code, add constants for the months of the year.
+
+`practice.h`
+
+```C
+#define FIRST_WEEK h->day < 8
+#define SECOND_WEEK h->day > 7 && h->day < 15
+#define THIRD_WEEK h->day > 14 && h->day < 22
+#define FOURTH_WEEK h->day > 21 && h->day < 29
+#define LAST_WEEK h->day > 24 && h->day < 32
+
+
+enum
+{
+    FRIDAY = 5,
+    MONDAY = 1,
+    THURSDAY = 4,
+    JANUARY = 0,
+    FEBRUARY = 1,
+    MARCH = 2,
+    APRIL = 3,
+    MAY = 4,
+    JUNE = 5,
+    JULY = 6,
+    AUGUST = 7,
+    SEPTEMBER = 8,
+    OCTOBER = 9,
+    NOVEMBER = 10,
+    DECEMBER = 11
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int wday;
+    char *name;
+};
+
+int weekend(int holiday, int mday, int wday);
+
+int isholiday(struct holiday *h);
+```
+
+`functions.c`
+
+```C
+int weekend(int holiday, int mday, int wday)
+{
+    if (mday > holiday - 2 && mday < holiday + 2)
+    {
+        if (mday == holiday - 1 && wday == FRIDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday + 1 && wday == MONDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday)
+        {
+            return 1;
+        }
+    }
+}
+
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Years Day",
+        "Martin Luther King Day",
+        "Presidents Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving",
+        "Christmas"};
+    int r;
+
+    // Check for New Year's Day observed on Friday, December 31st
+    if (h->month == DECEMBER && h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for New Year's Day on January 1st
+    if (h->month == JANUARY && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    // Check for New Year's Day observed on Monday, Jan 2nd
+    if (h->month == JANUARY && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for Martin Luther King Day (third Monday of January)
+    if (h->month == JANUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[1];
+            return 1;
+        }
+    }
+
+    // Check for Presidents' Day (third Monday of February)
+    if (h->month == FEBRUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[2];
+            return 1;
+        }
+    }
+
+    // Check for Memorial Day (last Monday of May)
+    if (h->month == MAY && h->wday == MONDAY)
+    {
+        if (LAST_WEEK)
+        {
+            h->name = n[3];
+            return 1;
+        }
+    }
+
+    // Check for Juneteenth (June 19th)
+    if (h->month == JUNE)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == JULY)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[5];
+        return r;
+    }
+
+    // Check for Labor Day (first Monday of September)
+    if (h->month == SEPTEMBER && h->wday == MONDAY)
+    {
+        if (FIRST_WEEK)
+        {
+            h->name = n[6];
+            return 1;
+        }
+    }
+
+    // Check for Columbus Day (second Monday of October)
+    if (h->month == OCTOBER && h->wday == MONDAY)
+    {
+        if (SECOND_WEEK)
+        {
+            h->name = n[7];
+            return 1;
+        }
+    }
+
+    // Check for Thanksgiving (fourth Thursday of November)
+    if (h->month == NOVEMBER)
+    {
+        if (h->wday == THURSDAY && FOURTH_WEEK)
+        {
+            h->name = n[9];
+            return 1;
+        }
+
+        // Check for Veterans Day (November 11th)
+        r = weekend(11, h->day, h->wday);
+        h->name = n[8];
+        return r;
+    }
+
+    // Check for Christmas Day (December 25th)
+    if (h->month == DECEMBER)
+    {
+        r = weekend(25, h->day, h->wday);
+        h->name = n[10];
+        return r;
+    }
+
+    // If no holiday matches, return 0;
+    return 0;
+}
+```
+
+
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    time_t now;
+    struct tm *today;
+    struct holiday h;
+    int r;
+
+    now = time(NULL);
+    today = localtime(&now);
+
+    // Test for Labor Day
+    h.month = SEPTEMBER;
+    h.day = 1;
+    h.wday = MONDAY;
+
+    printf("Today is %d/%02d/%d, ", h.month + 1, h.day, today->tm_year + 1900);
+
+    r = isholiday(&h);
+
+    if (r == 1)
+    {
+        puts(h.name);
+    }
+    else if (r == 2)
+    {
+        printf("%s is observed\n", h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+    return r;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 9/01/2024, Labor Day
+
+```
+
+
+
+```C
+// Test for Veterans Day
+    h.month = NOVEMBER;
+    h.day = 11;
+    h.wday = 0;
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/11/2024, Veterans Day
+```
+
+
+
+```C
+// Test when the day before holiday is FRIDAY
+h.month = NOVEMBER;
+    h.day = 10;
+    h.wday = FRIDAY;
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/10/2024, Veterans Day is observed
+```
+
+
+
+```C
+// Test when the day after the holiday is MONDAY
+h.month = NOVEMBER;
+    h.day = 12;
+    h.wday = MONDAY;
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/12/2024, Veterans Day is observed
+```
+
+
+
+### Calculating Easter
+
+- Easter falls on different dates each year because it's the last holiday remaining in Western culture based on the lunar calendar.
+- On the solar calendar, the date of Easter can be as early as March 22 or as late as April 25.]
+- It's always on Sunday.
+- For the lunar calender, Easter is the first Sunday after the first new moon after the vernal equinox.
+
+```C
+// Accepts a year value as the only argument
+void easter(int year)
+{
+    // Lots of int and double variables
+    int Y, a, c, e, h, k, L;
+    double b, d, f, g, i, m, month, day;
+
+    Y = year;
+    a = Y % 19;
+    b = floor(Y / 100);
+    c = Y % 100;
+    d = floor(b / 4);
+    e = (int)b % 4;
+
+    f = floor((b + 8) / 25);
+    g = floor((b - f + 1) / 3);
+    h = (19 * a + (int)b - (int)d - (int)g + 15) % 30;
+    i = floor(c / 4);
+    k = c % 4;
+    L = (32 + 2 * e + 2 * (int)i - h - k) % 7;
+    m = floor((a + 11 * h + 22 * L) / 451);
+    
+    // Obtain the month for Easter, either 3 (March) or 4 (April)
+    month = floor((h + L - 7 * m + 114) / 31);
+    
+    // Obtain the day of the month
+    day = ((h + L - 7 * (int)m + 114) % 31) + 1;
+
+    printf("In %d, Easter is ", Y);
+    if (month == 3)
+    {
+        printf("March %d\n", (int)day);
+    }
+    else
+    {
+        printf("April %d\n", (int)day);
+    }
+}
+
+int main()
+{
+    int x;
+    for (x = 2018; x < 2036; x++)
+    {
+        easter(x);
+    }
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+In 2018, Easter is April 1
+In 2019, Easter is April 21
+In 2020, Easter is April 12
+In 2021, Easter is April 4
+In 2022, Easter is April 17
+In 2023, Easter is April 9
+In 2024, Easter is March 31
+In 2025, Easter is April 20
+In 2026, Easter is April 5
+In 2027, Easter is March 28
+In 2028, Easter is April 16
+In 2029, Easter is April 1
+In 2030, Easter is April 21
+In 2031, Easter is April 13
+In 2032, Easter is March 28
+In 2033, Easter is April 17
+In 2034, Easter is April 9
+In 2035, Easter is March 25
+```
+
+
+
+In order to merge `easter()` function into the `isholiday()` function, the `easter()` function must:
+
+- be modified to accept a date value and return 1 or 0 depending on whether the date matches Easter for the given year.
+- First, the `holiday` structure must be modified to also include a `year` member:
+
+```C
+struct holiday{
+    int month;
+    int day;
+    int year;
+    int wday;
+    char *name;
+};
+```
+
+- Second, the `year` member's value must be assigned in the `main()` function:
+
+```C
+h.year = today->tm_year + 1900;
+```
+
+- Third, a call must be made to `easter()` in the `isholiday()` function.
+- At the start of the function, a string for Easter is added to the `n[]` pointer array.
+- The "Easter" string is last in the array declaration, `n[11]`.
+- These statements in the `isholiday()` function call the `easter()` function.
+- They are the last few statements in the function, right before the final `return`:
+
+```C
+r = easter(h);
+if(r == 1){
+    h->name = n[10];
+    return r;
+}
+```
+
+
+
+`practice.h`
+
+```C
+// Functions.c
+
+#define FIRST_WEEK h->day < 8
+#define SECOND_WEEK h->day > 7 && h->day < 15
+#define THIRD_WEEK h->day > 14 && h->day < 22
+#define FOURTH_WEEK h->day > 21 && h->day < 29
+#define LAST_WEEK h->day > 24 && h->day < 32
+
+enum
+{
+    FRIDAY = 5,
+    MONDAY = 1,
+    THURSDAY = 4,
+    JANUARY = 0,
+    FEBRUARY = 1,
+    MARCH = 2,
+    APRIL = 3,
+    MAY = 4,
+    JUNE = 5,
+    JULY = 6,
+    AUGUST = 7,
+    SEPTEMBER = 8,
+    OCTOBER = 9,
+    NOVEMBER = 10,
+    DECEMBER = 11
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int year;
+    int wday;
+    char *name;
+};
+
+int weekend(int holiday, int mday, int wday);
+
+int isholiday(struct holiday *h);
+
+// Functions_2.c
+int easter(struct holiday *hday);
+```
+
+`functions.c`
+
+```C
+
+int easter(struct holiday *hday)
+{
+    // Lots of int variables
+    int Y, a, c, e, h, k, L;
+    double b, d, f, g, i, m, month, day;
+
+    Y = hday->year;
+    a = Y % 19;
+    b = floor(Y / 100);
+    c = Y % 100;
+    d = floor(b / 4);
+    e = (int)b % 4;
+
+    f = floor((b + 8) / 25);
+    g = floor((b - f + 1) / 3);
+    h = (19 * a + (int)b - (int)d - (int)g + 15) % 30;
+    i = floor(c / 4);
+    k = c % 4;
+    L = (32 + 2 * e + 2 * (int)i - h - k) % 7;
+    m = floor((a + 11 * h + 22 * L) / 451);
+    month = floor((h + L - 7 * m + 114) / 31) - 1;
+    day = ((h + L - 7 * (int)m + 114) % 31) + 1;
+
+    if (hday->month == month && hday->day == day)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int weekend(int holiday, int mday, int wday)
+{
+    if (mday > holiday - 2 && mday < holiday + 2)
+    {
+        if (mday == holiday - 1 && wday == FRIDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday + 1 && wday == MONDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday)
+        {
+            return 1;
+        }
+    }
+}
+
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Years Day",
+        "Martin Luther King Day",
+        "Presidents Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving",
+        "Christmas", "Easter"};
+    int r;
+
+    // Check for New Year's Day observed on Friday, December 31st
+    if (h->month == DECEMBER && h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for New Year's Day on January 1st
+    if (h->month == JANUARY && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    // Check for New Year's Day observed on Monday, Jan 2nd
+    if (h->month == JANUARY && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for Martin Luther King Day (third Monday of January)
+    if (h->month == JANUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[1];
+            return 1;
+        }
+    }
+
+    // Check for Presidents' Day (third Monday of February)
+    if (h->month == FEBRUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[2];
+            return 1;
+        }
+    }
+
+    // Check for Memorial Day (last Monday of May)
+    if (h->month == MAY && h->wday == MONDAY)
+    {
+        if (LAST_WEEK)
+        {
+            h->name = n[3];
+            return 1;
+        }
+    }
+
+    // Check for Juneteenth (June 19th)
+    if (h->month == JUNE)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == JULY)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[5];
+        return r;
+    }
+
+    // Check for Labor Day (first Monday of September)
+    if (h->month == SEPTEMBER && h->wday == MONDAY)
+    {
+        if (FIRST_WEEK)
+        {
+            h->name = n[6];
+            return 1;
+        }
+    }
+
+    // Check for Columbus Day (second Monday of October)
+    if (h->month == OCTOBER && h->wday == MONDAY)
+    {
+        if (SECOND_WEEK)
+        {
+            h->name = n[7];
+            return 1;
+        }
+    }
+
+    // Check for Thanksgiving (fourth Thursday of November)
+    if (h->month == NOVEMBER)
+    {
+        if (h->wday == THURSDAY && FOURTH_WEEK)
+        {
+            h->name = n[9];
+            return 1;
+        }
+
+        // Check for Veterans Day (November 11th)
+        r = weekend(11, h->day, h->wday);
+        h->name = n[8];
+        return r;
+    }
+
+    // Check for Christmas Day (December 25th)
+    if (h->month == DECEMBER)
+    {
+        r = weekend(25, h->day, h->wday);
+        h->name = n[10];
+        return r;
+    }
+
+    r = easter(h);
+    if (r == 1)
+    {
+        h->name = n[11];
+        return r;
+    }
+
+    // If no holiday matches, return 0;
+    return 0;
+}
+```
+
+
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    time_t now;
+    struct tm *today;
+    struct holiday h;
+    int r;
+
+    now = time(NULL);
+    today = localtime(&now);
+
+    // Testing for today's date
+    h.month = today->tm_mon;
+    h.day = today->tm_mday;
+    h.year = today->tm_year + 1900;
+    h.wday = today->tm_wday;
+    h.name = NULL;
+
+    printf("Today is %d/%02d/%d, ", today->tm_mon + 1, today->tm_mday, today->tm_year + 1900);
+
+    r = isholiday(&h);
+    if (r == 1)
+    {
+        puts(h.name);
+    }
+    else if (r == 2)
+    {
+        printf("%s observed\n", h.name);
+    }
+    else
+    {
+        puts("Not a holiday");
+    }
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 11/24/2024, Not a holiday
+```
+
+```C
+// Test for March 31st 2024
+h.month = MARCH;
+    h.day = 31;
+    h.year = today->tm_year + 1900;
+    h.wday = today->tm_wday;
+    h.name = NULL;
+
+    printf("Today is %d/%02d/%d, ", h.month, h.day, today->tm_year + 1900);
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is 2/31/2024, Easter
+```
+
+
+
+### Running the date gauntlet
+
+- To test the `isholiday()` function, we must run it through the date gauntlet.
+- This test is a program that generates dates from January 1 through December 31 for a given year.
+- The goal is to ensure that the `isholiday()` function properly reacts, reporting the national holidays.
+- The next listing contains two arrays of string constants to represent months and days of the week.
+- The `mdays[]` array lists the member of days in each month, where it's assumed the year isn't a leap year.
+- February has only 28 days in the code.
+- The dates are output in a nested loop: the outer loop processes months, and the inner loop churns days of the month.
+
+```C
+int main(){
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+	
+    // Determines days of each month, assuming it isn't a leap year
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    enum{SU, MO, TU, WE, TH, FR, SA};
+    
+    int start_day, dom, doy, year, m, r;
+    struct holiday h;
+    //Set the starting day for 2025, Saturday
+    start_day = SA;
+    
+    // The first day of the year
+    doy = 1;
+    
+    // The year to be output (not a leap year)
+    year = 2025;
+    
+    // Loop thru 12 months of the year
+    for(m = 0; m < 12; m++){
+        // Loop thru each day of the month
+        for(dom = 1; dom <= mdays[m]; dom++){
+            // Math to Determine the proper day of the week
+            printf("%s, %s %d, %d\n", weekday[(doy + start_day - 1)] % 7), month[m], dom, year);
+            
+            // increment the day of the year
+            doy++;
+        }
+    }
+    return 0;
+}
+```
+
+- The math in the code determines the proper day of the week.
+- This detail is based on the `start_day` variable set to the proper day of the week for January 1, which is a Saturday - enumerated constant `SA` in the code.
+- The day-of-the-year variable, `doy`, is used in this calculation, incremented in the inner loop to keep track of each day of the year.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Saturday, January 1, 2025
+Sunday, January 2, 2025
+Monday, January 3, 2025
+Tuesday, January 4, 2025
+Wednesday, January 5, 2025
+Thursday, January 6, 2025
+Friday, January 7, 2025
+Saturday, January 8, 2025
+....
+....
+....
+....
+Friday, December 23, 2025
+Saturday, December 24, 2025
+Sunday, December 25, 2025
+Monday, December 26, 2025
+Tuesday, December 27, 2025
+Wednesday, December 28, 2025
+Thursday, December 29, 2025
+Friday, December 30, 2025
+Saturday, December 31, 2025
+chan@CMA:~/C_Programming/practice$ 
+
+```
+
+
+
+The next step is to add the functions `isholiday()`, `weekend()`, and `easter()` to the code to confirm that all holidays are properly tracked throughout the year.
+
+- As the gaunlet code churns through days of the year, the `isholiday()` function is called.
+- Only holidays are output.
+- Only a minor changes are needed to be applied to the `main()` function.
+
+
+
+#### Full Holiday Detector Program (Completed Version)
+
+`practice.h`
+
+```C
+// Functions.c
+
+#define FIRST_WEEK h->day < 8
+#define SECOND_WEEK h->day > 7 && h->day < 15
+#define THIRD_WEEK h->day > 14 && h->day < 22
+#define FOURTH_WEEK h->day > 21 && h->day < 29
+#define LAST_WEEK h->day > 24 && h->day < 32
+
+enum
+{
+    FRIDAY = 5,
+    MONDAY = 1,
+    THURSDAY = 4,
+    JANUARY = 0,
+    FEBRUARY = 1,
+    MARCH = 2,
+    APRIL = 3,
+    MAY = 4,
+    JUNE = 5,
+    JULY = 6,
+    AUGUST = 7,
+    SEPTEMBER = 8,
+    OCTOBER = 9,
+    NOVEMBER = 10,
+    DECEMBER = 11
+};
+
+struct holiday
+{
+    int month;
+    int day;
+    int year;
+    int wday;
+    char *name;
+};
+
+int weekend(int holiday, int mday, int wday);
+
+int isholiday(struct holiday *h);
+
+// Functions_2.c
+int easter(struct holiday *hday);
+```
+
+`functions.c`
+
+```C
+int easter(struct holiday *hday)
+{
+    // Lots of int variables
+    int Y, a, c, e, h, k, L;
+    double b, d, f, g, i, m, month, day;
+
+    Y = hday->year;
+    a = Y % 19;
+    b = floor(Y / 100);
+    c = Y % 100;
+    d = floor(b / 4);
+    e = (int)b % 4;
+
+    f = floor((b + 8) / 25);
+    g = floor((b - f + 1) / 3);
+    h = (19 * a + (int)b - (int)d - (int)g + 15) % 30;
+    i = floor(c / 4);
+    k = c % 4;
+    L = (32 + 2 * e + 2 * (int)i - h - k) % 7;
+    m = floor((a + 11 * h + 22 * L) / 451);
+    month = floor((h + L - 7 * m + 114) / 31) - 1;
+    day = ((h + L - 7 * (int)m + 114) % 31) + 1;
+
+    if (hday->month == month && hday->day == day)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int weekend(int holiday, int mday, int wday)
+{
+    if (mday > holiday - 2 && mday < holiday + 2)
+    {
+        if (mday == holiday - 1 && wday == FRIDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday + 1 && wday == MONDAY)
+        {
+            return 2;
+        }
+        if (mday == holiday)
+        {
+            return 1;
+        }
+    }
+}
+
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Years Day",
+        "Martin Luther King Day",
+        "Presidents Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving",
+        "Christmas", "Easter"};
+    int r;
+
+    // Check for New Year's Day observed on Friday, December 31st
+    if (h->month == DECEMBER && h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for New Year's Day on January 1st
+    if (h->month == JANUARY && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+
+    // Check for New Year's Day observed on Monday, Jan 2nd
+    if (h->month == JANUARY && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for Martin Luther King Day (third Monday of January)
+    if (h->month == JANUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[1];
+            return 1;
+        }
+    }
+
+    // Check for Presidents' Day (third Monday of February)
+    if (h->month == FEBRUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[2];
+            return 1;
+        }
+    }
+
+    // Check for Memorial Day (last Monday of May)
+    if (h->month == MAY && h->wday == MONDAY)
+    {
+        if (LAST_WEEK)
+        {
+            h->name = n[3];
+            return 1;
+        }
+    }
+
+    // Check for Juneteenth (June 19th)
+    if (h->month == JUNE)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == JULY)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[5];
+        return r;
+    }
+
+    // Check for Labor Day (first Monday of September)
+    if (h->month == SEPTEMBER && h->wday == MONDAY)
+    {
+        if (FIRST_WEEK)
+        {
+            h->name = n[6];
+            return 1;
+        }
+    }
+
+    // Check for Columbus Day (second Monday of October)
+    if (h->month == OCTOBER && h->wday == MONDAY)
+    {
+        if (SECOND_WEEK)
+        {
+            h->name = n[7];
+            return 1;
+        }
+    }
+
+    // Check for Thanksgiving (fourth Thursday of November)
+    if (h->month == NOVEMBER)
+    {
+        if (h->wday == THURSDAY && FOURTH_WEEK)
+        {
+            h->name = n[9];
+            return 1;
+        }
+
+        // Check for Veterans Day (November 11th)
+        r = weekend(11, h->day, h->wday);
+        h->name = n[8];
+        return r;
+    }
+
+    // Check for Christmas Day (December 25th)
+    if (h->month == DECEMBER)
+    {
+        r = weekend(25, h->day, h->wday);
+        h->name = n[10];
+        return r;
+    }
+
+    r = easter(h);
+    if (r == 1)
+    {
+        h->name = n[11];
+        return r;
+    }
+
+    // If no holiday matches, return 0;
+    return 0;
+}
+```
+
+`practice.c (main)`
+
+```C
+int main(){
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+	
+    // Determines days of each month, assuming it isn't a leap year
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    enum{SU, MO, TU, WE, TH, FR, SA};
+    
+    int start_day, dom, doy, year, m, r;
+    struct holiday h;
+    //Set the starting day for 2025, Saturday
+    start_day = SA;
+    
+    // The first day of the year
+    doy = 1;
+    
+    // The year to be output (not a leap year)
+    year = 2025;
+    
+    // Loop thru 12 months of the year
+    for(m = 0; m < 12; m++){
+        // Loop thru each day of the month
+        for(dom = 1; dom <= mdays[m]; dom++){
+            h.month = m;
+            h.day = dom;
+            h.year = year;
+            h.wday = (doy + start_day - 1) % 7;
+            h.name = NULL;
+            
+            r = isholiday(&h);
+            
+            if (r == 1)
+            {
+                printf("%s, %s %d, %d is %s\n", weekday[h.wday], month[h.month], h.day, h.year, h.name);
+            }
+            if (r == 2)
+            {
+                printf("%s, %s %d, %d %s is observed\n", weekday[h.wday], month[h.month], h.day, h.year, h.name);
+            }
+            // increment the day of the year
+            doy++;
+        }
+    }
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Saturday, January 1, 2025 is New Years Day
+Monday, January 17, 2025 is Martin Luther King Day
+Monday, February 21, 2025 is Presidents Day
+Wednesday, April 20, 2025 is Easter
+Monday, May 30, 2025 is Memorial Day
+Sunday, June 19, 2025 is Juneteenth
+Monday, June 20, 2025 Juneteenth is observed
+Monday, July 4, 2025 is Independence Day
+Monday, September 5, 2025 is Labor Day
+Monday, October 10, 2025 is Columbus Day
+Friday, November 11, 2025 is Veterans Day
+Thursday, November 24, 2025 is Thanksgiving
+Sunday, December 25, 2025 is Christmas
+Monday, December 26, 2025 Christmas is observed
+
+```
+
+
+
+---
+
+## Chapter 13 - Calendar
+
