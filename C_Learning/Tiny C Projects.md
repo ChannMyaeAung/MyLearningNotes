@@ -16087,3 +16087,603 @@ Monday, December 26, 2025 Christmas is observed
 
 ## Chapter 13 - Calendar
 
+
+
+### The calendar program
+
+```shell
+chan@CMA:~$ cal
+   November 2024      
+Su Mo Tu We Th Fr Sa  
+                1  2  
+ 3  4  5  6  7  8  9  
+10 11 12 13 14 15 16  
+17 18 19 20 21 22 23  
+24 25 26 27 28 29 30  
+```
+
+- We can follow `cal` with a year argument to obtain the full, 12-month calendar for the given year:
+
+```shell
+chan@CMA:~$ cal 1999
+```
+
+-  We can add a month argument to see the calendar for a specific month in a specific year:
+
+```shell
+chan@CMA:~$ cal 11 1999
+   November 1999      
+Su Mo Tu We Th Fr Sa  
+    1  2  3  4  5  6  
+ 7  8  9 10 11 12 13  
+14 15 16 17 18 19 20  
+21 22 23 24 25 26 27  
+28 29 30              
+```
+
+- The month can be specified numerically or by name.
+
+
+
+- To see the next three months of output, specify the `-A2` argument:
+
+```shell
+chan@CMA:~$ cal -A2
+   November 2024         December 2024          January 2025      
+Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa  
+                1  2   1  2  3  4  5  6  7            1  2  3  4  
+ 3  4  5  6  7  8  9   8  9 10 11 12 13 14   5  6  7  8  9 10 11  
+10 11 12 13 14 15 16  15 16 17 18 19 20 21  12 13 14 15 16 17 18  
+17 18 19 20 21 22 23  22 23 24 25 26 27 28  19 20 21 22 23 24 25  
+24 25 26 27 28 29 30  29 30 31              26 27 28 29 30 31 
+```
+
+
+
+### Creating constants and enumerating dates
+
+- For weekday and month names, `const char` pointers - string constants will be used.
+
+```C
+const char *weekday[] ={
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+};
+```
+
+```C
+const char *weekday[] = {
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+```
+
+```C
+const char *month[] = {
+    "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+};
+```
+
+- Each statement creates an array of pointers: storage for each string is allocated by the program at runtime.
+- What remains is an array of addresses.
+- Each array in in a sequence that matches the `tm_wday` and `tm_mon` members of the `tm` structure returned from the `localtime()` function.
+- For example, the `tm_mon` member for January is numbered 0, and the zeroth element of the `month[]` array is the string for January.
+- The `const` classifier declares these arrays as immutable, which prevents them from being accidentally altered elsewhere in the code.
+- The strings can be passed to functions, but don't change them!.
+- Doing so leads to unpredictable behavior, but not when they're classified as constants.
+- Paring with these two arrays, enumerated constants will be used to represent the weekday and month values.
+- `enum` helps us define constants similarly to the way an array defines groups of variables with the same data type.
+- Values in `enum` are assigned sequentially, starting with 0:
+
+```C
+enum{FALSE, TRUE};
+```
+
+- Here, constant `FALSE` is defined as 0; `TRUE` as 1.
+
+```C
+enum{ALPHA = 1, GAMMA = 5, DELTA, EPSILON, THETA};
+```
+
+- This statement defines constant `ALPHA` as 1.
+- Constant `GAMMA` is set equal to 5, with the rest of the constants numbered sequentially: `DELTA` is 6, `EPSILON` is 7, and `THETA` is 8.
+
+In the following listing, the `time()` function obtains the current epoch value, a `time_t` data type.
+
+- The `localtime()` function uses this value to fill a `tm` structure, `date`.
+- The month, month day, year, and weekday values are then interpreted and output, displaying the current day and date.
+
+```C
+int main()
+{
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+
+    time_t now;
+    struct tm *date;
+	
+    // Obtain the current clock tick value
+    time(&now);
+    
+    // Fills the `tm_date` structure with individual time values
+    date = localtime(&now);
+
+    printf("Today is %s %d, %d, a %s\n", month[date->tm_mon], date->tm_mday, date->tm_year + 1900, weekday[date->tm_wday]);
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Today is November 25, 2024, a Monday
+```
+
+
+
+
+
+### Demonstrating an algorithm to find the weekday for any day, month and year
+
+`Sakamoto Algorithm`
+
+- **Sakamoto's Algorithm** is a concise method to calculate the day of the week for any given date. 
+- It was devised by **Hideo Sakamoto** and is known for its simplicity and efficiency. 
+
+- The algorithm assigns specific values to each month, adjusts the year based on the month, and then applies a formula to compute the day of the week.
+- **Key Components:**
+  1. **Month Table (`t[]`):**
+     - An array that holds values corresponding to each month.
+     - These values are used in the calculation to account for the varying number of days in each month.
+  2. **Year Adjustment:**
+     - If the month is January or February (i.e., month < 3), the year is decremented by 1. This adjustment aligns the months correctly within the Gregorian calendar leap year rules.
+  3. **Day of the Week Calculation:**
+     - The formula combines the adjusted year, month table value, day, and leap year considerations to compute the day of the week.
+     - The result is taken modulo 7 to obtain a value between 0 and 6, each representing a day from Sunday to Saturday.
+
+```C
+int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+year -= month < 3;
+r = (year + year / 4 - year / 100 + year / 400 + t[month - 1] + day) % 7;
+```
+
+
+
+```C
+// The month value, m, ranges from 0 thru 11 for Jan thru Dec. d is the day of the month, and y is the full year value (tm_year + 1900)
+int dayoftheweek(int m, int d, int y)
+{
+    int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+
+    int r = 0;
+    ;
+
+    // The m < 2 evaluation is either 1 or 0, which is added to the year variable
+    y -= m < 2;
+    r = (y + y / 4 - y / 100 + y / 400 + t[m] + d) % 7;
+    return r;
+}
+
+int main()
+{
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+
+    int m, d, y, r;
+
+    m = 10;
+    d = 29;
+    y = 1999;
+
+    r = dayoftheweek(m, d, y);
+
+    printf("%s %d, %d was a %s\n", month[m], d, y, weekday[r]);
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+November 29, 1999 was a Monday
+```
+
+
+
+**Exercise 13.1**
+
+Modify the source code so that command-line arguments are interpreted as the month, day, and year for which we want to find the day of the week.
+
+**Author's Solution**
+
+```C
+int dayoftheweek(int m, int d, int y)
+{
+    int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+
+    y -= m < 2;
+    int r = (y + y / 4 - y / 100 + y / 400 + t[m] + d) % 7;
+    return r;
+}
+
+int main(int argc, char *argv[])
+{
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+
+    int m, d, y, r;
+
+    if (argc < 4)
+    {
+        fprintf(stderr, "Format: month day year\n");
+        exit(1);
+    }
+
+    // Convert command-line arguments into integers
+    m = strtol(argv[1], NULL, 10);
+
+    // No human will type 0 for January
+    m--;
+
+    d = strtol(argv[2], NULL, 10);
+    y = strtol(argv[3], NULL, 10);
+
+    r = dayoftheweek(m, d, y);
+
+    printf("%s %d, %d was a %s\n", month[m], d, y, weekday[r]);
+    return 0;
+}
+
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice 11 29 1999
+November 29, 1999 was a Monday
+chan@CMA:~/C_Programming/practice$ ./practice 10 19 1987
+October 19, 1987 was a Monday
+
+```
+
+
+
+**My Solution**
+
+```C
+int dayoftheweek(int m, int d, int y)
+{
+    int t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+
+    if (m < 3)
+    {
+        y -= 1;
+    }
+    int r = (y + y / 4 - y / 100 + y / 400 + t[m - 1] + d) % 7;
+    return r;
+}
+
+int main()
+{
+    const char *month[] = {
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    };
+
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+
+    int m, d, y, r;
+
+    printf("Enter month, day, year: ");
+
+    if (scanf("%d %d %d", &m, &d, &y) != 3)
+    {
+        printf("Invalid input format.\n");
+        return 1;
+    }
+
+    if (m < 1 || m > 12)
+    {
+        printf("Invalid month. Please enter a value between 1 and 12.\n");
+        return 1;
+    }
+    if (d < 1 || d > 31)
+    {
+        printf("Invalid day. Please enter a value between 1 and 31.\n");
+        return 1;
+    }
+
+    r = dayoftheweek(m, d, y);
+
+    printf("%s %d, %d was a %s\n", month[m - 1], d, y, weekday[r]);
+    return 0;
+}
+
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter date (MM DD YYYY): 11 29 1999
+November 29, 1999 was a Monday
+chan@CMA:~/C_Programming/practice$ ./practice
+Enter date (MM DD YYYY): 10 19 1987
+October 19, 1987 was a Monday
+
+```
+
+
+
+### Calculating the first day of the month
+
+![Screenshot from 2024-11-25 21-22-50](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-25 21-22-50.png)
+
+- If today is  Monday the 20th, the first of the month is on a Wednesday, always, for any month where Monday is the 20th.
+- When given a day of the month and its weekday, the computer can easily calculate upon which day the first of the month falls.
+
+```C
+first = weekday - (day % 7) + 1;
+```
+
+- Assume today is the 23rd. It's a Thursday, numeric value 4:
+
+```C
+first = 4 - (23 % 7) + 1;
+first = 4 - 2 + 1;
+first  = 3;
+```
+
+- When a month has the 23rd fall on a Thursday, the first is on a Wednesday (value 3.)
+- The next listing shows code that obtains the current date. 
+  - It uses the weekday and day of the month values to work the algorithm, outputting on which weekday the first of the month falls.
+
+```C
+int thefirst(int wday, int mday)
+{
+    int first = wday - (mday % 7) + 1;
+    if (first < 0)
+    {
+        first += 7;
+    }
+    return first;
+}
+
+int main()
+{
+    enum
+    {
+        SUNDAY,
+        MONDAY,
+        TUESDAY,
+        WEDNESDAY,
+        THURSDAY,
+        FRIDAY,
+        SATURDAY
+    };
+    const char *weekday[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    };
+
+    printf("If day %d is a %s, the first is on a %s\n", 25, weekday[SATURDAY], weekday[thefirst(SATURDAY, 25)]);
+    return 0;
+}
+
+```
+
+![Screenshot from 2024-11-25 21-22-50](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-25 21-22-50.png)
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+If day 25 is a Saturday, the first is on a Wednesday
+```
+
+
+
+### Identifying leap years
+
+- Leap year rules:
+  - If the year is divisible by both 100 and 400, it's a leap year.
+  - If the year is divisible only by 100, it's not a leap year.
+  - If the year is divisible by four, it's a leap year.
+
+```C
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+int main()
+{
+    int y;
+    for (y = 1999; y <= 2024; y++)
+    {
+        if (february(y) == 29)
+        {
+            printf("%d is a leap year\n", y);
+        }
+    }
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+2000 is a leap year
+2004 is a leap year
+2008 is a leap year
+2012 is a leap year
+2016 is a leap year
+2020 is a leap year
+2024 is a leap year
+```
+
+
+
+- In Linux, we can check the computer's time zone information by examining the `/etc/localtime` symbolic link.
+
+```shell
+chan@CMA:~$ ls -l /etc/localtime
+lrwxrwxrwx 1 root root 32 Oct 22 22:38 /etc/localtime -> /usr/share/zoneinfo/Asia/Bangkok
+```
+
+- The output we see is local to my system, a value set when Linux was first configured.
+
+
+
+### `putenv()` and `tzset()`
+
+#### `putenv()`
+
+- The `putenv()` adds an environment variable to the program's local environment; the change doesn't affect the shell.
+
+```C
+int putenv(char *string);
+```
+
+- The `string` is the environment entry to add.
+- In this case, it's `TZ=GMT` for "time zone equals Greenwich Mean Time".
+- This function requires the inclusion of the `stdlib.h` library.
+
+
+
+#### `tzset()`
+
+- The `tzset()` function sets the program's time zone but only while it runs.
+- The function doesn't otherwise alter the system.
+
+```C
+void tzset(void);
+```
+
+- The `tzset()` requires no arguments because it uses the `TZ` environment variable to set the program's time zone.
+- The `time.h` header must be included for this function to behave properly.
+
+
+
+```C
+int main()
+{
+    time_t epoch = 0;
+
+    putenv("TZ=GMT");
+    tzset();
+    printf("Time is %s", ctime(&epoch));
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Time is Thu Jan  1 00:00:00 1970
+```
+
+- The output now reflects the true Unix epoch as the program's time zone is changed to GMT internally.
+- One decision to make right way with any calendar utility is whether the week starts on Monday or Sunday.
