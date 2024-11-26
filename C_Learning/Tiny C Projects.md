@@ -16678,8 +16678,6 @@ int main()
 
 ```
 
-
-
 ```shell
 chan@CMA:~/C_Programming/practice$ ./practice
 Time is Thu Jan  1 00:00:00 1970
@@ -16687,3 +16685,1172 @@ Time is Thu Jan  1 00:00:00 1970
 
 - The output now reflects the true Unix epoch as the program's time zone is changed to GMT internally.
 - One decision to make right way with any calendar utility is whether the week starts on Monday or Sunday.
+
+
+
+```C
+int main()
+{
+    const char *months[] = {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"};
+    time_t now;
+    struct tm *date;
+    int day, weekday, month, sunday, d;
+	
+    // obtain the current time in clock ticks
+    time(&now);
+    
+    // convert the time_t value into tm structure members
+    date = localtime(&now);
+
+    day = date->tm_mday;
+    month = date->tm_mon;
+    weekday = date->tm_wday;
+    
+    // calculate the date for Sunday
+    sunday = day - weekday;
+
+    printf("  %s\n", months[month]);
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+    
+    // Loop thru days of the week, Sunday thru Sunday + 7
+    for (d = sunday; d < sunday + 7; d++)
+    {
+        // for the current day, output its value in brackets
+        if (d == day)
+        {
+            printf("[%2d]", d);
+        }
+        else
+        {
+            // Output every other day without brackets
+            printf(" %2d ", d);
+        }
+    }
+
+    putchar('\n');
+    return 0;
+}
+```
+
+- The `localtime()` function reports details about the current day of the week.
+
+- ```C
+  sunday = day_of_the_month - weekday;
+  ```
+
+- The `day_of_the_month` value is found in the `tm` structure, member `tm_mday`. 
+
+- Today's `weekday` value is member `tm_wday`.
+
+- As an example, if today is Thursday the 16th, the formula reads:
+
+```C
+sunday = 16 - 4;
+```
+
+- The `sunday` value is then used in a loop to output the seven days of the week.
+
+- The primary reason for using `sunday + 7` in the loop condition is to ensure that the loop iterates exactly **seven times**, corresponding to the **seven days of the week** (Sunday through Saturday). 
+
+- By setting the loop to run while `d < sunday + 7`, we cover a range of seven days:
+
+  - **Start:** `d = sunday`
+  - **End:** `d = sunday + 6`
+    (since the loop stops before `d` reaches `sunday + 7`)
+
+  This range (`sunday` to `sunday + 6`) encompasses all seven days of the week:
+
+  - **Sunday:** `d = sunday`
+  - **Monday:** `d = sunday + 1`
+  - ...
+  - **Saturday:** `d = sunday + 6`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+  November
+Sun Mon Tue Wed Thu Fri Sat
+ 24 [25] 26  27  28  29  30 
+```
+
+- The loop outputs days of the week, starting at Sunday. The current day is highlighted.
+- Of course, this code isn't perfect. If the first of the month falls on any day other than Sunday, we see output like this:
+
+![Screenshot from 2024-11-26 16-53-02](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-26 16-53-02.png)
+
+- Likewise, at the end of the month, we can see output like this:
+
+![Screenshot from 2024-11-26 17-07-34](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-26 17-07-34.png)
+
+- For the first update to the code, in the `for` loop, if the value of variable `d` is less than one, spaces are output instead of the day value.
+- Likewise, spaces are output when the day value is greater than the number of days in the current month.
+- Determining the last day of the month requires more code.
+- Specifically, we must add the `mdays[]` array that lists days of each month, and also the `february()` function.
+  - This function is necessary to ensure that the proper number of days in February is known for the current year.
+- The `mdays[]` array is added to the code in the variable declaration part of the `main()` function:
+
+```C
+int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+```
+
+- The `february()` function is also added to the code.
+- After the `localtime()` function is called, the `february()` function is called to update the `mdays[]` array, element one:
+
+```C
+mdays[1] = february(date->tm_year + 1900);
+```
+
+
+
+`practice.c (main)`
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int february(int year){
+    if(year % 400 == 0){
+        return 29;
+    }
+    if(year % 100 == 0){
+        return 28;
+    }  
+    if(year % 4 != 0){
+        return 28;
+    }
+    return 29;
+}
+
+int main(){
+    const char *months[] = {
+		"January", "February", "March", "April",
+		"May", "June", "July", "August",
+		"September", "October", "November", "December"
+	};
+	int mdays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    
+    time_t now;
+    struct tm *date;
+    int day, weekday, month, sunday, d;
+    
+    time(&now);
+    date = localtime(&now);
+    mdays[1] = february(date->tm_year + 1900);
+    
+    month = date->tm_mon;
+    day = date->tm_mday;
+    weekday = date->tm_wday;
+    sunday = day - weekday;
+    
+    printf("  %s\n", months[month]);
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+    for(d = sunday; d < sunday + 7; d++){
+        
+        // If date d is out of range, less than 1, or greater than the number of days in the current month, outputs spaces
+        if(d < 1 || d > mdays[month]){
+            printf("   ");
+        }else{
+            // Output current day with brackets
+            if(d == day){
+                printf("[%02d]", d);
+            }else{ // Outputs other days without brackets
+                printf(" %2d ", d);
+            }
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+  November
+Sun Mon Tue Wed Thu Fri Sat
+ 24  25 [26] 27  28  29  30 
+```
+
+```C
+// Manually setting the date to be close to the end of the month to test the code
+month = date->tm_mon;
+    day = 29;
+    weekday = date->tm_wday;
+    sunday = day - weekday;
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+  November
+Sun Mon Tue Wed Thu Fri Sat
+ 27  28 [29] 30  
+```
+
+
+
+To update the above program, `pmonth` is added, which holds the value of the previous month. 
+
+- The `pmonth` calculation takes place after the current month's value is read and stored in variable `month`:
+
+```C
+pmonth = month - 1;
+if(pmonth < 0){
+    pmonth = 11;
+}
+```
+
+- The previous month's value is the current month's value minus one.
+- If it's January (0), the previous month's value is negative.
+- The `if` test catches this condition, in which case the value of `pmonth` is set to 11, December.
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int february(int year){
+    if(year % 400 == 0){
+        return 29;
+    }
+    if(year % 100 == 0){
+        return 28;
+    }
+    if(year % 4 != 0){
+        return 28;
+    }
+    return 29;
+}
+
+int main(){
+    const char *months[] = {
+		"January", "February", "March", "April",
+		"May", "June", "July", "August",
+		"September", "October", "November", "December"
+	};
+	int mdays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    
+    time_t now;
+    struct tm *date;
+    int day, weekday, month, sunday, d, pmonth;
+    
+    time(&now);
+    date = localtime(&now);
+    
+    mdays[1] = february(date->tm_year + 1900);
+    
+    month = date->tm_mon;
+    pmonth = month - 1;
+    if(pmonth < 0){
+        pmonth = 11;
+    }
+    day = date->tm_mday;
+    weekday = date->tm_wday;
+    sunday = day - weekday;
+    
+    // When days from the previous month are calculated
+    // If the calculated Sunday date is less than 1, it belongs to the previous month
+    if(sunday < 1){
+        // Shows the previous and current months
+        // Example: "  October / November"
+        printf("  %s / %s\n", months[pmonth], months[month]);
+        
+        // Else if the calculated Saturday date exceeds the number of days in the current month
+    }else if(sunday + 6 > mdays[month]){ // Test to see whether days from the next month are output
+        
+        // For Dec, outputs December and January directly
+        // Example: "  December / January"
+        if(month == 11){
+            printf("  %s / %s\n", months[month], months[0]);
+        }else{
+            
+            // For other months, output the current, and next month names
+            printf("  %s / %s\n", months[month], months[month + 1]);
+        }
+    }else{ // No previous or next month dates appear in the output
+        // If the entire week falls within the current month, print only the current month
+        // Example: "  November"
+        printf("  %s\n", months[month]);
+    }
+    
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+    for(d = sunday; d < sunday + 7; d++){
+        
+        // If the day is less than 1, it belongs to the previous month
+        // The previous month still has days to output
+        if(d < 1){
+            
+            // Print the corresponding day from the previous month
+            // Example: " 30 " for day 30 of the previous month
+            printf("%2d", mdays[pmonth] + d);
+        }else if(d > mdays[month]){ // Else if the day exceeds the number of days in the current month, it belongs to the next month
+            
+            // Print the corresponding day from the next month
+            // Example: " 1 " for day 1 of the next month
+            //Output days from the next month using d minus the number of days in the current month
+            printf(" %2d ", d - mdays[month]);
+        }else{
+            if(d == day){
+                printf("[%2d]", d);
+            }else{
+                printf(" %2d ", d);
+            }
+        }
+    }
+    
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+To update the program, we can also make it to output the current week number as well.
+
+```C
+weekno = (9 + day_of_the_year - weekday) / 7;
+```
+
+- The `day_of_the_year` value is kept in the `tm` structure as member `tm_yday`.
+- The weekday value is `tm` structure member `tm_wday`, where Sunday is zero.
+- The expression is divided by seven, which is rounded as an integer value and stored in variable `weekno`.
+- The value of `weekno` must be tested for the first week of the year - specifically, when the first of January falls late in the week.
+- The `weekno` value returned by the equation is 0. 
+- It should be 52, as it's technically the last week of the previous year.
+
+```C
+if(weekno == 0){
+    weekno = 52;
+}
+```
+
+
+
+```C
+#include <stdio.h>
+#include <time.h>
+
+int february(int year){
+    if(year % 400 == 0){
+        return 29;
+    }
+    if(year % 100 == 0){
+        return 28;
+    }
+    if(year % 4 != 0){
+        return 28;
+    }
+    return 29;
+}
+
+int main(){
+    const char *months[] = {
+		"January", "February", "March", "April",
+		"May", "June", "July", "August",
+		"September", "October", "November", "December"
+	};
+	int mdays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    
+    time_t now;
+    struct tm *date;
+    int day, weekday, month, sunday, d, pmonth, weekno;
+    
+    time(&now);
+    date = localtime(&now);
+    
+    mdays[1] = february(date->tm_year + 1900);
+    
+    month = date->tm_mon;
+    pmonth = month - 1;
+    if(pmonth < 0){
+        pmonth = 11;
+    }
+    day = date->tm_mday;
+    weekday = date->tm_wday;
+    sunday = day - weekday;
+    
+    // When days from the previous month are calculated
+    // If the calculated Sunday date is less than 1, it belongs to the previous month
+    if(sunday < 1){
+        // Shows the previous and current months
+        // Example: "  October / November"
+        printf("  %s / %s\n", months[pmonth], months[month]);
+        
+        // Else if the calculated Saturday date exceeds the number of days in the current month
+    }else if(sunday + 6 > mdays[month]){ // Test to see whether days from the next month are output
+        
+        // For Dec, outputs December and January directly
+        // Example: "  December / January"
+        if(month == 11){
+            printf("  %s / %s\n", months[month], months[0]);
+        }else{
+            
+            // For other months, output the current, and next month names
+            printf("  %s / %s\n", months[month], months[month + 1]);
+        }
+    }else{ // No previous or next month dates appear in the output
+        // If the entire week falls within the current month, print only the current month
+        // Example: "  November"
+        printf("  %s\n", months[month]);
+    }
+    
+    // Calculate the current week number based on the day of the year and the current weekday
+    // Example: If today is the 250th day of the year and it's a Wednesday (wday = 3),
+    // weekno = (9 + 250 - 3) / 7 = 256 / 7 = 36
+    weekno = (9 + date->tm_yday - weekday) / 7;
+    
+    // If the calculated week number is 0, it implies that the date belongs to the last week of the previous year
+    // Thus, we adjust it to week 52
+    // Example: For January 1st, weekno might be calculated as 0, so we set it to 52
+    if(weekno == 0){
+        weekno = 52;
+    }
+    printf(" - Week %d\n", weekno);
+    
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+    for(d = sunday; d < sunday + 7; d++){
+        
+        // If the day is less than 1, it belongs to the previous month
+        // The previous month still has days to output
+        if(d < 1){
+            
+            // Print the corresponding day from the previous month
+            // Example: " 30 " for day 30 of the previous month
+            printf("%2d", mdays[pmonth] + d);
+        }else if(d > mdays[month]){ // Else if the day exceeds the number of days in the current month, it belongs to the next month
+            
+            // Print the corresponding day from the next month
+            // Example: " 1 " for day 1 of the next month
+            //Output days from the next month using d minus the number of days in the current month
+            printf(" %2d ", d - mdays[month]);
+        }else{
+            
+            // If the day falls within the current month
+            if(d == day){
+                printf("[%2d]", d);
+            }else{
+                printf(" %2d ", d);
+            }
+        }
+    }
+    
+    putchar('\n');
+    return 0;
+}
+```
+
+- ```C
+  // Calculate the current week number based on the day of the year and the current weekday
+  // Example: If today is the 250th day of the year and it's a Wednesday (wday = 3),
+  // weekno = (9 + 250 - 3) / 7 = 256 / 7 = 36
+  weekno = (9 + date->tm_yday - weekday) / 7;
+  ```
+
+- **Purpose:**
+  Determines the current week number of the year.
+
+- **Breakdown:**
+
+  - `date->tm_yday`: The day of the year (0-based, where January 1st is 0).
+
+  - `weekday`: The current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday).
+
+  - **Formula:**
+    `(9 + tm_yday - wday) / 7`
+
+  - **Example Calculation:**
+    If `tm_yday = 249` (which is the 250th day) and `wday = 3` (Wednesday),
+
+  - ```
+    weekno = (9 + 249 - 3) / 7 = 255 / 7 ≈ 36
+    ```
+
+- ```C
+  // If the calculated week number is 0, it implies that the date belongs to the last week of the previous year
+  // Thus, we adjust it to week 52
+  // Example: For January 1st, weekno might be calculated as 0, so we set it to 52
+  if (weekno == 0)
+  {
+      weekno = 52;
+  }
+  ```
+
+- **Purpose:**
+  Ensures that week numbers are valid within the range `[1, 52]`. If the calculation results in `0`, it adjusts the week number to `52`, which typically represents the last week of the previous year.
+
+- **Rationale:**
+  Dates at the very beginning of the year might fall into the last week of the previous year based on how week numbers are calculated. This adjustment prevents displaying a week number of `0`.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+  November
+ - Week 48
+Sun Mon Tue Wed Thu Fri Sat
+ 24  25 [26] 27  28  29  30 
+
+# when hardcoding the day to 30
+chan@CMA:~/C_Programming/practice$ ./practice
+  November / December
+ - Week 48
+Sun Mon Tue Wed Thu Fri Sat
+ 28  29 [30]  1   2   3   4 
+ 
+```
+
+
+
+```C
+month = date->tm_mon;
+    pmonth = month - 1;
+    if (pmonth < 0)
+    {
+        pmonth = 11;
+    }
+
+// Manually set day to the first day of the month to test the code
+    day = 1;
+    weekday = date->tm_wday;
+    sunday = day - weekday;
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+ October / November
+ - Week 48
+Sun Mon Tue Wed Thu Fri Sat
+ 30  31 [ 1]  2   3   4   5 
+
+```
+
+
+
+### Showing a month
+
+```C
+int main(){
+    int mdays, today, first, day, d;
+    
+    mdays = 30; // Presets the number of days in the month (for November) 
+    today = 26; // Sets today as the 26th
+    first = 5; // The first day of the month is on Friday
+    
+    printf("November 2024\n");
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+    
+    // Starts with the day counter at 1, the first day of the month
+    day = 1;
+    
+    // Loop thru the days of the month
+    while(day <= mdays){
+        
+        // Loop thru a week, Sunday(0) thru Saturday(6)
+        for(d = 0; d < 7; d++){
+            
+            // Check for the first week of the month
+            if(d < first && day == 1){
+                printf("    "); // Outputs 4 spaces blank and do not increment the day counter!
+            }else{ // Outputs days, now that the first week/day has passed.
+                if(day == today){
+                    // highlight today
+                    printf("[%2d]", day);
+                }else{
+                    // Regular day output
+                    printf(" %2d ", day);
+                }
+                day++;
+                
+                // Exit the loop after the last day of the month
+                if(day > mdays){
+                    break;
+                }
+            }
+        }
+        putchar('\n');
+    }
+    
+    return 0;
+    
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+November 2024
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25 [26] 27  28  29  30 
+ 
+chan@CMA:~/C_Programming/practice$ cal
+   November 2024      
+Su Mo Tu We Th Fr Sa  
+                1  2  
+ 3  4  5  6  7  8  9  
+10 11 12 13 14 15 16  
+17 18 19 20 21 22 23  
+24 25 26 27 28 29 30
+```
+
+
+
+#### Using the current date for the above program
+
+```C
+int thefirst(int wday, int mday)
+{
+    // Calculate the starting day of the week for the first date to display
+    // Subtract the remainder of the current day divided by 7 from the current weekday
+    // Then add 1 to align the days correctly
+    int first = wday - (mday % 7) + 1;
+
+    // If the calculated first day is negative, adjust it by adding 7 to wrap around the week
+    if (first < 0)
+    {
+        first += 7;
+    }
+
+    // Return the adjusted first day of the week
+    return first;
+}
+
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+int main()
+{
+    const char *months[] = {
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    time_t now;
+    struct tm *date;
+    int month, today, weekday, year, first, day, d;
+
+    time(&now);
+    date = localtime(&now);
+
+    month = date->tm_mon;
+    today = date->tm_mday;
+    weekday = date->tm_wday;
+    year = date->tm_year + 1900;
+    mdays[1] = february(year);
+    
+    // set to the day of the week upon which the first of the month falls
+    first = thefirst(weekday, today);
+	
+    
+    // OUtput the current month and year (E.g. November 2024)
+    printf("%s %d\n", months[month], year);
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+
+    day = 1;
+    while (day <= mdays[month])
+    {
+        for (d = 0; d < 7; d++)
+        {
+            if (d < first && day == 1)
+            {
+                printf("    ");
+            }
+            else
+            {
+                if (day == today)
+                {
+                    printf("[%2d]", day);
+                }
+                else
+                {
+                    printf(" %2d ", day);
+                }
+                day++;
+                if (day > mdays[month])
+                {
+                    break;
+                }
+            }
+        }
+        putchar('\n');
+    }
+
+    return 0;
+}
+
+```
+
+
+
+**Exercise 13.3 & 13.4**
+
+Update the code so that the function output the top heading centered within a certain width. Then modify the `main()` function so that any command-line arguments are parsed as a month-and-year value. Both values must be present and valid; otherwise, the current month is output.
+
+
+
+`practice.h`
+
+```C
+int thefirst(int wday, int mday);
+
+int february(int year);
+
+void center(char *text, int width);
+```
+
+`functions.c`
+
+```C
+int thefirst(int wday, int mday)
+{
+    // Calculate the starting day of the week for the first date to display
+    // Subtract the remainder of the current day divided by 7 from the current weekday
+    // Then add 1 to align the days correctly
+    int first = wday - (mday % 7) + 1;
+
+    // If the calculated first day is negative, adjust it by adding 7 to wrap around the week
+    if (first < 0)
+    {
+        first += 7;
+    }
+
+    // Return the adjusted first day of the week
+    return first;
+}
+
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width)
+{
+    int s, length, indent;
+
+    length = strlen(text);
+    if (length < width)
+    {
+        indent = (width - length) / 2;
+        for (s = 0; s < indent; s++)
+        {
+            putchar(' ');
+        }
+        puts(text);
+    }
+    else
+    {
+        for (s = 0; s < width; s++)
+        {
+            putchar(*text++);
+        }
+        putchar('\n');
+    }
+}
+```
+
+`practice.c (main)`
+
+```C
+int main(int argc, char *argv[])
+{
+    const char *months[] = {
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    time_t now;
+    struct tm *date;
+    int month, today, weekday, year, first, day, d;
+
+    int a_month, a_year; /* arguments from the command line */
+    const int output_width = 27;
+    char title[output_width];
+
+    time(&now);
+    date = localtime(&now);
+
+    if (argc == 3)
+    {
+        a_month = strtol(argv[1], NULL, 10);
+        a_year = strtol(argv[2], NULL, 10);
+
+        /* check month range */
+        if (a_month > 0 && a_month < 13)
+        {
+            date->tm_mon = a_month - 1;    // Jan is zero
+            date->tm_year = a_year - 1900; // account for 1900
+            date->tm_mday = 1;             // start on the first
+            mktime(date);                  // update the date structure
+        }
+    }
+
+    month = date->tm_mon;
+    today = date->tm_mday;
+    weekday = date->tm_wday;
+    year = date->tm_year + 1900;
+    mdays[1] = february(year);
+    first = thefirst(weekday, today);
+
+    sprintf(title, "%s %d\n", months[month], year);
+    center(title, output_width);
+    printf("Sun Mon Tue Wed Thu Fri Sat\n");
+
+    day = 1;
+    while (day <= mdays[month])
+    {
+        for (d = 0; d < 7; d++)
+        {
+            if (d < first && day == 1)
+            {
+                printf("    ");
+            }
+            else
+            {
+                if (day == today)
+                {
+                    printf("[%2d]", day);
+                }
+                else
+                {
+                    printf(" %2d ", day);
+                }
+                day++;
+                if (day > mdays[month])
+                {
+                    break;
+                }
+            }
+        }
+        putchar('\n');
+    }
+
+    return 0;
+}
+
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+      November 2024
+
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25 [26] 27  28  29  30 
+chan@CMA:~/C_Programming/practice$ ./practice 11 2024
+      November 2024
+
+Sun Mon Tue Wed Thu Fri Sat
+                    [ 1]  2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+chan@CMA:~/C_Programming/practice$ ./practice 12 2024
+      December 2024
+
+Sun Mon Tue Wed Thu Fri Sat
+[ 1]  2   3   4   5   6   7 
+  8   9  10  11  12  13  14 
+ 15  16  17  18  19  20  21 
+ 22  23  24  25  26  27  28 
+ 29  30  31 
+
+```
+
+
+
+### Displaying a full year
+
+The following listing shows the initialization portion of the `main()` function.
+
+`practice.h`
+
+```C
+int february(int year);
+
+void center(char *text, int width);
+```
+
+
+
+`functions.c`
+
+```C
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width)
+{
+    int s, length, indent;
+
+    length = strlen(text);
+    if (length < width)
+    {
+        indent = (width - length) / 2;
+        for (s = 0; s < indent; s++)
+        {
+            putchar(' ');
+        }
+        puts(text);
+    }
+    else
+    {
+        for (s = 0; s < width; s++)
+        {
+            putchar(*text++);
+        }
+        putchar('\n');
+    }
+}
+```
+
+
+
+```C
+int main(int argc, char *argv[])
+{
+    const char *months[] = {
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    struct tm date;
+    int month, weekday, year, day, dow;
+    const int output_width = 27;
+    char title[output_width];
+
+    date.tm_year = 2000 - 1900;
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+
+    putenv("TZ=GMT");
+    tzset();
+    mktime(&date);
+
+    weekday = date.tm_wday;
+    year = date.tm_year + 1900;
+    mdays[1] = february(year);
+
+    dow = 0;
+    for (month = 0; month < 12; month++)
+    {
+        sprintf(title, "%s %d", months[month], year);
+        center(title, output_width);
+        printf("Sun Mon Tue Wed Thu Fri Sat\n");
+
+        day = 1;
+        while (day <= mdays[month])
+        {
+            if (dow < weekday && day == 1)
+            {
+                printf("    ");
+                dow++;
+            }
+            else
+            {
+                printf(" %2d ", day);
+                dow++;
+                if (dow > 6)
+                {
+                    dow = 0;
+                    putchar('\n');
+                }
+                day++;
+                if (day > mdays[month])
+                {
+                    break;
+                }
+            }
+        }
+        weekday = dow;
+        dow = 0;
+        printf("\n\n");
+    }
+
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+       January 1999
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+ 31 
+
+       February 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28 
+
+        March 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30  31 
+
+        April 1999
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29  30 
+
+         May 1999
+Sun Mon Tue Wed Thu Fri Sat
+                          1 
+  2   3   4   5   6   7   8 
+  9  10  11  12  13  14  15 
+ 16  17  18  19  20  21  22 
+ 23  24  25  26  27  28  29 
+ 30  31 
+
+         June 1999
+Sun Mon Tue Wed Thu Fri Sat
+          1   2   3   4   5 
+  6   7   8   9  10  11  12 
+ 13  14  15  16  17  18  19 
+ 20  21  22  23  24  25  26 
+ 27  28  29  30 
+
+         July 1999
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29  30  31 
+
+
+        August 1999
+Sun Mon Tue Wed Thu Fri Sat
+  1   2   3   4   5   6   7 
+  8   9  10  11  12  13  14 
+ 15  16  17  18  19  20  21 
+ 22  23  24  25  26  27  28 
+ 29  30  31 
+
+      September 1999
+Sun Mon Tue Wed Thu Fri Sat
+              1   2   3   4 
+  5   6   7   8   9  10  11 
+ 12  13  14  15  16  17  18 
+ 19  20  21  22  23  24  25 
+ 26  27  28  29  30 
+
+       October 1999
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+ 31 
+
+       November 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30 
+
+       December 1999
+Sun Mon Tue Wed Thu Fri Sat
+              1   2   3   4 
+  5   6   7   8   9  10  11 
+ 12  13  14  15  16  17  18 
+ 19  20  21  22  23  24  25 
+ 26  27  28  29  30  31 
+
+```
+
+
+
+**Exercise 13.5**
+
+Modify the code so that it accepts a command-lien argument for the year to output. When a command-line argument isn't available, the current year is output. 
+
+
+
+**Solution**
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c (main)`
+
+```C
+```
+
