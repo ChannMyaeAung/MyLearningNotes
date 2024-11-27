@@ -17505,7 +17505,10 @@ int main(int argc, char *argv[])
         /* check month range */
         if (a_month > 0 && a_month < 13)
         {
+            // Set the month in the 'date' structure (0-based indexing)
             date->tm_mon = a_month - 1;    // Jan is zero
+            
+            // Set the year in the 'date' structure (years since 1900)
             date->tm_year = a_year - 1900; // account for 1900
             date->tm_mday = 1;             // start on the first
             mktime(date);                  // update the date structure
@@ -17524,13 +17527,17 @@ int main(int argc, char *argv[])
     printf("Sun Mon Tue Wed Thu Fri Sat\n");
 
     day = 1;
+    
+    // Loop through each day of the month to display the calendar
     while (day <= mdays[month])
     {
+        // Iterate over each day of the week (Sunday to Saturday)
         for (d = 0; d < 7; d++)
         {
+            // If it's the first week and the current day hasn't started yet, print spaces
             if (d < first && day == 1)
             {
-                printf("    ");
+                printf("    "); // 4 spaces for alignment
             }
             else
             {
@@ -17634,18 +17641,22 @@ void center(char *text, int width)
     length = strlen(text);
     if (length < width)
     {
+        // Calculate the number of spaces needed on the left to center the text
         indent = (width - length) / 2;
+        
+        // Loop to print the indentation spaces
         for (s = 0; s < indent; s++)
         {
-            putchar(' ');
+            putchar(' '); // Print a single space
         }
         puts(text);
     }
     else
     {
+        // If the text length exceeds the desired width, truncate the text to fit the width
         for (s = 0; s < width; s++)
         {
-            putchar(*text++);
+            putchar(*text++); // Print each character and increment the pointer
         }
         putchar('\n');
     }
@@ -17666,7 +17677,8 @@ int main(int argc, char *argv[])
     int month, weekday, year, day, dow;
     const int output_width = 27;
     char title[output_width];
-
+ 
+    // Initialize the date structure to January 1
     date.tm_year = 2000 - 1900;
     date.tm_mon = 0;
     date.tm_mday = 1;
@@ -17674,35 +17686,54 @@ int main(int argc, char *argv[])
     date.tm_min = 0;
     date.tm_sec = 0;
 
+    // Set the timezone to GMT (Greenwich Mean Time)
     putenv("TZ=GMT");
-    tzset();
+    tzset(); // Apply the timezone setting
+    
+    // Normalize the date structure and compute the time value
+    // mktime modifies the struct tm based on the fields set above
     mktime(&date);
 
     weekday = date.tm_wday;
     year = date.tm_year + 1900;
     mdays[1] = february(year);
 
-    dow = 0;
+    // dow is updated manually as opposed in a loop because the first weekday of the month isn't the same for every month
+    dow = 0; // The weekday loop variable, day-of-the-week (it counts weekdays)
+    
+    // The outer loop pages thru months of the year
     for (month = 0; month < 12; month++)
     {
+        
+        // Outputs the month & year, centered and the weekday header row
         sprintf(title, "%s %d", months[month], year);
         center(title, output_width);
         printf("Sun Mon Tue Wed Thu Fri Sat\n");
-
+	
+        // Initialize the day of the month, the 1st
         day = 1;
+        
+        // Loop thru days of the month
         while (day <= mdays[month])
         {
+            
+            // The first week is special; variable weekday holds the first weekday of the month. Outputs blanks before then.
             if (dow < weekday && day == 1)
             {
                 printf("    ");
+                
+                // Increment the day of the week, Sunday (0) thru Saturday (6)
                 dow++;
             }
             else
             {
                 printf(" %2d ", day);
                 dow++;
+                
+                // Check for the weekday overflow
                 if (dow > 6)
                 {
+                    // Reset the day of the week back to Sunday (0)
                     dow = 0;
                     putchar('\n');
                 }
@@ -17713,7 +17744,11 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        
+        // Set the first day of the month for next month
         weekday = dow;
+        
+        // Reset the day of the week back to Sunday for the next month
         dow = 0;
         printf("\n\n");
     }
@@ -17723,7 +17758,8 @@ int main(int argc, char *argv[])
 
 ```
 
-
+- Variable `dow` works with variable `weekday` to output the first week of January.
+- Afterwards, variables `weekday` and `dow` are updated so that the following month's start day is properly set.
 
 ```shell
 chan@CMA:~/C_Programming/practice$ ./practice
@@ -17842,15 +17878,656 @@ Modify the code so that it accepts a command-lien argument for the year to outpu
 `practice.h`
 
 ```C
+int february(int year);
+
+void center(char *text, int width);
 ```
 
 `functions.c`
 
 ```C
+int february(int year){
+    if(year % 400 == 0){
+        return 29;
+    }
+    if(year % 100 == 0){
+        return 28;
+    }
+    if(year % 4 != 0){
+        return 28;
+    }
+    return 29;
+}
+
+void center(char *text, int width){
+    int s, length, indent;
+    length = strlen(text);
+    
+    if(length < width){
+        indent = (width - length) / 2;
+        for(s = 0; s < indent; s++){
+            putchar(' ');
+        }
+        puts(text);
+    }else{
+        for(s = 0; s < width; s++){
+            putchar(*text++);
+        }
+        putchar('\n');
+    }
+}
 ```
 
 `practice.c (main)`
 
 ```C
+int main(int argc, char *argv[]){
+    const char *months[] = {
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    time_t now;
+    struct tm date = {0};
+    int month, weekday, year, day, dow;
+    const int output_width = 27;
+    char title[output_width];
+    
+    if(argc < 2){ // No year provided
+        time(&now);
+        struct tm *today = localtime(&now);
+        year = today->tm_year + 1900;
+    }else{ // convert argv[1] to year
+        year = strtol(argv[1], NULL, 10);
+    }
+    
+    // Set January 1 of the given year
+    date.tm_year = year - 1900;
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1; // Allow mktime to determine dst
+    
+    putenv("TZ=GMT");
+    tzset();
+    
+    // Normalize the date
+    mktime(&date);
+    weekday = date.tm_wday;
+    
+    mdays[1] = february(year);
+    
+    dow = 0;
+    
+    for(month = 0; month < 12; month++){
+        sprintf(title, "%s %d", months[month], year);
+        center(title, output_width);
+        printf("Sun Mon Tue Wed Thu Fri Sat\n");
+        
+        day = 1;
+        while(day <= mdays[month]){
+            if(dow < weekday && day == 1){
+                printf("    ");
+                dow++;
+            }else{
+                printf(" %2d ", day);
+                dow++;
+                if(dow > 6){
+                    dow = 0;
+                    putchar('\n');
+                }
+                day++;
+            }
+        }
+        weekday = dow;
+        dow = 0;
+        printf("\n\n");
+    }
+    return 0;
+}
+```
+
+- **`mktime` requires a fully initialized `struct tm`:** The `mktime` function depends on all fields in the `struct tm` being set correctly. If we don't initialize fields like `tm_isdst`, unexpected results can occur.
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+       January 2024
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30  31 
+
+       February 2024
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29 
+
+        March 2024
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+ 31 
+
+        April 2024
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30 
+
+         May 2024
+Sun Mon Tue Wed Thu Fri Sat
+              1   2   3   4 
+  5   6   7   8   9  10  11 
+ 12  13  14  15  16  17  18 
+ 19  20  21  22  23  24  25 
+ 26  27  28  29  30  31 
+
+         June 2024
+Sun Mon Tue Wed Thu Fri Sat
+                          1 
+  2   3   4   5   6   7   8 
+  9  10  11  12  13  14  15 
+ 16  17  18  19  20  21  22 
+ 23  24  25  26  27  28  29 
+ 30 
+
+         July 2024
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30  31 
+
+        August 2024
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29  30  31 
+
+
+      September 2024
+Sun Mon Tue Wed Thu Fri Sat
+  1   2   3   4   5   6   7 
+  8   9  10  11  12  13  14 
+ 15  16  17  18  19  20  21 
+ 22  23  24  25  26  27  28 
+ 29  30 
+
+       October 2024
+Sun Mon Tue Wed Thu Fri Sat
+          1   2   3   4   5 
+  6   7   8   9  10  11  12 
+ 13  14  15  16  17  18  19 
+ 20  21  22  23  24  25  26 
+ 27  28  29  30  31 
+
+       November 2024
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+
+
+       December 2024
+Sun Mon Tue Wed Thu Fri Sat
+  1   2   3   4   5   6   7 
+  8   9  10  11  12  13  14 
+ 15  16  17  18  19  20  21 
+ 22  23  24  25  26  27  28 
+ 29  30  31 
+ 
+ chan@CMA:~/C_Programming/practice$ ./practice 1999
+       January 1999
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+ 31 
+
+       February 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28 
+
+        March 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30  31 
+
+        April 1999
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29  30 
+
+         May 1999
+Sun Mon Tue Wed Thu Fri Sat
+                          1 
+  2   3   4   5   6   7   8 
+  9  10  11  12  13  14  15 
+ 16  17  18  19  20  21  22 
+ 23  24  25  26  27  28  29 
+ 30  31 
+
+         June 1999
+Sun Mon Tue Wed Thu Fri Sat
+          1   2   3   4   5 
+  6   7   8   9  10  11  12 
+ 13  14  15  16  17  18  19 
+ 20  21  22  23  24  25  26 
+ 27  28  29  30 
+
+         July 1999
+Sun Mon Tue Wed Thu Fri Sat
+                  1   2   3 
+  4   5   6   7   8   9  10 
+ 11  12  13  14  15  16  17 
+ 18  19  20  21  22  23  24 
+ 25  26  27  28  29  30  31 
+
+
+        August 1999
+Sun Mon Tue Wed Thu Fri Sat
+  1   2   3   4   5   6   7 
+  8   9  10  11  12  13  14 
+ 15  16  17  18  19  20  21 
+ 22  23  24  25  26  27  28 
+ 29  30  31 
+
+      September 1999
+Sun Mon Tue Wed Thu Fri Sat
+              1   2   3   4 
+  5   6   7   8   9  10  11 
+ 12  13  14  15  16  17  18 
+ 19  20  21  22  23  24  25 
+ 26  27  28  29  30 
+
+       October 1999
+Sun Mon Tue Wed Thu Fri Sat
+                      1   2 
+  3   4   5   6   7   8   9 
+ 10  11  12  13  14  15  16 
+ 17  18  19  20  21  22  23 
+ 24  25  26  27  28  29  30 
+ 31 
+
+       November 1999
+Sun Mon Tue Wed Thu Fri Sat
+      1   2   3   4   5   6 
+  7   8   9  10  11  12  13 
+ 14  15  16  17  18  19  20 
+ 21  22  23  24  25  26  27 
+ 28  29  30 
+
+       December 1999
+Sun Mon Tue Wed Thu Fri Sat
+              1   2   3   4 
+  5   6   7   8   9  10  11 
+ 12  13  14  15  16  17  18 
+ 19  20  21  22  23  24  25 
+ 26  27  28  29  30  31 
+
+```
+
+
+
+### Putting the full year into a grid
+
+- The required update is to the `center()` function.
+- The function centers the month and year within a given width but doesn't pad out the rest of the row of text.
+- To line up the months in a grid, the header row one must be output at a consistent size.
+- The next listing shows the required updates to the `center()` function for row-by-row output.
+- The `width` argument centers the text and sets the number of spaces to pad on both sides.
+
+```C
+void center(char *text, int width){
+    int s, length, indent;
+    
+    length = strlen(text);
+    
+    if(length < width){
+        indent = (width - length) / 2;
+        for(s = 0; s < indent; s++){
+            puthcar('\n');
+        }
+        
+        // instead of a puts() function, outputs the string one character at a time
+        while(*text){
+            putchar(*text);
+            text++;
+            s++; // tracks s to determine the final output width
+        }
+        // Output spaces to match the width value
+        for(; s < width; s++){
+            putchar(' ');
+        }
+    }else{
+        for(s = 0; s < width; s++){
+            putchar(*text++);
+        }
+    }
+}
+```
+
+
+
+#### Full Program to output a full year in a grid
+
+`practice.h`
+
+```C
+enum
+{
+    COLUMNS = 3
+};
+
+int february(int year);
+
+void center(char *text, int width);
+```
+
+`functions.c`
+
+```C
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width)
+{
+    int s, length, indent;
+    length = strlen(text);
+
+    if (length < width)
+    {
+        indent = (width - length) / 2;
+        for (s = 0; s < indent; s++)
+        {
+            putchar(' ');
+        }
+        
+        // instead of a puts() function, outputs the string one character at a time
+        while (*text)
+        {
+            putchar(*text);
+            text++;
+            s++;
+        }
+        
+        // Output spaces to match the width value
+        for (; s < width; s++)
+        {
+            putchar(' ');
+        }
+    }
+    else
+    {
+        for (s = 0; s < width; s++)
+        {
+            putchar(*text++);
+        }
+    }
+}
+```
+
+`practice.c (main)`
+
+- `int dotm[12]`:  The `dotm[]` (day of the month) array holds the starting day for each month in the year.
+  - Its values are the same as the `weekday` variable, 0 through 6.
+  - The `weekday` variable already holds the day of the week for January 1.
+  - It's stored in element 0 of the `dotm[]` array.
+
+```C
+int main(int argc, char *argv[]){
+     const char *months[] = {
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"};
+
+    // Array with the number of days in each month
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int dotm[12]; // Array to hold the starting day for each month in the year
+    int month, weekday, year, day, dow, c, week;
+    char int output_width = 27;
+    char title[output_width];
+    
+    // Check if a year is provided as a command-line arg
+    if(argc < 2){ // If no argument is provided,use the current year
+        time(&now); // Get the current time
+        struct tm *today = localtime(&now); // Convert to local time
+        year = today->tm_year + 1900; // Extract the year
+    }else // If a year is provided
+    {
+        year = strtol(argv[1], NULL, 10); // Convert argument to an integer year
+    }
+
+    // Initialize the date structure for January 1st of the given year
+    date.tm_year = year - 1900;
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1; // Let `mktime` determine daylight savings time
+    putenv("TZ=GMT"); // Set time zone to GMT
+    tzset(); // Apply time zone settings
+    mktime(&date); // Normalize the date
+
+    weekday = date.tm_wday; // Get the day of the week for January 1
+    mdays[1] = february(year); // Adjust February days for leap years
+    dotm[0] = weekday; // First day of the year
+
+    // Calculate the first day of each month
+    for (month = 1; month < 12; month++)
+    {
+        dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+    }
+
+    // Loop through the months in sets of `COLUMNS` (3 months per row)
+    for (month = 0; month < 12; month += COLUMNS)
+    {
+        // Print the titles for each month in the row
+        for (c = 0; c < COLUMNS; c++)
+        {
+            sprintf(title, "%s %d", months[month + c], year); // Format the title
+            center(title, output_width); // Center the title
+            printf("   "); // Spacing between columns
+        }
+        putchar('\n'); // New line after titles
+
+        // Print the weekday headers for each month
+        for (c = 0; c < COLUMNS; c++)
+        {
+            printf("Sun Mon Tue Wed Thu Fri Sat    "); // Weekday names
+        }
+        putchar('\n'); // New line after headers
+
+        // Print the first week of each month
+        for (c = 0; c < COLUMNS; c++)
+        {
+            day = 1;
+            for (dow = 0; dow < 7; dow++) // Loop through the days of the week
+            {
+                
+                // If the first of the month weekday hasn't happened, outputs spaces
+                if (dow < dotm[month + c]) // Print spaces for days before the 1st
+                {
+                    printf("    ");
+                }
+                else // Print the days starting from the 1st
+                {
+                    printf(" %2d ", day++);
+                }
+            }
+            printf("  ");
+            dotm[month + c] = day; // Update the first day of the next week
+        }
+        putchar('\n'); // New line after the first week
+
+        // Print the remaining weeks
+        for (week = 1; week < 6; week++) // Up to 6 weeks per month
+        {
+            for (c = 0; c < COLUMNS; c++) // Loop through each column (month)
+            {
+                day = dotm[month + c]; // Start with the current day
+                for (dow = 0; dow < 7; dow++) // Loop through the days of the week
+                {
+                    if (day <= mdays[month + c]) // Print the day if within range
+                    {
+                        printf(" %2d ", day);
+                    }
+                    else // Print spaces if out of range
+                    {
+                        printf("    ");
+                    }
+                    day++; // Move to the next day
+                }
+                printf("  ");
+                dotm[month + c] = day; // Update the first day of the next week
+            }
+            putchar('\n'); // New line after each week
+        }
+        putchar('\n'); // New line between rows of months
+    }
+
+    return (0); // Successful execution
+}
+
+}
+```
+
+- ```C
+  dotm[0] = weekday;
+  
+  for(month = 1; month < 12; month++){
+      dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+  }
+  ```
+
+- The statement in the `for` loop totals the values of the number of days in the previous month, `mdays[month - 1]`, with the starting day of the week for the previous month, `dotm[month - 1]`.
+
+- The total is modulo 7, which yields the starting day of the week for the month represented by variable `month`.
+
+  - **`% 7`:** The modulus operation ensures that the result wraps around to stay within the range of valid days of the week (0–6).
+
+- When the loop is complete, the `dotm[]` array holds the starting weekday for the first of each month in a given year.
+
+- Assume the year is 2024 (a leap year) and January 1 is a Monday (`weekday = 1`). The `mdays` array contains the number of days in each month:
+
+```C
+mdays = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+```
+
+- **January (`dotm[0]`):** Starts on Monday (`dotm[0] = 1`).
+- February (`dotm[1]`):
+  - Days in January: 31 (`mdays[0]`).
+  - Starting day of February: `(31 + 1) % 7 = 32 % 7 = 4` (Thursday).
+  - `dotm[1] = 4`.
+- March (`dotm[2]`):
+  - Days in February: 29 (`mdays[1]`).
+  - Starting day of March: `(29 + 4) % 7 = 33 % 7 = 5` (Friday).
+  - `dotm[2] = 5`.
+- April (`dotm[3]`):
+  - Days in March: 31 (`mdays[2]`).
+  - Starting day of April: `(31 + 5) % 7 = 36 % 7 = 1` (Monday).
+  - `dotm[3] = 1`.
+
+This process continues for all months, correctly calculating the starting day of the week for each one.
+
+`Output`
+
+![Screenshot from 2024-11-27 22-36-58](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-27 22-36-58.png)
+
+
+
+### A calendar in color
+
+- An ANSI escape sequence is a series of characters, the first of which is the escape character, ASCII 27, hex 1B.
+- This character must be output directly.
+
+```C
+#define RESET "\x1b[0m"
+#define BOLD "\x1b[1m"
+#define FAINT "\x1b[2m"
+#define UNDERLINE "\x1b[4m"
+#define BLINK "\x1b[5m"
+#define INVERSE "\x1b[7m"
+
+int main(int argc, char *argv[])
+{
+    printf("%sBold text%s\n", BOLD, RESET);
+    printf("%sFaint text%s\n", FAINT, RESET);
+    printf("%sUnderlined text%s\n", UNDERLINE, RESET);
+    printf("%sBlinking text%s\n", BLINK, RESET);
+    printf("%sInverted text%s\n", INVERSE, RESET);
+    return (0);
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Bold text
+Faint text
+Underlined text
+Blinking text
+Inverted text
+```
+
+![Screenshot from 2024-11-27 22-45-53](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-27 22-45-53.png)
+
+
+
+```C
+```
+
+`Output`
+
+```shell
 ```
 
