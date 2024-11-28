@@ -18478,6 +18478,39 @@ mdays = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 This process continues for all months, correctly calculating the starting day of the week for each one.
 
+##### **Visualization**
+
+Assume `COLUMNS = 3`. Here's what happens for January, February, and March:
+
+Step 1: First Row Titles
+
+```plaintext
+        January 2024                February 2024                March 2024        
+
+```
+
+Step 2: Weekday Headers
+
+```plaintext
+Sun Mon Tue Wed Thu Fri Sat    Sun Mon Tue Wed Thu Fri Sat    Sun Mon Tue Wed Thu Fri Sat
+
+```
+
+**Step 3: First Week**
+
+- January starts on Monday (`dotm[0] = 1`).
+- February starts on Thursday (`dotm[1] = 4`).
+- March starts on Friday (`dotm[2] = 5`).
+
+```
+             1   2   3   4   5   6        1   2   3        1   2   
+
+```
+
+**Step 4: Remaining Weeks**
+
+Days are printed week by week until the end of the month.
+
 `Output`
 
 ![Screenshot from 2024-11-27 22-36-58](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-27 22-36-58.png)
@@ -18521,13 +18554,1636 @@ Inverted text
 
 ![Screenshot from 2024-11-27 22-45-53](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-27 22-45-53.png)
 
+| Color   | Foreground Code | Background Code | Foreground Sequence | Background Sequence |
+| ------- | --------------- | --------------- | ------------------- | ------------------- |
+| Black   | 30              | 40              | `\x1b[30m`          | `\x1b[40m`          |
+| Red     | 31              | 41              | `\x1b[31m`          | `\x1b[41m`          |
+| Green   | 32              | 42              | `\x1b[32m`          | `\x1b[42m`          |
+| Yellow  | 33              | 43              | `\x1b[33m`          | `\x1b[43m`          |
+| Blue    | 34              | 44              | `\x1b[34m`          | `\x1b[44m`          |
+| Magenta | 35              | 45              | `\x1b[35m`          | `\x1b[45m`          |
+| Cyan    | 36              | 46              | `\x1b[36m`          | `\x1b[46m`          |
+| White   | 37              | 47              | `\x1b[37m`          | `\x1b[47m`          |
+
 
 
 ```C
+int main(int argc, char *argv[])
+{
+    int f, b;
+
+    for (f = 0; f < 8; f++)
+    {
+        for (b = 0; b < 8; b++)
+        {
+            printf("\x1b[%d, %dm %d:%d ", f + 30, b + 40, f + 30, b + 40);
+        }
+        printf("\x1b[0m\n");
+    }
+    return (0);
+}
 ```
 
 `Output`
 
 ```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+ 30:40  30:41  30:42  30:43  30:44  30:45  30:46  30:47 
+ 31:40  31:41  31:42  31:43  31:44  31:45  31:46  31:47 
+ 32:40  32:41  32:42  32:43  32:44  32:45  32:46  32:47 
+ 33:40  33:41  33:42  33:43  33:44  33:45  33:46  33:47 
+ 34:40  34:41  34:42  34:43  34:44  34:45  34:46  34:47 
+ 35:40  35:41  35:42  35:43  35:44  35:45  35:46  35:47 
+ 36:40  36:41  36:42  36:43  36:44  36:45  36:46  36:47 
+ 37:40  37:41  37:42  37:43  37:44  37:45  37:46  37:47 
+
+```
+
+
+
+### Generating a tight-but-colorful calendar
+
+`practice.h`
+
+```C
+#define BOLD 1
+#define BLACK 0
+#define CYAN 6
+#define WHITE 7
+#define FG 30
+#define BG 40
+
+enum
+{
+    COLUMNS = 3,
+};
+
+int february(int year);
+
+void center(char *text, int width);
+
+void color_output(int d);
+```
+
+`functions.c`
+
+```C
+int february(int year){
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width){
+    int s, length, indent;
+    length = strlen(text);
+    
+    if(length < width){
+        indent = (width - length) / 2;
+        for(s = 0; s < indent; s++){
+            putchar(' ');
+        }
+        while(*text){
+            putchar(*text);
+            text++;
+            s++;
+        }
+        for(; s < width; s++){
+            putchar(' ');
+        }
+    }else{
+        for(S = 0; s < width; s++){
+            putchar(*text++);
+        }
+    }
+}
+
+void color_output(int d){
+    
+    // d % 2 == 1?
+    if (d % 2)
+    {
+        // Outputs odd days with a black foreground and white background
+        printf("\x1b[%d;%dm%2d", FG + BLACK, BG + WHITE, d);
+    }
+    else
+    {
+        // Output even days with a white foreground and cyan background
+        printf("\x1b[%d;%dm%2d", FG + WHITE, BG + CYAN, d);
+    }
+}
+```
+
+`practice.c (main)`
+
+```C
+int main(int argc, char *argv[]){
+    onst char *months[] = {
+        "Jan", "Feb", "March", "April",
+        "May", "June", "July", "Aug",
+        "Sep", "Oct", "Nov", "Dec"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    // Array to store the starting weekday of each month
+    int dotm[12];
+    time_t now;
+    struct tm date;
+    int month, weekday, year, day, dow, c, week;
+    const int output_width = 14;
+    char title[output_width];
+    
+    // Check if a year is provided as a command-line argument
+    if(argc < 2){ // If no argument is provided, use the current year
+        time(&now);
+        struct tm *today = localtime(&now);
+        year = today->tm_year + 1900;
+    }else{ // If a year is provided
+        year = strtol(argv[1], NULL, 10);
+    }
+    // Set the date structure to January 1st of the specified year
+    date.tm_year = year - 1900;
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1;
+    
+    putenv("TZ=GMT");
+    tzset();
+    
+    mktime(&date);
+    
+    // Retrieve the weekday of January 1st
+    weekday = date.tm_wday; // 0 = Sunday, ..., 6 = Saturday
+    mdays[1] = february(year);
+    dotm[0] = weekday;
+    
+    // Calculate the starting weekday for each subsequent month
+    for(mont = 1; month < 12; month++){
+        dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+    }
+    
+    for(month = 0; month < 12; month += COLUMNS){
+        for(c = 0; c < COLUMNS; c++){
+            sprintf(title, "%s %d", months[month + c], year);
+            center(title, output_width);
+            printf("  ");
+        }
+        putchar('\n');
+        
+        for(c = 0 ; c < COLUMNS; c++){
+            printf("\x1b[%dm%s", BOLD, "Su");
+            printf("\x1b[0m%s", "Mo");
+            printf("\x1b[%dm%s", BOLD, "Tu");
+            printf("\x1b[0m%s", "We");
+            printf("\x1b[%dm%s", BOLD, "Th");
+            printf("\x1b[0m%s", "Fr");
+            printf("\x1b[%dm%s", BOLD, "Sa");
+            printf("\x1b[0m  ");
+        }
+        putchar('\n');
+        
+        for(c = 0; c < COLUMNS; c++){
+            day = 1;  // Start from the first day of the month
+            for(dow = 0; dow < 7; dow++){
+                if(dow < dotm[month + c]){
+                    // Print spaces before the first day of the month
+                    printf("  ");
+                }else{
+                    color_output(day);
+                    day++;
+                }
+            }
+            
+            // Reset formatting and add spacing between columns
+            printf("\x1b[0m  ");
+            
+            // Update the day for the current month in 'dotm' array
+            dotm[month + c] = day; 
+        }
+        
+        // Reset formatting and move to the next line after the first week
+        printf("\x1b[0m\n");
+        
+        // Print the remaining weeks (up to 5 weeks per month)
+        for(week = 1; week < 6; week++){
+            for(c = 0; c < COLUMNS; c++){
+                day = dotm[month + c]; // Continue from the last day printed
+                for(dow = 0; dow < 7; dow++){
+                    if(day <= mdays[month + c]){
+                        color_output(day);
+                    }else{
+                        printf("\x1b[0m  ");
+                    }
+                    day++;
+                }
+                printf("\x1b[0m  ");
+                // Update the day for the current month in 'dotm' array
+                dotm[month + c] = day;
+            }
+            
+            // Reset formatting and move to the next line after each week
+            printf("\x1b[0m\n");
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+```
+
+- ```C
+  for(mont = 1; month < 12; month++){
+          dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+      }
+  ```
+
+  - **`mdays[month - 1]`:** This gives the number of days in the previous month.
+
+  - **`dotm[month - 1]`:** This is the starting day of the week for the previous month.
+
+  - Adding these two values gives the total number of days from the start of the year to the start of the current month.
+
+  - **`% 7`:** The modulus operation ensures that the result wraps around to stay within the range of valid days of the week (0–6).
+
+  - The result is stored in `dotm[month]`, which now contains the starting day of the week for the current month.
+
+  - Assume the year is 2024 (a leap year) and January 1 is a Monday (`weekday = 1`). The `mdays` array contains the number of days in each month:
+
+  - ```
+    mdays = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    ```
+
+  - **January (`dotm[0]`):** Starts on Monday (`dotm[0] = 1`).
+
+  - February (`dotm[1]`):
+
+    - Days in January: 31 (`mdays[0]`).
+    - Starting day of February: `(31 + 1) % 7 = 32 % 7 = 4` (Thursday).
+    - `dotm[1] = 4`.
+
+  - March (`dotm[2]`):
+
+    - Days in February: 29 (`mdays[1]`).
+    - Starting day of March: `(29 + 4) % 7 = 33 % 7 = 5` (Friday).
+    - `dotm[2] = 5`.
+
+  - April (`dotm[3]`):
+
+    - Days in March: 31 (`mdays[2]`).
+    - Starting day of April: `(31 + 5) % 7 = 36 % 7 = 1` (Monday).
+    - `dotm[3] = 1`.
+
+  This process continues for all months, correctly calculating the starting day of the week for each one.
+
+- The space between months is reduced to two.
+
+- Various `putchar('\n')` statements are replaced by `printf()` statements that also output the ANSI escape sequence to reset the colors back to normal.
+
+- This change avoided color spill at the end of each line of output.
+
+- Color spill is something we must be aware of when coding color output: always terminate the color output, resetting it when colored text is no longer required.
+
+- The reset sequence is `\x1b[0m`.
+
+`Output`
+
+![Screenshot from 2024-11-28 16-52-14](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-28 16-52-14.png)
+
+**Exercise 13.6**
+
+Your task for this exercise is to modify the source code to detect the current day of the year and output this one specific day in a special color. Obviously, if the calendar isn't showing the current year, the code won't highlight today's date.
+
+`practice.h`
+
+```C
+#define BOLD 1
+#define BLACK 0
+#define CYAN 6
+#define WHITE 7
+#define RED 1
+#define FG 30
+#define BG 40
+
+enum
+{
+    COLUMNS = 3,
+};
+
+int february(int year);
+
+void center(char *text, int width);
+
+void color_output(int d);
+
+void color_today(int d);
+```
+
+`functions.c`
+
+```C
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width)
+{
+    int s, length, indent;
+    length = strlen(text);
+
+    if (length < width)
+    {
+        indent = (width - length) / 2;
+        for (s = 0; s < indent; s++)
+        {
+            putchar(' ');
+        }
+        while (*text)
+        {
+            putchar(*text);
+            text++;
+            s++;
+        }
+        for (; s < width; s++)
+        {
+            putchar(' ');
+        }
+    }
+    else
+    {
+        for (s = 0; s < width; s++)
+        {
+            putchar(*text++);
+        }
+    }
+}
+
+void color_output(int d)
+{
+    if (d % 2)
+    {
+        printf("\x1b[%d;%dm%2d", FG + BLACK, BG + WHITE, d);
+    }
+    else
+    {
+        printf("\x1b[%d;%dm%2d", FG + WHITE, BG + CYAN, d);
+    }
+}
+
+void color_today(int d)
+{
+    printf("\x1b[%d;%dm%2d", FG + RED, BG + BLACK, d);
+}
+```
+
+`practice.c (main)`
+
+```C
+int main(int argc, char *argv[]){
+    onst char *months[] = {
+        "Jan", "Feb", "March", "April",
+        "May", "June", "July", "Aug",
+        "Sep", "Oct", "Nov", "Dec"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    // Array to store the starting weekday of each month
+    int dotm[12];
+    time_t now;
+    struct tm date, *today;
+    int month, weekday, year, day, dow, c, week;
+    const int output_width = 14;
+    char title[output_width];
+    
+    /* these two statements are moved outside of the if decision */
+    /* It's necessary to always know the current date, even when another year is specified at the command prompt*/
+    time(&now); 
+    today = localtime(&now);
+    
+    // Check if a year is provided as a command-line argument
+    if(argc < 2){ // If no argument is provided, use the current year
+        date.tm_year = today->tm_year;
+    }else{ // If a year is provided
+        date.tm_year = strtol(argv[1], NULL, 10) - 1900;
+    }
+    // Set the date structure to January 1st of the specified year
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1;
+    
+    putenv("TZ=GMT");
+    tzset();
+    
+    mktime(&date);
+    
+    // Retrieve the weekday of January 1st
+    weekday = date.tm_wday; // 0 = Sunday, ..., 6 = Saturday
+    year = date.tm_year + 1900;
+    mdays[1] = february(year);
+    dotm[0] = weekday;
+    
+    // Calculate the starting weekday for each subsequent month
+    for(mont = 1; month < 12; month++){
+        dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+    }
+    
+    for(month = 0; month < 12; month += COLUMNS){
+        for(c = 0; c < COLUMNS; c++){
+            sprintf(title, "%s %d", months[month + c], year);
+            center(title, output_width);
+            printf("  ");
+        }
+        putchar('\n');
+        
+        for(c = 0 ; c < COLUMNS; c++){
+            printf("\x1b[%dm%s", BOLD, "Su");
+            printf("\x1b[0m%s", "Mo");
+            printf("\x1b[%dm%s", BOLD, "Tu");
+            printf("\x1b[0m%s", "We");
+            printf("\x1b[%dm%s", BOLD, "Th");
+            printf("\x1b[0m%s", "Fr");
+            printf("\x1b[%dm%s", BOLD, "Sa");
+            printf("\x1b[0m  ");
+        }
+        putchar('\n');
+        
+        // calculate and output the first week
+        for(c = 0; c < COLUMNS; c++){
+            day = 1;  // Start from the first day of the month
+            for(dow = 0; dow < 7; dow++){
+                if(dow < dotm[month + c]){
+                    // Print spaces before the first day of the month
+                    printf("  ");
+                }else{
+                    /* a decision is made here when today happens in the first week of the month. First check the date */
+                    if(today->tm_year + 1900 == year && today->tm_mon == month + c && today->tm_mday == day){
+                        color_today(day);
+                    }else{
+                        color_output(day);
+                    }
+                    day++;
+                }
+            }
+            
+            // Reset formatting and add spacing between columns
+            printf("\x1b[0m  ");
+            
+            // Update the day for the current month in 'dotm' array
+            dotm[month + c] = day; 
+        }
+        
+        // Reset formatting and move to the next line after the first week
+        printf("\x1b[0m\n");
+        
+        // Print the remaining weeks (up to 5 weeks per month)
+        for(week = 1; week < 6; week++){
+            for(c = 0; c < COLUMNS; c++){
+                day = dotm[month + c]; // Continue from the last day printed
+                for(dow = 0; dow < 7; dow++){
+                    /* test for today every day of the month */
+                    if(today->tm_year + 1900 == year && today->tm_mon == month + c && today->tm_mday == day){
+                        color_today(day);
+                    }else{
+                        if(day <= mdays[month + c]){
+                            color_output(day);
+                        }else{
+                            printf("\x1b[0m  ");
+                        }
+                    }
+                    day++;
+                }
+                printf("\x1b[0m  ");
+                // Update the day for the current month in 'dotm' array
+                dotm[month + c] = day;
+            }
+            
+            // Reset formatting and move to the next line after each week
+            printf("\x1b[0m\n");
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+```
+
+
+
+`Output`
+
+![Screenshot from 2024-11-28 18-36-31](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-28 18-36-31.png)
+
+
+
+### Coloring holidays
+
+`practice.h`
+
+```C
+// Functions.c
+
+#define BOLD 1
+#define BLACK 0
+#define CYAN 6
+#define WHITE 7
+#define RED 1
+#define YELLOW 3
+#define FG 30
+#define BG 40
+
+// functions.c
+enum
+{
+    COLUMNS = 3,
+};
+
+int february(int year);
+
+void center(char *text, int width);
+
+void color_output(int d);
+
+void color_today(int d);
+
+void color_holiday(int d);
+
+// Functions_2.c
+#define FIRST_WEEK h->day < 8
+#define SECOND_WEEK h->day > 7 && h->day < 15
+#define THIRD_WEEK h->day > 14 && h->day < 22
+#define FOURTH_WEEK h->day > 21 && h->day < 29
+#define LAST_WEEK h->day > 24 && h->day < 32
+struct holiday
+{
+    int month;
+    int day;
+    int year;
+    int wday;
+    char *name;
+};
+
+enum weekdays
+{
+    SUNDAY,
+    MONDAY,
+    TUESDAY,
+    WEDNESDAY,
+    THURSDAY,
+    FRIDAY,
+    SATURDAY,
+};
+
+int easter(struct holiday *hday);
+int weekend(int holiday, int mday, int wday);
+int isholiday(struct holiday *h);
+```
+
+`functions_2.c`
+
+```C
+int easter(struct holiday *hday)
+{
+    int Y, a, c, e, h, k, L;
+    double b, d, f, g, i, m, month, day;
+
+    Y = hday->year;
+    a = Y % 19;
+    b = floor(Y / 100);
+    c = Y % 100;
+    d = floor(b / 4);
+    e = (int)b % 4;
+    f = floor((b + 8) / 25);
+    g = floor((b - f + 1) / 3);
+    h = (19 * a + (int)b - (int)d - (int)g + 15) % 30;
+    i = floor(c / 4);
+    k = c % 4;
+    L = (32 + 2 * e + 2 * (int)i - h - k) % 7;
+    m = floor((a + 11 * h + 22 * L) / 451);
+    month = floor((h + L - 7 * m + 114) / 31) - 1;
+    day = ((h + L - 7 * (int)m + 114) % 31) + 1;
+
+    if (hday->month == month && hday->day == day)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int weekend(int holiday, int mday, int wday)
+{
+    // Narrow down the range of dates to check for Friday & Monday
+    if (mday > holiday - 2 && mday < holiday + 2)
+    {
+        // If the day is 1 day before the holiday and it's Friday?
+        if (mday == holiday - 1 && wday == FRIDAY)
+        {
+            return 2;
+        }
+        
+        // If the day is 1 day after the holiday and it's Monday?
+        if (mday == holiday + 1 && wday == MONDAY)
+        {
+            return 2;
+        }
+        
+        // Checking for the actual holiday
+        if (mday == holiday)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+int isholiday(struct holiday *h)
+{
+    char *n[] = {
+        "New Years Day",
+        "Martin Luther King Day",
+        "Presidents Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving",
+        "Christmas",
+        "Easter"};
+    int r;
+
+    enum months
+    {
+        JANUARY,
+        FEBRUARY,
+        MARCH,
+        APRIL,
+        MAY,
+        JUNE,
+        JULY,
+        AUGUST,
+        SEPTEMBER,
+        OCTOBER,
+        NOVEMBER,
+        DECEMBER
+    };
+
+    // Check for New Year's Day (Dec 31st Friday)
+    if (h->month == DECEMBER && h->day == 31 && h->wday == FRIDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+    // Check for New Year's Day (Jan 1st)
+    if (h->month == JANUARY && h->day == 1)
+    {
+        h->name = n[0];
+        return 1;
+    }
+    // Check for New Year's Day (Jan 2nd Monday)
+    if (h->month == JANUARY && h->day == 2 && h->wday == MONDAY)
+    {
+        h->name = n[0];
+        return 2;
+    }
+
+    // Check for Martin Luther King Day (3rd Monday in January)
+    if (h->month == JANUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[1];
+            return 1;
+        }
+    }
+
+    // Check for Presidents Day (3rd Monday in February)
+    if (h->month == FEBRUARY && h->wday == MONDAY)
+    {
+        if (THIRD_WEEK)
+        {
+            h->name = n[2];
+            return 1;
+        }
+    }
+
+    // Check for Memorial Day (Last Monday in May)
+    if (h->month == MAY && h->wday == MONDAY)
+    {
+        if (LAST_WEEK)
+        {
+            h->name = n[3];
+            return 1;
+        }
+    }
+
+    // Check for Juneteenth (June 19th)
+    if (h->month == JUNE)
+    {
+        r = weekend(19, h->day, h->wday);
+        h->name = n[4];
+        return r;
+    }
+
+    // Check for Independence Day (July 4th)
+    if (h->month == JULY)
+    {
+        r = weekend(4, h->day, h->wday);
+        h->name = n[5];
+        return r;
+    }
+
+    // Check for Labor Day (1st Monday in September)
+    if (h->month == SEPTEMBER && h->wday == MONDAY)
+    {
+        if (FIRST_WEEK)
+        {
+            h->name = n[6];
+            return 1;
+        }
+    }
+
+    // Check for Columbus Day (2nd Monday in October)
+    if (h->month == OCTOBER && h->day == MONDAY)
+    {
+        if (SECOND_WEEK)
+        {
+            h->name = n[7];
+            return 1;
+        }
+    }
+
+    // Check for (November 11th)
+    if (h->month == NOVEMBER)
+    {
+        // Thanksgiving is the 4th Thursday in November
+        if (h->wday == THURSDAY && FOURTH_WEEK)
+        {
+            h->name = n[9];
+            return 1;
+        }
+        // Veterans Day is the 11th
+        r = weekend(11, h->day, h->wday);
+        h->name = n[8];
+        return r;
+    }
+
+    // Check for Christmas (Dec 25th)
+    if (h->month == DECEMBER)
+    {
+        r = weekend(25, h->day, h->wday);
+        h->name = n[10];
+        return r;
+    }
+
+    // Check for Easter
+    r = easter(h);
+    if (r == 1)
+    {
+        h->name = n[11];
+        return r;
+    }
+
+    return 0;
+}
+
+```
+
+`functions.c`
+
+```C
+int february(int year)
+{
+    if (year % 400 == 0)
+    {
+        return 29;
+    }
+    if (year % 100 == 0)
+    {
+        return 28;
+    }
+    if (year % 4 != 0)
+    {
+        return 28;
+    }
+
+    return 29;
+}
+
+void center(char *text, int width)
+{
+    int s, length, indent;
+    length = strlen(text);
+
+    if (length < width)
+    {
+        indent = (width - length) / 2;
+        for (s = 0; s < indent; s++)
+        {
+            putchar(' ');
+        }
+        while (*text)
+        {
+            putchar(*text);
+            text++;
+            s++;
+        }
+        for (; s < width; s++)
+        {
+            putchar(' ');
+        }
+    }
+    else
+    {
+        for (s = 0; s < width; s++)
+        {
+            putchar(*text++);
+        }
+    }
+}
+
+void color_output(int d)
+{
+    if (d % 2)
+    {
+        printf("\x1b[%d;%dm%2d", FG + BLACK, BG + WHITE, d);
+    }
+    else
+    {
+        printf("\x1b[%d;%dm%2d", FG + WHITE, BG + CYAN, d);
+    }
+}
+
+void color_today(int d)
+{
+    printf("\x1b[%d;%dm%2d", FG + RED, BG + BLACK, d);
+}
+
+void color_holiday(int d)
+{
+    printf("\x1b[%d;%dm%2d", FG + YELLOW, BG + BLACK, d);
+}
+```
+
+`practice.c (main)`
+
+```C
+int main(int argc, char *argv[]){
+    onst char *months[] = {
+        "Jan", "Feb", "March", "April",
+        "May", "June", "July", "Aug",
+        "Sep", "Oct", "Nov", "Dec"};
+    int mdays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    // Array to store the starting weekday of each month
+    int dotm[12];
+    time_t now;
+    struct tm date, *today;
+    int month, weekday, year, day, dow, c, week;
+    const int output_width = 14;
+    char title[output_width];
+    struct holiday h;
+    
+    /* these two statements are moved outside of the if decision */
+    /* It's necessary to always know the current date, even when another year is specified at the command prompt*/
+    time(&now); 
+    today = localtime(&now);
+    
+    // Check if a year is provided as a command-line argument
+    if(argc < 2){ // If no argument is provided, use the current year
+        date.tm_year = today->tm_year;
+    }else{ // If a year is provided
+        date.tm_year = strtol(argv[1], NULL, 10) - 1900;
+    }
+    // Set the date structure to January 1st of the specified year
+    date.tm_mon = 0;
+    date.tm_mday = 1;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1;
+    
+    putenv("TZ=GMT");
+    tzset();
+    
+    mktime(&date);
+    
+    // Retrieve the weekday of January 1st
+    weekday = date.tm_wday; // 0 = Sunday, ..., 6 = Saturday
+    year = date.tm_year + 1900;
+    mdays[1] = february(year);
+    dotm[0] = weekday;
+    
+    // Calculate the starting weekday for each subsequent month
+    for(mont = 1; month < 12; month++){
+        dotm[month] = (mdays[month - 1] + dotm[month - 1]) % 7;
+    }
+    
+    for(month = 0; month < 12; month += COLUMNS){
+        for(c = 0; c < COLUMNS; c++){
+            sprintf(title, "%s %d", months[month + c], year);
+            center(title, output_width);
+            printf("  ");
+        }
+        putchar('\n');
+        
+        for(c = 0 ; c < COLUMNS; c++){
+            printf("\x1b[%dm%s", BOLD, "Su");
+            printf("\x1b[0m%s", "Mo");
+            printf("\x1b[%dm%s", BOLD, "Tu");
+            printf("\x1b[0m%s", "We");
+            printf("\x1b[%dm%s", BOLD, "Th");
+            printf("\x1b[0m%s", "Fr");
+            printf("\x1b[%dm%s", BOLD, "Sa");
+            printf("\x1b[0m  ");
+        }
+        putchar('\n');
+        
+        // calculate and output the first week
+        for(c = 0; c < COLUMNS; c++){
+            h.month = month + c;
+            h.year= year;
+            h.name = NULL;
+            day = 1;  // Start from the first day of the month
+            for(dow = 0; dow < 7; dow++){
+                if(dow < dotm[month + c]){
+                    // Print spaces before the first day of the month
+                    printf("  ");
+                }else{
+                    h.day = day;
+                    h.wday = dow;
+                    if(isholid(&h) == 1){
+                        color_holiday(day);
+                    }else if(today->tm_year + 1900 == year && today->tm_mon == month + c && today->tm_mday == day){
+                        color_today(day);
+                    }else{
+                        color_output(day);
+                    }
+                    day++;
+                }
+            }
+            
+            // Reset formatting and add spacing between columns
+            printf("\x1b[0m  ");
+            
+            // Update the day for the current month in 'dotm' array
+            dotm[month + c] = day; 
+        }
+        
+        // Reset formatting and move to the next line after the first week
+        printf("\x1b[0m\n");
+        
+        // Print the remaining weeks (up to 5 weeks per month)
+        for(week = 1; week < 6; week++){
+            for(c = 0; c < COLUMNS; c++){
+                h.month = month + c;
+                h.year = year;
+                h.name = NULL;
+                day = dotm[month + c]; // Continue from the last day printed
+                for(dow = 0; dow < 7; dow++){
+                    h.day = day;
+                    h.wday = dow;
+                    if(isholiday(&h) == 1){
+                        color_holiday(day);
+                    }else if(today->tm_year + 1900 == year && today->tm_mon == month + c && today->tm_mday == day){
+                        color_today(day);
+                    }else{
+                        if(day <= mdays[month + c]){
+                            color_output(day);
+                        }else{
+                            printf("\x1b[0m  ");
+                        }
+                    }
+                    
+                    day++;
+                }
+                printf("\x1b[0m  ");
+                // Update the day for the current month in 'dotm' array
+                dotm[month + c] = day;
+            }
+            
+            // Reset formatting and move to the next line after each week
+            printf("\x1b[0m\n");
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+```
+
+
+
+
+
+`Output`
+
+![Screenshot from 2024-11-28 19-18-07](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-28 19-18-07.png)
+
+- Today (the day I am learning this November 28th 2024) is the Thanksgiving holiday.
+- All holidays are highlighted with yellow color and black background.
+
+---
+
+## Chapter 14 - Lotto picks
+
+### Understanding the odds
+
+**Some math formula-things explain the odds**
+
+```
+Probability of winning = Chances of winning / Chances of winning + Chances of losing
+
+Odds of winning = Chances of losing : Chances of winning
+```
+
+Suppose that we're betting on the roll of a die. Here is how we would calculate our odds of guessing the right number, one out of six:
+
+```
+odds = 1 / (1 + 5) = 1 / 6 = 0.166...
+```
+
+- we have a 16.6% chance of guessing correctly.
+- To calculate the odds of losing, change the numerator in the top equation so that **Chances of losing** replaces **Chances of winning**.
+
+```
+odds = 5 / (1 + 5) = 5 / 6 = 0.833...
+```
+
+- We have an 83.3% chance of losing.
+- For the dice example, the odds of winning are 1 in 5, often expressed as 5:1 or "five to 1".
+- The odds aren't 1:6 because one of the choices wins but five lose.
+- Therefore, the odds are expressed 5:1 with the same win/lose percentages: 16.6 and 83.3.
+
+
+
+### Programming the odds
+
+```C
+int main(int argc, char *argv[])
+{
+    int ow, ol; // ow = odds of winning, ol = odds of losing
+
+    printf("Chances of happening: ");
+    scanf("%d", &ow);
+    printf("Chances of not happening: ");
+    scanf("%d", &ol);
+
+    printf("Your odds of winning are %2.1f%%, or %d:%d\n", (float)ow / (float)(ow + ol) * 100, ow, ol);
+    return (0);
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Chances of happening: 1
+Chances of not happening: 5
+Your odds of winning are 16.7%, or 1:5
+```
+
+- If we guess one of the six sides of a die, the chances of it happening are one, and the chances of it not happening are five.
+- The odds of winning are 16.7%, or one in five.
+- Say we want to calculate the odds of drawing a heart from a deck of cards:
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Chances of happening: 13
+Chances of not happening: 39
+Your odds of winning are 25.0%, or 13:39
+```
+
+- Because hearts is one of four suits, the odds are 25% or one in four though the program doesn't reduce the ratio.
+
+- Another example is a game like Powerball, the odds are calculated as numbers are drawn but also considering that the balls aren't drawn in any order.
+
+  - These items must be considered to properly calculate the odds.
+  - For example, if we could bet on only one ball, the odds are 68:1 or 1 / (68 + 1), which is 1.45 percent chance of winning. 
+  - If we bet on drawing two balls, the odds for the second ball become 67:1 and then 66:1 for the third ball, and so on.
+  - If your guesses are 1,2,3,5 and 8, the first ball could be any of those numbers.
+  - The second ball could be any four of those numbers and so on.
+  - The number of balls from which the numbers are drawn - 69, 68, 67, 66, 65 - must be divided by 5 * 4 * 3 * 2 * 1, or 5! (five factorial):
+
+  ```
+  (69 * 68 * 67 * 66 * 65) / (5 * 4 * 3 * 2 * 1) = 11,238,513
+  ```
+
+  - Our chance of correctly picking five numbers from a 69-ball lottery is 1:11,268,513.
+
+- To calculate multiple draws, as in a lottery, more math is required. 
+
+- The decreasing number of balls must be multiplied, as well as permutations of the number guessed.
+
+- The product of the total items is calculated in variable `i`; the product of the items to draw is calculated in variable `d`.
+
+
+
+```C
+int main(int argc, char *argv[])
+{
+    int items, draw, x;
+
+    // even an unsigned long value may not be large enough to handle the odds for some calculations
+    unsigned long long i, d;
+
+    printf("Number of items: ");
+    scanf("%d", &items);
+    printf("Items to draw: ");
+    scanf("%d", &draw);
+
+    i = items;
+    d = draw;
+
+    // loop thru the number of draws
+    for (x = 1; x < draw; x++)
+    {
+
+        // obtain the product of each item, decreasing in value
+        i *= items - x;
+
+        // Obtain the product of each drawing permutation, decreasing in value
+        d *= draw - x;
+    }
+
+    printf("Your odds of drawing %d ", draw);
+    printf("items from %d are: \n", items);
+    printf("\t1:%.0f\n", (float)i / (float)d); // cast the variable to obtain an accurate result
+    return (0);
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Number of items: 69
+Items to draw: 5
+Your odds of drawing 5 items from 69 are: 
+	1:11238513
+
+```
+
+
+
+**Exercise 14.1**
+
+Modify the code to confirm that the input of either value isn't 0, and that the number of items drawn doesn't exceed the number of items available.
+
+```C
+int main(int argc, char *argv[])
+{
+    int items, draw, x;
+
+    // even an unsigned long value may not be large enough to handle the odds for some calculations
+    unsigned long long i, d;
+
+    printf("Number of items: ");
+    scanf("%d", &items);
+    printf("Items to draw: ");
+    scanf("%d", &draw);
+
+    i = items;
+    d = draw;
+
+    if (items < draw)
+    {
+        fprintf(stderr, "You cannot draw more items than you have.\n");
+        return 1;
+    }
+
+    if (i <= 0 || d <= 0)
+    {
+        fprintf(stderr, "You cannot draw 0 or less items.\n");
+        return 1;
+    }
+
+    // loop thru the number of draws
+    for (x = 1; x < draw; x++)
+    {
+
+        // obtain the product of each item, decreasing in value
+        i *= items - x;
+
+        // Obtain the product of each drawing permutation, decreasing in value
+        d *= draw - x;
+    }
+
+    printf("Your odds of drawing %d ", draw);
+    printf("items from %d are: \n", items);
+    printf("\t1:%.0f\n", (float)i / (float)d); // cast the variable to obtain an accurate result
+    return (0);
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Number of items: 0
+Items to draw: 0
+You cannot draw 0 or less items.
+chan@CMA:~/C_Programming/practice$ ./practice
+Number of items: 10
+Items to draw: 12
+You cannot draw more items than you have.
+```
+
+**Exercise 14.2**
+
+Add commas to the odds number output. 
+
+```
+1:11238513 -> 1:11,238,513
+```
+
+
+
+```C
+void print_with_commas(unsigned long long n)
+{
+     // Base case: If the number is less than 1000, print it directly.
+    if (n < 1000)
+    {
+        printf("%llu", n);
+        return;
+    }
+    else
+    {
+        // Recursive case: Process higher-order digits.
+        print_with_commas(n / 1000);
+        
+        // Print a comma followed by the last three digits with leading zeros if necessary.
+        printf(",%03llu", n % 1000);
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    int items, draw, x;
+
+    // even an unsigned long value may not be large enough to handle the odds for some calculations
+    unsigned long long i, d;
+
+    printf("Number of items: ");
+    scanf("%d", &items);
+    printf("Items to draw: ");
+    scanf("%d", &draw);
+
+    i = items;
+    d = draw;
+
+    if (items < draw)
+    {
+        fprintf(stderr, "You cannot draw more items than you have.\n");
+        return 1;
+    }
+
+    if (i <= 0 || d <= 0)
+    {
+        fprintf(stderr, "You cannot draw 0 or less items.\n");
+        return 1;
+    }
+
+    // loop thru the number of draws
+    for (x = 1; x < draw; x++)
+    {
+
+        // obtain the product of each item, decreasing in value
+        i *= items - x;
+
+        // Obtain the product of each drawing permutation, decreasing in value
+        d *= draw - x;
+    }
+
+    unsigned long long odds = i / d;
+
+    printf("Your odds of drawing %d ", draw);
+    printf("items from %d are: \n", items);
+    printf("\t1:");
+    print_with_commas(odds);
+    printf("\n");
+    return (0);
+}
+```
+
+1. **Display Odds with Commas:**
+   - The function `print_with_commas(odds)` is called with let's assume `odds = 13,983,870`.
+   - **Function Execution:**
+     - **First Call (`n = 13,983,870`):**
+       - Since `n >= 1000`, recursively call with `n / 1000`.
+     - **Second Call (`n = 13,983`):**
+       - Since `n >= 1000`, recursively call with `n / 1000`.
+     - **Third Call (`n = 13`):**
+       - Since `n < 1000`, print `13`.
+     - **Back to Second Call:**
+       - Print `,` and `983` with leading zeros: `,983`
+     - **Back to First Call:**
+       - Print `,` and `870` with leading zeros: `,870`
+   - **Final Output:**
+     - Prints `13,983,870`
+
+**Author's Solution**
+
+```C
+char *commify(float bignum){
+    const int size = 128; /* large enough */
+    char string[size]; /* original string */
+    static char commas[size]; // commified string
+    int len, s, c;
+    
+    // store the value as a string
+    snprintf(string, size, "%.0f", bignum);
+    len = strlen(string);
+    s = c = 0;
+    
+    // if the number is zero or negative
+    if(bignum < 1){
+        strcpy(commas, "0"); // return zero
+        return commas;
+    }
+    
+    // If number is less than 1000, no need to add any commas
+    if(bignum < 1000){
+        strcpy(commas, string); // just copy the string
+        return commas;
+    }
+    
+    // loop thru the number stored in string
+    while(string[s]){
+        // add a comma every third character after the initial character
+        if(len % 3 == 0 && c > 0){
+            commas[c] = ',';
+            c++;
+        }
+        
+        // otherwise, copy the character
+        commas[c++] = string[s++];
+        len--;
+    }
+    return commas;
+}
+
+int main(int argc, char *argv[])
+{
+    int items, draw, x;
+
+    // even an unsigned long value may not be large enough to handle the odds for some calculations
+    unsigned long long i, d;
+
+    printf("Number of items: ");
+    scanf("%d", &items);
+    printf("Items to draw: ");
+    scanf("%d", &draw);
+
+    i = items;
+    d = draw;
+
+    if (items < draw)
+    {
+        fprintf(stderr, "You cannot draw more items than you have.\n");
+        return 1;
+    }
+
+    if (i <= 0 || d <= 0)
+    {
+        fprintf(stderr, "You cannot draw 0 or less items.\n");
+        return 1;
+    }
+
+    // loop thru the number of draws
+    for (x = 1; x < draw; x++)
+    {
+
+        // obtain the product of each item, decreasing in value
+        i *= items - x;
+
+        // Obtain the product of each drawing permutation, decreasing in value
+        d *= draw - x;
+    }
+
+    unsigned long long odds = i / d;
+
+    printf("Your odds of drawing %d ", draw);
+    printf("items from %d are: \n", items);
+    printf("\t1:%s\n", commify((float)i / (float)d)); // cast the variable to obtain an accurate result
+    return (0);
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Number of items: 69
+Items to draw: 5
+Your odds of drawing 5 items from 69 are: 
+	1:11,238,513
+```
+
+
+
+### Generating random values
+
+- The required tool is the `rand()` function, prototyped in the `stdlib.h` header file:
+
+```C
+int rand(void);
+```
+
+- The function takes no arguments and returns an integer value in the range zero through `RAND_MAX`.
+- The next code spews out a grid of random numbers, five rows by five columns.
+- The `rand()` function generates the value saved in variable `r` and output in a `printf()` statement.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(){
+    const int rows = 5;
+    int x, y, r;
+    
+    for(x = 0; x < rows; x++){
+        for(y = 0; y < rows; y++){
+            r = rand();
+            printf("%d ", r);
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+```
+
+- The program generates 25 random values, and the output is completely ugly.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+1804289383 846930886 1681692777 1714636915 1957747793 
+424238335 719885386 1649760492 596516649 1189641421 
+1025202362 1350490027 783368690 1102520059 2044897763 
+1967513926 1365180540 1540383426 304089172 1303455736 
+35005211 521595368 294702567 1726956429 336465782 
+```
+
+- The numbers are huge, which is within the range generated by the `rand()` function, from zero through `RAND_MAX`.
+- To output values in a different range, we can employ the modulo operator.
+
+```C
+value = rand() % range;
+```
+
+- The variable `value` is between 0 and the value of `range`.
+- If we want the value to be between 1 and `range`,
+
+```C
+value = rand() % range + 1;
+```
+
+
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(){
+    const int rows = 5;
+    int x, y, r;
+    
+    for(x = 0; x < rows; x++){
+        for(y = 0; y < rows; y++){
+            r = rand() % 100 + 1;
+            printf("%3d ", r);
+        }
+        putchar('\n');
+    }
+    return 0;
+}
+```
+
+- The first statement limits the `rand()` function's output to the range of 1 through 100.
+- The second statement aligns output, restricting the value to a three-character-wide frame, followed by a space.
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+ 84  87  78  16  94 
+ 36  87  93  50  22 
+ 63  28  91  60  64 
+ 27  41  27  73  37 
+ 12  69  68  30  83 
+```
+
+
+
+#### `srand()` function
+
+However, there is an issue. If we run the program twice, the same numbers are generated. 
+
+- The result doesn't bode well for our lottery picks because the desire is to be random.
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+ 84  87  78  16  94 
+ 36  87  93  50  22 
+ 63  28  91  60  64 
+ 27  41  27  73  37 
+ 12  69  68  30  83 
+chan@CMA:~/C_Programming/practice$ ./practice
+ 84  87  78  16  94 
+ 36  87  93  50  22 
+ 63  28  91  60  64 
+ 27  41  27  73  37 
+ 12  69  68  30  83 
+```
+
+- The solution is to use `srand()`.
+
+```C
+void srand(unsigned int seed);
+```
+
+- The seed argument is a positive integer value, which the `rand()` function uses in its random-number calculations.
+- The `srand()` function needs to be called only once.
+- It's often used with the `time()` function, which returns the current clock-tick value as a seed.
+
+```C
+srand((unsigned)time(NULL));
+```
+
+- The `time()` function is typecast to `unsigned` and given the NULL argument.
+- This format ensures that the clock-tick value is properly consumed by the `srand()` function, and a new slate of random numbers is generated every time the program runs.
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+int main(int argc, char *argv[])
+{
+    const int rows = 5;
+    int x, y, r;
+    srand((unsigned)time(NULL));
+    for (x = 0; x < rows; x++)
+    {
+        for (y = 0; y < rows; y++)
+        {
+            r = rand() % 100 + 1;
+            printf("%3d ", r);
+        }
+        putchar('\n');
+    }
+    return (0);
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+ 19  17  69  72  12 
+ 37  19  34   2  13 
+ 39   7  29  75  64 
+ 16  30  97  77  60 
+ 90  70  16  43  18 
+chan@CMA:~/C_Programming/practice$ ./practice
+ 57  32  41  61  75 
+ 30  23  64  98  64 
+ 79   9  84  10  62 
+ 11  46  83  27  53 
+ 81  77  64   7  99 
+
 ```
 
