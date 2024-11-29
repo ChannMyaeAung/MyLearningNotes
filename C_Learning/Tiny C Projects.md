@@ -20187,3 +20187,786 @@ chan@CMA:~/C_Programming/practice$ ./practice
 
 ```
 
+
+
+### Drawing lotto balls
+
+- A `for` loop fills the array with random values.
+- Next, a nested `for` loop works like a bubble sort to compare each value in the array with other values.
+- When two values match, the second is replaced with a new random value, and the loop is reset to scan again.
+
+```C
+int main(){
+    
+    // set the constants to represent total balls and number to draw
+    const int balls = 69, draw = 5;
+    int x, r;
+    int winners[draw];
+    
+    srand((unsigned)time(NULL));
+    
+    printf("Drawing %d numbers from %d balls:\n", draw, balls);
+    
+    for(x = 0; x < draw; x++){
+        // five random numbers in the range from 1 thru 69.
+        winners[x] = rand() % balls + 1;
+    }
+    
+    // THe outer loop moves thru the array to the next-to-last element, draw - 1
+    for(x = 0; x < draw - 1; x++){
+        //The inner loop moves thru the array from the x + 1 element to the last element
+        for(y = x + 1; y < draw; y++){
+            if(winners[x] == winners[y]){
+                winners[y] = rand() % balls + 1;
+                y = draw;
+                x = -1;
+            }
+        }
+    }
+    for(x = 0; x < draw; x++){
+        printf("%2d\n", winners[x]);
+    }
+    return 0;
+}
+```
+
+
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Drawing 5 numbers from 69 balls:
+58
+19
+ 7
+27
+30
+chan@CMA:~/C_Programming/practice$ ./practice
+Drawing 5 numbers from 69 balls:
+54
+40
+10
+64
+68
+
+```
+
+
+
+**Exercise 14.3**
+
+The output from the program looks nothing like the back of a fortune cookie fortune. Two ways to improve it are to sort the numbers and output them on a single line to improve readability.
+
+```shell
+Drawing 5 numbers from 69 balls:
+5 - 10 - 14 - 33
+```
+
+**Solution**
+
+```C
+//a and b are const void * pointers, which need to be cast to int * for dereferencing.
+int compare(const void *a, const void *b){
+    return (*(int *)a - *(int *)b);
+}
+
+int main(){
+    const int balls = 69, draw = 5;
+    int x, y;
+    int winners[draw];
+    
+    srand((unsigned)time(NULL));
+    
+    printf("Drawing %d numbers from %d balls:\n", draw, balls);
+    
+    // Generate random numbers
+    for(x = 0; x < draw; x++){
+        winners[x] = rand() % balls + 1;
+    }
+    
+    // Ensure all numbers are unique
+    for(x = 0; x < draw - 1; y++){
+        for(y = x + 1; y < draw; y++){
+            if(winners[x] == winners[y]){
+                winners[y] = rand() % balls + 1; // Replace duplicate with a new random number
+                y = draw; // Restart the inner loop
+                x = -1; // Restart the outer loop
+
+            }
+        }
+    }
+    
+    qsort(winners, draw, sizeof(int), compare);
+    
+    for(X = 0; x < draw; x++){
+        if(x == draw - 1){
+            printf("%2d\n", winners[x]);
+        }else{
+            printf("%2d - ", winners[x]);
+        }
+    }
+    return 0;
+}
+```
+
+- ```C
+  qsort(winners, draw, sizeof(int), compare);
+  ```
+
+- **Purpose:** Sorts the `winners` array in ascending order using the `qsort` function.
+
+  **Parameters:**
+
+  - `winners`: Array to sort.
+  - `draw`: Number of elements in the array.
+  - `sizeof(int)`: Size of each element.
+  - `compare`: Function to compare two elements.
+
+  **Code Breakdown**
+
+  **Outer Loop (`x`):**
+
+  ```C
+  for (x = 0; x < draw - 1; x++)
+  ```
+
+  - **Purpose:** Iterates over each element in the `winners` array.
+  - **`x`:** Represents the index of the current number being checked for duplicates.
+
+  #### **Inner Loop (`y`):**
+
+  ```c
+  for (y = x + 1; y < draw; y++)
+  ```
+
+  - **Purpose:** Compares `winners[x]` with all subsequent numbers in the array (`winners[y]`).
+  - **`y`:** Represents the index of the number being compared to `winners[x]`.
+
+  #### **Duplicate Check:**
+
+  ```c
+  if (winners[x] == winners[y]) // Check for duplicates
+  ```
+
+  - Compares the current number `winners[x]` with `winners[y]`.
+  - If they are the same, a duplicate is detected.
+
+  #### **Replace Duplicate and Restart:**
+
+  ```c
+  winners[y] = rand() % balls + 1; // Replace duplicate with a new random number
+  y = draw; // Exit the inner loop (force restart)
+  x = -1;   // Exit the outer loop (force restart from the beginning)
+  ```
+
+  - Generate a New Random Number:
+    - Replace `winners[y]` with a new random number (`rand() % balls + 1`).
+  - Restart Inner Loop (`y = draw`):
+    - Forces the inner loop to exit by setting `y` to `draw` (breaking the condition `y < draw`).
+  - Restart Outer Loop (`x = -1`):
+    - Forces the outer loop to restart from the beginning on the next iteration (`x` will increment to `0`).
+
+  ------
+
+  ### **Example Walkthrough**
+
+  #### **Initial Setup:**
+
+  - Let `balls = 10`,  `draw = 5`, and the initial random numbers be:
+
+    ```c
+    winners = [3, 7, 3, 9, 5];
+    ```
+
+  - This array contains a duplicate (`3` appears twice).
+
+  ------
+
+  #### **Step-by-Step Execution**
+
+  1. **Outer Loop (`x = 0`):**
+
+     - `winners[0] = 3`.
+
+     **Inner Loop (`y = 1` to `4`):**
+
+     - `winners[1] = 7`: No match.
+
+     - `winners[2] = 3`: 
+
+       Duplicate found!
+
+       - Replace `winners[2]` with a new random number, e.g., `4`.
+       - Array becomes: `[3, 7, 4, 9, 5]`.
+       - Restart loops (`y = draw`, `x = -1`).
+
+  ------
+
+  1. **Outer Loop Restarts (`x = 0`):**
+
+     - `winners[0] = 3`.
+
+     **Inner Loop (`y = 1` to `4`):**
+
+     - `winners[1] = 7`: No match.
+     - `winners[2] = 4`: No match.
+     - `winners[3] = 9`: No match.
+     - `winners[4] = 5`: No match.
+
+  ------
+
+  1. **Outer Loop (`x = 1`):**
+
+     - `winners[1] = 7`.
+
+     **Inner Loop (`y = 2` to `4`):**
+
+     - `winners[2] = 4`: No match.
+     - `winners[3] = 9`: No match.
+     - `winners[4] = 5`: No match.
+
+  ------
+
+  1. **Outer Loop (`x = 2`):**
+
+     - `winners[2] = 4`.
+
+     **Inner Loop (`y = 3` to `4`):**
+
+     - `winners[3] = 9`: No match.
+     - `winners[4] = 5`: No match.
+
+  ------
+
+  1. **Outer Loop (`x = 3`):**
+
+     - `winners[3] = 9`.
+
+     **Inner Loop (`y = 4`):**
+
+     - `winners[4] = 5`: No match.
+
+  ------
+
+  1. Outer Loop (`x = 4`):
+     - No `y` values remain (`y = x + 1 = 5`).
+
+  ------
+
+  #### **Final Result:**
+
+  - After all iterations, the `winners` array contains only unique numbers:
+
+  ```C
+  winners = [3, 7, 4, 9, 5];
+  
+  ```
+
+  
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Drawing 5 numbers from 69 balls:
+ 5 - 16 - 32 - 50 - 67
+
+```
+
+
+
+### Avoiding repeated numbers, another approach
+
+![Screenshot from 2024-11-29 21-37-42](/home/chan/Pictures/Screenshots/Screenshot from 2024-11-29 21-37-42.png)
+
+- An array `numbers[]` has been initialized with all zeros.
+- The array's elements represent balls in a lottery.
+- When an element has the value zero, it means that the ball hasn't yet been drawn.
+- When a ball is drawn, its corresponding element in the array is set to 1, as shown in the above figure.
+- For example, if the random number generator returns 12, the 12th element of the array is set to one.
+- If the element is zero, the number is available and it's set to zero.
+- If the element is 1, it's skipped and another random number is generated.
+
+```C
+for(x = 0; x < draw; x++){
+    do{
+        r = rand() % balls;
+    }while(numbers[r] == 1);
+    numbers[r] = 1;
+}
+```
+
+- The `numbers[]` array represents the simulated lotto balls.
+- The `do-while` loop repeats whenever the random array element `numbers[r]` is equal to 1. This test ensures that a ball isn't drawn twice.
+
+
+
+```C
+int main(){
+    const int balls = 69, draw = 5;
+    int x, r, count;
+    int numbers[balls];
+    
+    srand((unsigned)time(NULL));
+    
+    printf("Drawing %d numbers from %d balls:\n", draw, balls);
+    
+    // Initialize the array
+    for(x = 0; x < balls; x++){
+        numbers[x] = 0;
+    }
+    
+    // select the random values
+    for(x = 0; x < draw; x++){
+        do{
+            r = rand() % balls;
+        }while(numbers[r] == 1);
+        numbers[r] = 1;
+    }
+    
+    count = 0;
+    
+    // Process the array to cull the winning numbers
+    for(x = 0; x < balls; x++){
+        
+        // If the element is nonzero (1), the ball was drawn.
+        if(numbers[x]){
+            // Outputs the ball number, plus one to account for the array starting at element 0
+            printf(" %d", x + 1);
+            count++;
+            
+            // After all but the last number, output a dash separator
+            if(count < draw){
+                printf(" -");
+            }
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Drawing 5 numbers from 69 balls:
+ 16 - 61 - 63 - 64 - 66
+chan@CMA:~/C_Programming/practice$ ./practice
+Drawing 5 numbers from 69 balls:
+ 3 - 30 - 35 - 51 - 58
+
+```
+
+
+
+### Creating the `lotto()` function
+
+- In the `lotto()` function shown next, the `numbers[]` array now dwells within the `lotto()` function because its contents need not be retained between calls.
+- After the array is initialized, a `for` loop sets the random element values representing numbers drawn.
+- This operation is followed by a second `for` loop that processes the entire `numbers[]` array, filling elements from the passed array.
+
+```C
+enum
+{
+    BALLS = 69,
+    DRAW = 5
+};
+
+void lotto(int *a);
+```
+
+
+
+```C
+// the arrya is referenced as a pointer
+void lotto(int *a)
+{
+    int numbers[BALLS];
+    int x, y, r;
+	
+    // Initialize the numbers[] array
+    for (x = 0; x < BALLS; x++)
+    {
+        numbers[x] = 0;
+    }
+
+    // Randomly draws items in the array
+    for (x = 0; x < DRAW; x++)
+    {
+        do
+        {
+            r = rand() % BALLS;
+        } while (numbers[r] == 1);
+        numbers[r] = 1;
+    }
+
+    // Variable y serves as an index into the passed array
+    y = 0;
+    
+    // Fills the passed array's elements with the random numbers drawn
+    for (x = 0; x < BALLS; x++)
+    {
+        // If the ball has been drawn...
+        if (numbers[x])
+        {
+            // sets the element number in the passed array
+            a[y] = x;
+            y++;
+        }
+        
+        // If the passed array is full, breaks the loop
+        if (y == DRAW)
+        {
+            break;
+        }
+    }
+}
+```
+
+```C
+int main()
+{
+    int x;
+    
+    // use an array as the argument for the looto function
+    int match[DRAW];
+
+    srand((unsigned)time(NULL));
+
+    printf("Trying to match:");
+    
+    // call the lotto() function, filling array match
+    lotto(match);
+    
+    // Outputs the array's elements, the lottery "winners"
+    for (x = 0; x < DRAW; x++)
+    {
+        printf(" %d", match[x] + 1);
+        if (x < DRAW - 1)
+        {
+            printf(" -");
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Trying to match: 12 - 16 - 28 - 35 - 50
+```
+
+- The output looks like all the other `lotto` programs so far, though with the `lotto()` function set, it's now possible to draw multiple lottery numbers in the same code.
+- The next step is to obtain another set of random lottery ball picks to see whether they match the first numbers drawn.
+
+### Matching lottery picks
+
+- To make the comparison between two sets of lottery ball draws, the `winner()` function is used.
+- As arguments, it consumes two arrays, referenced as integer pointers.
+- Nested `for` loops compare each array value from the first array with each array value in the second array.
+- Pointer notation is used to make the comparison.
+- When a match is found, variable `c` is incremented.
+- The total number of matches, ranging from zero through `DRAW` , is returned.
+
+`practice.h`
+
+```C
+enum
+{
+    BALLS = 69,
+    DRAW = 5
+};
+
+void lotto(int *a);
+
+int winner(int *m, int *g);
+```
+
+`functions.c`
+
+```C
+// the array is referenced as a pointer
+void lotto(int *a)
+{
+    int numbers[BALLS];
+    int x, y, r;
+	
+    // Initialize the numbers[] array
+    for (x = 0; x < BALLS; x++)
+    {
+        numbers[x] = 0;
+    }
+
+    // Randomly draws items in the array
+    for (x = 0; x < DRAW; x++)
+    {
+        do
+        {
+            r = rand() % BALLS;
+        } while (numbers[r] == 1);
+        numbers[r] = 1;
+    }
+
+    // Variable y serves as an index into the passed array
+    y = 0;
+    
+    // Fills the passed array's elements with the random numbers drawn
+    for (x = 0; x < BALLS; x++)
+    {
+        // If the ball has been drawn...
+        if (numbers[x])
+        {
+            // sets the element number in the passed array
+            a[y] = x;
+            y++;
+        }
+        
+        // If the passed array is full, breaks the loop
+        if (y == DRAW)
+        {
+            break;
+        }
+    }
+}
+
+// Both arrays are passed as int pointers, m for match and g for guess
+int winner(int *m, int *g)
+{
+    int x, y, c;
+
+    c = 0;
+    
+    // Loop thru all DRAW numbers in the first array
+    for (x = 0; x < DRAW; x++)
+    {
+        // Loop thru each DRAW number in the second array
+        for (y = 0; y < DRAW; y++)
+        {
+            // Compares each element value
+            if (*(m + x) == *(g + y))
+            {
+                c++; // increment the variable if two values match
+            }
+        }
+    }
+    
+    // Returns the number of matches
+    return c;
+}
+```
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    int x, c;
+    int match[DRAW], guess[DRAW];
+
+    srand((unsigned)time(NULL));
+
+    printf("Trying to match:");
+    lotto(match);
+    for (x = 0; x < DRAW; x++)
+    {
+        printf(" %d", match[x] + 1);
+        if (x < DRAW - 1)
+        {
+            printf(" -");
+        }
+    }
+    putchar('\n');
+
+    lotto(guess);
+    c = winner(match, guess);
+    printf("      Your draw:");
+    for (x = 0; x < DRAW; x++)
+    {
+        printf(" %d", guess[x] + 1);
+        if (x < DRAW - 1)
+        {
+            printf(" -");
+        }
+    }
+    putchar('\n');
+    printf("You matched %d numbers.\n", c);
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Trying to match: 17 - 27 - 45 - 60 - 69
+      Your draw: 5 - 10 - 11 - 36 - 55
+You matched 0 numbers.
+```
+
+- If we remove `srand(time(NULL))`, 
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Trying to match: 7 - 26 - 30 - 35 - 47
+      Your draw: 2 - 25 - 38 - 47 - 58
+You matched 1 numbers.
+```
+
+
+
+### Testing the odds
+
+The next listing shows the `main()` function from an updated - the final - version of the `lotto` series of programs.
+
+- The `lotto()` and `winner()` functions are unchanged, but to the `main()` function, a constant, `tomatch` is added which sets the minimum number of balls to match before a do-while loop stops drawing random lotto balls.
+- Nothing is output until a match is found, which shaves several seconds from the processing time.
+
+`practice.h`
+
+```C
+enum
+{
+    BALLS = 69,
+    DRAW = 5
+};
+
+void lotto(int *a);
+
+int winner(int *m, int *g);
+```
+
+`functions.c`
+
+```C
+// the array is referenced as a pointer
+void lotto(int *a)
+{
+    int numbers[BALLS];
+    int x, y, r;
+	
+    // Initialize the numbers[] array
+    for (x = 0; x < BALLS; x++)
+    {
+        numbers[x] = 0;
+    }
+
+    // Randomly draws items in the array
+    for (x = 0; x < DRAW; x++)
+    {
+        do
+        {
+            r = rand() % BALLS;
+        } while (numbers[r] == 1);
+        numbers[r] = 1;
+    }
+
+    // Variable y serves as an index into the passed array
+    y = 0;
+    
+    // Fills the passed array's elements with the random numbers drawn
+    for (x = 0; x < BALLS; x++)
+    {
+        // If the ball has been drawn...
+        if (numbers[x])
+        {
+            // sets the element number in the passed array
+            a[y] = x;
+            y++;
+        }
+        
+        // If the passed array is full, breaks the loop
+        if (y == DRAW)
+        {
+            break;
+        }
+    }
+}
+
+// Both arrays are passed as int pointers, m for match and g for guess
+int winner(int *m, int *g)
+{
+    int x, y, c;
+
+    c = 0;
+    
+    // Loop thru all DRAW numbers in the first array
+    for (x = 0; x < DRAW; x++)
+    {
+        // Loop thru each DRAW number in the second array
+        for (y = 0; y < DRAW; y++)
+        {
+            // Compares each element value
+            if (*(m + x) == *(g + y))
+            {
+                c++; // increment the variable if two values match
+            }
+        }
+    }
+    
+    // Returns the number of matches
+    return c;
+}
+```
+
+`practice.c (main)`
+
+```C
+int main()
+{
+    // determine how many balls to match
+    const int tomatch = 2;
+    int x, c, count;
+    
+    // The two arrays - one to hold the numbers to match and the other the guesses
+    int match[DRAW], guess[DRAW];
+
+    srand((unsigned)time(NULL));
+
+    printf("Trying to match:");
+    lotto(match);
+    for (x = 0; x < DRAW; x++)
+    {
+        printf(" %d", match[x] + 1);
+        if (x < DRAW - 1)
+        {
+            printf(" -");
+        }
+    }
+    putchar('\n');
+
+    count = 0; // tracks how many draws are attempted
+    do
+    {
+        lotto(guess); // grabs the simulated lottery draw
+        c = winner(match, guess); // sees whether any balls match
+        count++; // increment the count
+    } while (c < tomatch); // keep looping as long as the number of balls matching is less than the goal (2)
+
+    printf("It took %d times to match %d balls:\n", count, c);
+    
+    // Outputs the winning draw
+    for (x = 0; x < DRAW; x++)
+    {
+        printf(" %d", guess[x] + 1);
+        if (x < DRAW - 1)
+        {
+            printf(" -");
+        }
+    }
+    putchar('\n');
+    return 0;
+}
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Trying to match: 4 - 10 - 23 - 38 - 54
+It took 14 times to match 2 balls:
+ 4 - 5 - 17 - 38 - 59
+chan@CMA:~/C_Programming/practice$ ./practice
+Trying to match: 2 - 4 - 5 - 9 - 15
+It took 28 times to match 2 balls:
+ 2 - 9 - 14 - 24 - 64
+```
+
