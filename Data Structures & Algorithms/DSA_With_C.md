@@ -1863,9 +1863,11 @@ struct StackNode {
     struct StackNode* next;
 };
 
+typedef struct StackNode SN;
+
 // Function to create a new stack node
-struct StackNode* createNode(int data) {
-    struct StackNode* newNode = (struct StackNode*) malloc(sizeof(struct StackNode));
+SN* createNode(int data) {
+    struct StackNode* newNode = (SN*) malloc(sizeof(SN));
     if (!newNode) { // Check for malloc failure
         printf("Memory allocation error\n");
         exit(1);
@@ -1876,20 +1878,20 @@ struct StackNode* createNode(int data) {
 }
 
 // Push operation: Add an element to the stack
-void push(struct StackNode** top_ref, int new_data) {
-    struct StackNode* new_node = createNode(new_data);
+void push(SN** top_ref, int new_data) {
+    SN* new_node = createNode(new_data);
     new_node->next = *top_ref; // Link the old stack to the new node
     *top_ref = new_node;       // Update the top pointer
     printf("Pushed %d to stack\n", new_data);
 }
 
 // Pop operation: Remove an element from the stack
-int pop(struct StackNode** top_ref) {
+int pop(SN** top_ref) {
     if (*top_ref == NULL) {
         printf("Stack Underflow\n");
         exit(1);
     }
-    struct StackNode* temp = *top_ref;
+    SN* temp = *top_ref;
     int popped = temp->data;
     *top_ref = temp->next; // Move the top pointer to the next node
     free(temp);            // Free memory
@@ -1897,7 +1899,7 @@ int pop(struct StackNode** top_ref) {
 }
 
 // Peek operation: Get the top element without removing it
-int peek(struct StackNode* top) {
+int peek(SN* top) {
     if (top == NULL) {
         printf("Stack is empty\n");
         exit(1);
@@ -1906,12 +1908,12 @@ int peek(struct StackNode* top) {
 }
 
 // Check if the stack is empty
-int isEmpty(struct StackNode* top) {
+int isEmpty(SN* top) {
     return (top == NULL);
 }
 
 // Function to print the stack
-void printStack(struct StackNode* top) {
+void printStack(SN* top) {
     printf("Stack: ");
     while (top != NULL) {
         printf("%d -> ", top->data);
@@ -1922,7 +1924,7 @@ void printStack(struct StackNode* top) {
 
 // Driver program to test the stack operations
 int main() {
-    struct StackNode* stack = NULL; // Initialize stack as empty
+    SN* stack = NULL; // Initialize stack as empty
 
     push(&stack, 10);
     push(&stack, 20);
