@@ -1832,9 +1832,24 @@ struct elt{
   - This is also O(1) opeartion.
 - The fact that we can add and remove elements at the start of linked lists for cheap makes them particularly useful for implementing a **stack**.
 
+### Looping over a linked list backwards
+
+```C
+```
+
+
+
+### Deques and doubly-linked lists
+
+- Suppose we want a data structure that represents a line of elements where we can push or pop elements at either end.
+- Such a data structure is known as a `deque` (pronounced like "deck") and can be implemented with all operations taking O(1) time by a **doubly-linked list**, where each element has a pointer to both its successor and its predecessor.
+
+
+
 ## Stacks
 
 - A **Stack** is a linear data structure that follows the **Last In, First Out (LIFO)** principle. Think of it like a stack of plates: we add (push) plates to the top and remove (pop) plates from the top.
+- When we pop, we get the last item we pushed.
 - A Stack is an abstract data type that supports operations `push` (insert a new element on top of the stack) and `pop` (remove and return the element at the top of the stack).
 - Below is an example of a simple linked-list implementation of a stack.
 
@@ -2035,7 +2050,7 @@ int stackPop(Stack *s)
     // Retrieve the value from the top element
     ret = (*s)->value;
 
-    // patch out first element
+    // Remove the top element from the stack
     e = *s;
     *s = e->next;
 
@@ -2183,7 +2198,7 @@ int main()
 
 #### **Functions Explanation**
 
-**1. `stackPush(Stack \*s, int value)`**
+**1. `stackPush(Stack *s, int value)`**
 
 - **Purpose**: Adds a new element with the given `value` to the top of the stack.
 - **Steps**:
@@ -2192,22 +2207,120 @@ int main()
   - Point the new element's `next` to the current top of the stack (`*s`).
   - Update the stack pointer `*s` to point to the new element.
 
-**2. `int stackPop(Stack \*s)`**
+**2. `int stackPop(Stack *s)`**
 
 - **Purpose**: Removes and returns the value from the top element of the stack.
-- **Steps**:
-  - Ensure the stack is not empty.
-  - Store the value of the top element.
-  - Move the stack pointer `*s` to the next element (`(*s)->next`), effectively removing the top element.
-  - Free the memory allocated for the removed element.
-  - Return the stored value.
 
-**3. `int stackEmpty(const Stack \*s)`**
+- **Ensure Stack is Not Empty:**
+  
+  - `assert(!stackEmpty(s));`
+  - Ensures that the stack is not empty before attempting to pop an element.
+  
+  - **Retrieve the Value:**
+    - `ret = (*s)->value;`
+    - Retrieves the value from the top element of the stack.
+    - `(*s)` dereferences the stack pointer to get the top element. `(*s)->value` accesses the `value` field of the top element and stores it in the variable `ret`.
+  - **Remove the Top Element:**
+    - `e = *s;`
+    - Stores the pointer to the top element in `e`.
+    - `*s = e->next;`
+    - Updates the stack pointer to point to the next element, effectively removing the top element.
+    - `e = *s;` stores the pointer to the top element in the variable `e`.
+    - `*s = e->next;` updates the stack pointer to point to the next element in the stack, effectively removing the top element.
+  - **Free Memory:**
+    - `free(e);`
+    - Frees the memory allocated for the removed element.
+  - **Return the Value:**
+    - `return ret;`
+    - Returns the value retrieved from the top element.
+  
+- **Visualization**:
+
+  - Let's visualize the process with an example. Suppose we have the following stack:
+
+  - ```
+    Top -> [4] -> [3] -> [2] -> [1] -> [0] -> NULL
+    ```
+
+  - We want to pop the top element (`4`) from the stack.
+
+  - **Initial State**
+
+    - **Stack Pointer (`s`):** Points to the top element (`4`).
+    - **Top Element (`*s`):** `[4]`
+    - **Next Element (`(*s)->next`):** `[3]`
+
+    ```
+    s -> [4] -> [3] -> [2] -> [1] -> [0] -> NULL
+    ```
+
+  - **Retrieve the Value from the Top Element**
+
+    ```C
+    ret = (*s)->value;
+    ```
+
+    - `(*s)` points to `[4]`.
+    - `(*s)->value` is `4`.
+    - `ret` is set to `4`.
+
+  - **Remove the Top Element from the Stack**:
+
+    ```C
+    e = *s;
+    *s = e->next;
+    ```
+
+    - `e = *s;` stores the pointer to `[4]` in `e`.
+    - `*s = e->next;` updates `*s` to point to `[3]`.
+
+  - **State After Removal:**
+
+    ```
+    e -> [4] -> [3] -> [2] -> [1] -> [0] -> NULL
+    s -> [3] -> [2] -> [1] -> [0] -> NULL
+    ```
+
+  - **Free the Memory Allocated for the Removed Element**
+
+    ```C
+    free(e);
+    ```
+
+    - Frees the memory allocated for `[4]`.
+
+  - **State After Freeing Memory:**
+
+    ```
+    s -> [3] -> [2] -> [1] -> [0] -> NULL
+    ```
+
+  - **Return the Popped Value**:
+
+    ```C
+    return ret;
+    ```
+
+    - Returns `4`.
+
+  - **Final State**:
+
+    After popping the top element (`4`), the stack looks like this:
+
+    ```
+    Top -> [3] -> [2] -> [1] -> [0] -> NULL
+    ```
+
+    - The stack pointer (`s`) now points to the new top element (`3`).
+    - The value `4` has been returned by the `stackPop` function.
+
+
+**3. `int stackEmpty(const Stack *s)`**
 
 - **Purpose**: Checks if the stack is empty.
 - **Returns**: `1` (true) if the stack is empty (`*s == 0`), `0` (false) otherwise.
 
-**4. `void stackPrint(const Stack \*s)`**
+**4. `void stackPrint(const Stack *s)`**
 
 - **Purpose**: Prints the current contents of the stack from top to bottom.
 - **Steps**:
@@ -2241,16 +2354,213 @@ pop gets 0
 
 ```
 
+
+
+### C Code Example #3
+
+#### Program Code
+
+`practice.h`
+
+```C
+typedef struct
+{
+    int *collection;
+    int capacity;
+    int size;
+} Stack;
+
+Stack *create_stack(int capacity);
+void destroy_stack(Stack *stack);
+bool is_full(Stack *stack);
+bool is_empty(Stack *stack);
+bool pop(Stack *stack, int *item);
+bool push(Stack *stack, int item);
+bool peek(Stack *stack, int *item);
+```
+
+`functions.c`
+
+```C
+Stack *create_stack(int capacity)
+{
+    if (capacity <= 0)
+    {
+        return NULL;
+    }
+
+    Stack *stack = malloc(sizeof(Stack));
+    if (stack == NULL)
+    {
+        return NULL;
+    }
+    stack->collection = malloc(sizeof(int) * capacity);
+    if (stack->collection == NULL)
+    {
+        free(stack);
+        return NULL;
+    }
+
+    stack->capacity = capacity;
+    stack->size = 0;
+
+    return stack;
+}
+
+void destroy_stack(Stack *stack)
+{
+    free(stack->collection);
+    free(stack);
+}
+
+bool is_full(Stack *stack)
+{
+    return stack->capacity == stack->size;
+}
+
+bool is_empty(Stack *stack)
+{
+    return stack->size == 0;
+}
+
+bool pop(Stack *stack, int *item)
+{
+    if (is_empty(stack))
+    {
+        return false;
+    }
+    stack->size--;
+    *item = stack->collection[stack->size];
+    return true;
+}
+
+bool push(Stack *stack, int item)
+{
+    if (is_full(stack))
+    {
+        return false;
+    }
+    stack->collection[stack->size++] = item;
+    return true;
+}
+
+bool peek(Stack *stack, int *item)
+{
+    if (is_empty(stack))
+    {
+        return false;
+    }
+    *item = stack->collection[stack->size - 1];
+    return true;
+}
+```
+
+
+
+`practice.c`
+
+```C
+int main()
+{
+    Stack *stack = create_stack(5);
+
+    if (stack == NULL)
+    {
+        fprintf(stderr, "Failed to create stack\n");
+        return 1;
+    }
+
+    if (is_empty(stack))
+    {
+        printf("Stack is empty\n");
+    }
+    push(stack, 2);
+    printf("Stack size: %d\n", stack->size);
+    push(stack, 9);
+    push(stack, 4);
+    push(stack, 7);
+    push(stack, 8);
+
+    printf("Stack size: %d\n", stack->size);
+    if (is_full(stack))
+    {
+        printf("Stack is full\n");
+    }
+    bool try_push = push(stack, 5);
+    if (!try_push)
+    {
+        printf("Push failed\n");
+    }
+
+    int peek_val = 0;
+    peek(stack, &peek_val);
+    printf("Peek value: %d\n", peek_val);
+
+    int pop_val = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        pop(stack, &pop_val);
+        printf("Popped value: %d\n", pop_val);
+    }
+
+    bool try_pop = pop(stack, &pop_val);
+    if (try_pop == false)
+    {
+        printf("Pop failed\n");
+    }
+
+    bool try_peek = peek(stack, &peek_val);
+    if (try_peek == false)
+    {
+        printf("Peek failed\n");
+    }
+
+    destroy_stack(stack);
+    return 0;
+}
+```
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Stack is empty
+Stack size: 1
+Stack size: 5
+Stack is full
+Push failed
+Peek value: 8
+Popped value: 8
+Popped value: 7
+Popped value: 4
+Popped value: 9
+Popped value: 2
+Pop failed
+Peek failed
+```
+
+
+
 ---
 
 ## Queues
 
 - A **Queue** is a linear data structure that follows the **First In, First Out (FIFO)** principle. Imagine a line at a ticket counter: the first person to join the line is the first to be served.
 
+### **Why Use Queues?**
+
+- **Order Processing:** Useful in scenarios like printer queues, CPU task scheduling.
+- **Breadth-First Search (BFS):** Essential in graph traversal algorithms.
+- **Buffer Management:** Commonly used in handling streaming data.
+
 ### Queue Operations
 
 1. **Enqueue:** Add an element to the end of the queue.
-2. **Dequeue:** Remove an element from the front of the queue.
+   1. Enqueuing a new element typicaly requires (a) allocating a new `struct` to hold it; (b) making the old tail `struct` point at the new `struct`; and (c) updating the tail pointer to also point to the new `struct`.
+
+2. **Dequeue :** Remove an element from the front of the queue.
+   1. Dequeuing an element involves updating the head pointer and freeing the removed `struct`, exactly like a stack pop.
+
 3. **Front:** View the front element without removing it.
 4. **IsEmpty:** Check if the queue is empty.
 
@@ -2258,15 +2568,692 @@ pop gets 0
 
 Using a linked list to implement a queue allows for **dynamic memory allocation**, enabling the queue to grow or shrink as needed without a fixed size limit.
 
-### C Code Example
+### C Code Example # 1
 
 #### Program Code
 
+`practice.h`
+
 ```C
+#define QUEUE_EMPTY INT_MIN
+
+typedef struct node{
+    int value;
+    struct node *next;
+} node;
+
+typedef struct{
+    node *head;
+    node *tail;
+} queue;
+
+void init_queue(queue *q);
+
+bool enqueue(queue *q, int value);
+
+int dequeue(queue *q);
 ```
 
-### Program Output
+`functions.c`
+
+```C
+void init_queue(queue *q){
+    q->head = NULL;
+    q->tail = NULL;
+}
+
+bool enqueue(queue *q, int value){
+    // create a new node
+    node *newnode = malloc(sizeof(node));
+    if(newnode == NULL){
+        return false;
+    }
+    newnode->value = value;
+    newnode->next = NULL;
+    
+    // if there's a tail, link it to the new node
+    if(q->tail != NULL){
+        q->tail->next = newnode;
+    }
+    q->tail = newnode;
+    
+    // if there's no head, set the head to the newnode
+    if(q->head == NULL){
+        q->head = newnode;
+    }
+    return true;
+}
+
+int dequeue(queue *q){
+    // check to see if the queue is empty
+    if(q->head == NULL){
+        return QUEUE_EMPTY
+    }
+    
+    // save the head of the queue
+    node *tmp = q->head;
+    
+    // save the result we are going to return
+    int result = tmp->value;
+    
+    // take it off
+    q->head = q->head->next;
+    if(q->head == NULL){
+        q->tail = NULL;
+    }
+    free(tmp);
+    return result;
+}
+```
+
+
+
+`practice.c`
+
+```C
+int main()
+{
+    queue q1, q2, q3;
+
+    init_queue(&q1);
+    init_queue(&q2);
+    init_queue(&q3);
+
+    enqueue(&q1, 56);
+    enqueue(&q2, 78);
+    enqueue(&q2, 23);
+    enqueue(&q2, 988);
+    enqueue(&q3, 13);
+
+    int t;
+    while ((t = dequeue(&q2)) != QUEUE_EMPTY)
+    {
+        printf("t = %d\n", t);
+    }
+    return 0;
+}
+```
+
+##### **Visualization**
+
+**Queue Operations**
+
+Let's visualize the queue operations step by step.
+
+**1. Initial State**
+
+- **Queues:** `q1`, `q2`, `q3` are empty.
+
+  ```
+  q1: head -> NULL, tail -> NULL
+  
+  q2: head -> NULL, tail -> NULL
+  
+  q3: head -> NULL, tail -> NULL
+  ```
+
+**2. Enqueue Operations**
+
+- **Enqueue `56` to `q1`:**
+
+  ```
+  q1: head -> [56] -> NULL, tail -> [56]
+  ```
+
+- **Enqueue `78` to `q2`:**
+
+  ```
+  q2: head -> [78] -> NULL, tail -> [78]
+  ```
+
+- **Enqueue `23` to `q2`:**
+
+  ```
+  q2: head -> [78] -> [23] -> NULL, tail -> [23]
+  ```
+
+- **Enqueue `988` to `q2`:**
+
+  ```
+  q2: head -> [78] -> [23] -> [988] -> NULL, tail -> [988]
+  ```
+
+- **Enqueue `13` to `q3`:**
+
+  ```
+  q3: head -> [13] -> NULL, tail -> [13]
+  ```
+
+**3. Dequeue Operations from `q2`**
+
+- **Dequeue from `q2`:**
+
+  - First Dequeue:
+    - Removes `78`.
+    - Updates `head` to `23`.
+
+  ```
+  q2: head -> [23] -> [988] -> NULL, tail -> [988]
+  ```
+
+  - Second Dequeue:
+    - Removes `23`.
+    - Updates `head` to `988`.
+
+  ```
+  q2: head -> [988] -> NULL, tail -> [988]
+  ```
+
+  - Third Dequeue:
+    - Removes `988`.
+    - Updates `head` and `tail` to `NULL`.
+
+  ```
+  q2: head -> NULL, tail -> NULL
+  ```
+
+  **Final State**
+
+- **Queues:**
+
+  ```
+  q1: head -> [56] -> NULL, tail -> [56]
+  
+  q2: head -> NULL, tail -> NULL
+  
+  q3: head -> [13] -> NULL, tail -> [13]
+  ```
+
+- **Output:**
+
+```
+t = 78
+
+t = 23
+
+t = 988
+```
+
+#### Program Output
 
 ```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+t = 78
+t = 23
+t = 988
+
+```
+
+
+
+### C Code Example #2
+
+#### Program Code
+
+`practice.h`
+
+```C
+typedef struct QueueNode{
+    int data;
+    struct QueueNode *next;
+}QueueNode;
+
+typedef struct{
+    QueueNode *head;
+    QueueNode *tail;
+}Queue;
+
+QueueNode *createNode(int data);
+void enqueue(Queue *q, int new_data);
+int dequeue(Queue *q);
+int front(Queue *q);
+int isEmpty(Queue *q);
+void printQueue(Queue *q);
+```
+
+`functions.c`
+
+```C
+// create a new node with the given data and returns a pointer to it
+QueueNode *createNode(int data){
+    QueueNode *newNode = (QueueNode *)malloc(sizeof(QueueNode));
+    if(!newNode){
+        printf("Memory allocation error\n");
+        exit(1);
+    }
+    
+    newNode->data = data;
+    newNode->next = NULL;
+    return newNode;
+}
+
+// Adds a new element to the end of the queue
+void enqueue(Queue *q, int new_data){
+    QueueNode *newNode = createNode(new_data);
+    
+    // If the queue is empty, sets both head and tail to the new node
+    if(q->tail == NULL){
+        q->head = q->tail = newNode;
+        printf("Enqueued %d to queue\n", new_data);
+        return;
+    }
+    
+    // Otherwise, linkes the new node to the current tail and updates the tail pointer
+    //Connects the new node to the end of the existing list, effectively adding it after the current tail.
+    q->tail->next = newNode;
+    
+    // Marks newNode as the new rear (tail) of the queue, ensuring that subsequent additions will follow after it.
+    q->tail = newNode; // updates the tail pointer
+    printf("Enqueued %d to queue\n", new_data);
+}
+
+// Removes and returns the element from the front of the queue
+int dequeue(Queue *q){
+    
+    // Checks if the queue is empty
+    if(q->head == NULL){
+        printf("Queue underflow\n");
+        exit(1);
+    }
+    
+    // save the head node and its data
+    QueueNode *temp = q->head;
+    int dequeued = temp->data;
+    
+    // update the head pointer the next node
+    q->head = temp->next;
+    
+    // If the queue becomes empty, set the tail pointer to NULL
+    if(q->head == NULL){
+        q->tail = NULL;
+    }
+    
+    free(temp);
+    
+    // Return the data of the removed node
+    return dequeued;
+}
+
+// Returns the front element of the queue
+int front(Queue *q){
+    if(q->head == NULL){
+        printf("Queue is empty\n");
+        exit(1);
+    }
+    return q->head->data;
+}
+
+int isEmpty(Queue *q){
+    return q->head == NULL;
+}
+
+void printQueue(Queue *q){
+    QueueNode *current = q->head;
+    printf("Queue: ");
+    while(current != NULL){
+        printf("%d -> ", current->data);
+        current = current->next;
+    }
+    printf("NULL\n");
+}
+```
+
+##### Visualization of some code blocks
+
+- ```C
+  q->tail->next = newNode;
+  q->tail = newNode;
+  ```
+
+```
+[Head] --> [Node1] --> [Node2] --> NULL
+                           ^
+                        [Tail]
+
+```
+
+- **`q->head`** points to **Node1**.
+- **`q->tail`** points to **Node2**.
+- **Node2->next** is **NULL**.
+
+New Node to Add:
+
+```yaml
+newNode: [Node3] --> NULL
+```
+
+After Executing `q->tail->next = newNode;`:
+
+```css
+[Front] --> [Node1] --> [Node2] --> [Node3] --> NULL
+
+```
+
+- **Node2->next** now points to **Node3**.
+- **Node3->next** remains **NULL**.
+
+After Executing `q->tail = newNode;`:
+
+```css
+[Front] --> [Node1] --> [Node2] --> [Node3] --> NULL
+                                     ^
+                                  [Tail]
+
+```
+
+- **`q->tail`** now points to **Node3**.
+
+- **Node3** is the new rear of the queue.
+
+##### Visualization with Enqueue Operations:
+
+1. **Initial Empty Queue:**
+
+```yaml
+Queue Structure:
+[Front] = NULL
+[Tail] = NULL
+```
+
+2. **Enqueue 10:**
+
+- Since the queue is empty, both `front` and `tail` point to the new node.
+
+```less
+Queue Structure:
+[Front] --> [10] --> NULL
+[Tail] --> [10] --> NULL
+```
+
+3. **Enqueue 20:**
+
+- Link `tail->next` to the new node (20).
+- Update `tail` to point to 20.
+
+```less
+Queue Structure:
+[Front] --> [10] --> [20] --> NULL
+[Tail] --> [20] --> NULL
+```
+
+4. **Enqueue 30:**
+
+- Link `tail->next` to the new node (30).
+- Update `tail` to point to 30.
+
+```less
+Queue Structure:
+[Front] --> [10] --> [20] --> [30] --> NULL
+[Tail] --> [30] --> NULL
+```
+
+`practice.c`
+
+```C
+int main(){
+    Queue q;
+
+    q.head = NULL;
+    q.tail = NULL;
+
+    enqueue(&q, 10);
+    enqueue(&q, 20);
+    enqueue(&q, 30);
+
+    printQueue(&q);
+
+    printf("Front element is %d\n", front(&q));
+
+    printf("Dequeued element: %d\n", dequeue(&q));
+
+    printQueue(&q);
+
+    printf("Dequeued element: %d\n", dequeue(&q));
+
+    printQueue(&q);
+
+    printf("Is queue empty? %s\n", isEmpty(&q) ? "Yes" : "No");
+
+    printf("Dequeued element: %d\n", dequeue(&q));
+
+    printf("Is queue empty? %s\n", isEmpty(&q) ? "Yes" : "No");
+    return 0;
+}
+```
+
+##### Visualization
+
+**Initial State**
+
+- **Queue:** Empty (`head = NULL`, `tail = NULL`).
+
+```
+head -> NULL
+tail -> NULL
+```
+
+**Enqueue Operations**
+
+- **Enqueue `10`:**
+
+  ```
+  head -> [10] -> NULL
+  tail -> [10]
+  ```
+
+- Enqueue `20`:
+
+  ```
+  head -> [10] -> [20] -> NULL
+  tail -> [20]
+  ```
+
+- Enqueue `30`:
+
+  ```
+  head -> [10] -> [20] -> [30] -> NULL
+  tail -> [30]
+  ```
+
+**Dequeue Operations**
+
+- **Dequeue `10`:**
+
+  ```
+  head -> [20] -> [30] -> NULL
+  
+  tail -> [30]
+  ```
+
+- **Dequeue `20`:**
+
+  ```
+  head -> [30] -> NULL
+  
+  tail -> [30]
+  ```
+
+- **Dequeue `30`:**
+
+  ```
+  head -> NULL
+  
+  tail -> NULL
+  ```
+
+### **Final State**
+
+- **Queue:** Empty (`head = NULL`, `tail = NULL`).
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Enqueued 10 to queue
+Enqueued 20 to queue
+Enqueued 30 to queue
+Queue: 10 -> 20 -> 30 -> NULL
+Front element is 10
+Dequeued element: 10
+Queue: 20 -> 30 -> NULL
+Dequeued element: 20
+Queue: 30 -> NULL
+Is queue empty? No
+Dequeued element: 30
+Is queue empty? Yes
+```
+
+
+
+### C Code Example #3
+
+#### Program Code
+
+`practice.h`
+
+```C
+// Standard Link list element
+typedef struct elt{
+    struct elt *next;
+    int value;
+}Elt:
+
+typedef struct queue{
+    struct elt *head; // dequeue this next
+    struct elt *tail; // enqueue after this
+}Queue:
+
+Queue *queueCreate(void);
+void enq(Queue *q, int value);
+int queueEmpty(const Queue *q);
+int deq(Queue *q);
+void queuePrint(const Queue *q);
+void queueDestroy(Queue *q);
+```
+
+`functions.c`
+
+```c
+// create a new empty queue
+Queue *queueCreate(void){
+    Queue *q = malloc(sizeof(Queue));
+    assert(q);
+    q->head = q->tail = 0;
+    
+    return q;
+}
+
+// add a new value to back of queue
+void enq(Queue *q, int value){
+    Elt *e = malloc(sizeof(Queue));
+    assert(e);
+    
+    e->value = value;
+    
+    // Because I will be the tail, nobody is behind me
+    e->next = 0;
+    
+    if(q->tail == 0){
+        // If the queue was empty, I become the head
+        q->head = e;
+    }else{
+        // otherwise, I get in line after the old tail
+        q->tail->next = e;
+    }
+    
+    // I become the new tail
+    q->tail = e;
+}
+
+int queueEmpty(const Queue *q){
+    return q->head == 0;
+}
+
+// Remove and return value from front of queue
+int deq(Queue *q){
+    int ret;
+    Elt *e;
+    assert(!queueEmpty(q));
+    
+    ret = q->head->value;
+    
+    // patch out first element
+    e = q->head;
+    q->head = e->next;
+    
+    free(e);
+    
+    return ret;
+}
+
+// print contents of queue on a single line, head first
+void queuePrint(const Queue *q){
+    Elt *e;
+    for(e = q->head; e != 0; e = e->next){
+        printf("%d ", e->value);
+    }
+    putchar('\n');
+}
+
+// free a queue and all of its elements
+void queueDestroy(Queue *q){
+    while(!queueEmpty(q)){
+        deq(q);
+    }
+    free(q);
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    Queue *q = queueCreate();
+
+    for (int i = 0; i < 5; i++)
+    {
+        printf("enq %d\n", i);
+        enq(q, i);
+        queuePrint(q);
+    }
+
+    while (!queueEmpty(q))
+    {
+        printf("deq gets %d\n", deq(q));
+        queuePrint(q);
+    }
+
+    queueDestroy(q);
+    return 0;
+}
+```
+
+
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+enq 0
+0 
+enq 1
+0 1 
+enq 2
+0 1 2 
+enq 3
+0 1 2 3 
+enq 4
+0 1 2 3 4 
+deq gets 0
+1 2 3 4 
+deq gets 1
+2 3 4 
+deq gets 2
+3 4 
+deq gets 3
+4 
+deq gets 4
+
 ```
 
