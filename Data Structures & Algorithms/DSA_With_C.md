@@ -6528,6 +6528,18 @@ void resizeAndRehash(HashTable **table_ref, int new_size)
             node = node->next;
         }
     }
+    
+    // Free all original nodes in the old table
+    for (int i = 0; i < old_table->size; i++)
+    {
+        HashNode *node = old_table->buckets[i];
+        while (node != NULL)
+        {
+            HashNode *temp = node;
+            node = node->next;
+            free(temp);
+        }
+    }
 
     // Free the old table's buckets array
     free(old_table->buckets);
@@ -6745,6 +6757,116 @@ Hash table memory freed.
 
 ```
 
+#### Checking Memory Leak
+
+```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==8613== Memcheck, a memory error detector
+==8613== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==8613== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==8613== Command: ./practice
+==8613== 
+Inserted key 10 with value 100 at index 3.
+Inserted key 20 with value 200 at index 6.
+Inserted key 15 with value 150 at index 1.
+Inserted key 7 with value 70 at index 0.
+Inserted key 8 with value 80 at index 1.
+Resizing from 7 to 14 buckets and rehashing...
+Inserted key 7 with value 70 at index 7.
+Inserted key 8 with value 80 at index 8.
+Inserted key 15 with value 150 at index 1.
+Inserted key 10 with value 100 at index 10.
+Inserted key 20 with value 200 at index 6.
+Resizing and rehashing completed.
+Inserted key 22 with value 220 at index 8.
+Inserted key 1 with value 10 at index 1.
+
+Hash Table Contents (Size: 14, Count: 7):
+Bucket 0: NULL
+Bucket 1: (1, 10) -> (15, 150) -> NULL
+Bucket 2: NULL
+Bucket 3: NULL
+Bucket 4: NULL
+Bucket 5: NULL
+Bucket 6: (20, 200) -> NULL
+Bucket 7: (7, 70) -> NULL
+Bucket 8: (22, 220) -> (8, 80) -> NULL
+Bucket 9: NULL
+Bucket 10: (10, 100) -> NULL
+Bucket 11: NULL
+Bucket 12: NULL
+Bucket 13: NULL
+Inserted key 17 with value 170 at index 3.
+Inserted key 27 with value 270 at index 13.
+
+Hash Table Contents (Size: 14, Count: 9):
+Bucket 0: NULL
+Bucket 1: (1, 10) -> (15, 150) -> NULL
+Bucket 2: NULL
+Bucket 3: (17, 170) -> NULL
+Bucket 4: NULL
+Bucket 5: NULL
+Bucket 6: (20, 200) -> NULL
+Bucket 7: (7, 70) -> NULL
+Bucket 8: (22, 220) -> (8, 80) -> NULL
+Bucket 9: NULL
+Bucket 10: (10, 100) -> NULL
+Bucket 11: NULL
+Bucket 12: NULL
+Bucket 13: (27, 270) -> NULL
+
+Key 15 found with value 150.
+Key 99 not found.
+Key 20 deleted from index 6.
+Key 7 deleted from index 7.
+
+Hash Table Contents (Size: 14, Count: 7):
+Bucket 0: NULL
+Bucket 1: (1, 10) -> (15, 150) -> NULL
+Bucket 2: NULL
+Bucket 3: (17, 170) -> NULL
+Bucket 4: NULL
+Bucket 5: NULL
+Bucket 6: NULL
+Bucket 7: NULL
+Bucket 8: (22, 220) -> (8, 80) -> NULL
+Bucket 9: NULL
+Bucket 10: (10, 100) -> NULL
+Bucket 11: NULL
+Bucket 12: NULL
+Bucket 13: (27, 270) -> NULL
+Key 10 deleted from index 10.
+Key 15 deleted from index 1.
+Key 8 deleted from index 8.
+Resizing from 14 to 7 buckets and rehashing...
+Inserted key 1 with value 10 at index 1.
+Inserted key 17 with value 170 at index 3.
+Inserted key 22 with value 220 at index 1.
+Inserted key 27 with value 270 at index 6.
+Resizing and rehashing completed.
+
+Hash Table Contents (Size: 7, Count: 4):
+Bucket 0: NULL
+Bucket 1: (22, 220) -> (1, 10) -> NULL
+Bucket 2: NULL
+Bucket 3: (17, 170) -> NULL
+Bucket 4: NULL
+Bucket 5: NULL
+Bucket 6: (27, 270) -> NULL
+Key 100 not found. Cannot delete.
+Hash table memory freed.
+==8613== 
+==8613== HEAP SUMMARY:
+==8613==     in use at exit: 0 bytes in 0 blocks
+==8613==   total heap usage: 25 allocs, 25 frees, 1,584 bytes allocated
+==8613== 
+==8613== All heap blocks were freed -- no leaks are possible
+==8613== 
+==8613== For lists of detected and suppressed errors, rerun with: -s
+==8613== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
 
 
 ### Use Cases of Hash Tables
@@ -6775,6 +6897,44 @@ Hash tables are versatile and widely used in various applications due to their e
 8. **Bioinformatics:**
    - **Genomic Data Storage:** Efficiently storing and querying large genomic datasets.
 
+
+
+**Quadratic Probing** and **Double Hashing** are two effective **collision resolution techniques** used in **open addressing** hash tables. These methods aim to handle scenarios where multiple keys hash to the same index, ensuring efficient storage and retrieval of data without relying on additional data structures like linked lists (as in separate chaining).
+
+### Quadratic Probing
+
+**Quadratic Probing** is a collision resolution technique where the interval between probes increases quadratically. Instead of checking the next slot linearly, it uses a quadratic function to determine the sequence of indices to probe.
+
+#### Advantages and Disadvantages
+
+**Advantages:**
+
+1. **Reduces Primary Clustering:** Unlike linear probing, quadratic probing reduces the clustering effect, where contiguous blocks of occupied slots form.
+2. **Simpler Implementation:** Easier to implement compared to double hashing.
+
+**Disadvantages:**
+
+1. **Secondary Clustering:** While it reduces primary clustering, quadratic probing can still suffer from secondary clustering where keys with the same initial hash follow the same probe sequence.
+2. **Not Guaranteed to Probe All Slots:** Depending on the table size and probe function, some slots might never be probed, potentially leading to failure in finding an empty slot even if the table isn't full.
+3. **Requires Prime Table Size:** To ensure that all slots are probed, it's often recommended to use a prime number for the table size.
+
+Index=(h(k)+i<sup>2</sup>) % m.
+
+Suppose h(k) = k mod 7, m = 7, and we have keys 10. 17, 24.
+
+- Insert 10:
+  - 10 % 7 = 3;
+  - Place at index 3.
+- Insert 17:
+  - 17 % 7 = 3 -> Collision;
+  - Probe 1: (3 + 1<sup>2</sup>) % 7 = 4;
+  - Place at index 4.
+- Insert 24:
+  - 24 % 7 = 3 -> Collision.
+  - Probe 1: (3 + 1<sup>2</sup>) % 7 = 4 -> Occupied.
+  - Probe 2: (3 + 2<sup>2</sup>) % 7 = 0.
+  - Place at index 0.
+
 ### C Code Example (Quadratic Probing)
 
 #### Program Code
@@ -6782,16 +6942,325 @@ Hash tables are versatile and widely used in various applications due to their e
 `practice.h`
 
 ```C
+#define INITIAL_SIZE 7
+#define LOAD_FACTOR_THRESHOLD 0.5
+
+typedef struct HashEntry
+{
+    int key;
+    int value;
+    bool isOccupied;
+    bool isDeleted;
+} HashEntry;
+
+typedef struct HashTable
+{
+    int size;
+    int count;
+    HashEntry *table;
+} HashTable;
+
+int hashFunction(int key, int size);
+HashTable *createHashTable(int size);
+bool needsResize(HashTable *ht);
+
+void resizeAndRehash(HashTable **ht, int new_size);
+
+void insert(HashTable **ht, int key, int value);
+
+int search(HashTable *ht, int key);
+void deleteKey(HashTable **ht, int key);
+
+void display(HashTable *ht);
+
+void freeHashTable(HashTable *ht);
 ```
 
 `functions.c`
 
 ```C
+// Hash Function
+int hashFunction(int key, int size)
+{
+    return key % size;
+}
+
+// Create a new hash table
+HashTable *createHashTable(int size)
+{
+    HashTable *ht = (HashTable *)malloc(sizeof(HashTable));
+    if (!ht)
+    {
+        printf("Memory allocation failed for HashTable.\n");
+        exit(EXIT_FAILURE);
+    }
+    ht->size = size;
+    ht->count = 0;
+    ht->table = (HashEntry *)malloc(sizeof(HashEntry) * size);
+    if (!ht->table)
+    {
+        printf("Memory allocation failed for HashTable entries.\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < size; i++)
+    {
+        ht->table[i].isOccupied = false;
+        ht->table[i].isDeleted = false;
+    }
+    return ht;
+}
+
+// Check if the hash table needs resizing
+bool needsResize(HashTable *ht)
+{
+    double load_factor = (double)ht->count / ht->size;
+    return load_factor > LOAD_FACTOR_THRESHOLD;
+}
+
+// Resize and rehash the hash table
+void resizeAndRehash(HashTable **ht_ref, int new_size)
+{
+    HashTable *old_ht = *ht_ref;
+    HashTable *new_ht = createHashTable(new_size);
+
+    for (int i = 0; i < old_ht->size; i++)
+    {
+        if (old_ht->table[i].isOccupied && !old_ht->table[i].isDeleted)
+        {
+            // Insert into new hash table
+            // Using the same insert function to handle quadratic probing
+            int key = old_ht->table[i].key;
+            int value = old_ht->table[i].value;
+
+            int index = hashFunction(key, new_ht->size);
+            int j = 1;
+            while (new_ht->table[index].isOccupied)
+            {
+                index = (hashFunction(key, new_ht->size) + j * j) % new_ht->size;
+                j++;
+            }
+            new_ht->table[index].key = key;
+            new_ht->table[index].value = value;
+            new_ht->table[index].isOccupied = true;
+            new_ht->table[index].isDeleted = false;
+            new_ht->count++;
+        }
+    }
+
+    // Free the old table
+    free(old_ht->table);
+    free(old_ht);
+
+    // Update the reference
+    *ht_ref = new_ht;
+    printf("Resized and rehashed to new size %d.\n", new_size);
+}
+
+// Insert key-value pair using Quadratic Probing
+void insert(HashTable **ht_ref, int key, int value)
+{
+    HashTable *ht = *ht_ref;
+
+    if (needsResize(ht))
+    {
+        resizeAndRehash(ht_ref, ht->size * 2); // Double the size
+        ht = *ht_ref;                          // Update the local reference after resizing
+    }
+
+    int index = hashFunction(key, ht->size);
+    int original_index = index;
+    int i = 1;
+
+    while (ht->table[index].isOccupied && !ht->table[index].isDeleted && ht->table[index].key != key)
+    {
+        index = (original_index + i * i) % ht->size;
+        i++;
+        if (i == ht->size)
+        {
+            printf("Hash table is full. Cannot insert key %d.\n", key);
+            return;
+        }
+    }
+
+    if (!ht->table[index].isOccupied || ht->table[index].isDeleted)
+    {
+        ht->table[index].key = key;
+        ht->table[index].value = value;
+        ht->table[index].isOccupied = true;
+        ht->table[index].isDeleted = false;
+        ht->count++;
+        printf("Inserted key %d with value %d at index %d.\n", key, value, index);
+    }
+    else
+    {
+        // Key already exists, update the value
+        ht->table[index].value = value;
+        printf("Updated key %d with new value %d at index %d.\n", key, value, index);
+    }
+}
+
+// Search for a key using Quadratic Probing
+int search(HashTable *ht, int key)
+{
+    int index = hashFunction(key, ht->size);
+    int original_index = index;
+    int i = 1;
+
+    while (ht->table[index].isOccupied)
+    {
+        if (!ht->table[index].isDeleted && ht->table[index].key == key)
+        {
+            return ht->table[index].value;
+        }
+        index = (original_index + i * i) % ht->size;
+        i++;
+        if (i == ht->size)
+        {
+            break; // Searched all slots
+        }
+    }
+    return -1; // Not found
+}
+
+// Delete a key using Quadratic Probing
+void deleteKey(HashTable **ht_ref, int key)
+{
+    HashTable *ht = *ht_ref;
+    int index = hashFunction(key, ht->size);
+    int original_index = index;
+    int i = 1;
+
+    while (ht->table[index].isOccupied)
+    {
+        if (!ht->table[index].isDeleted && ht->table[index].key == key)
+        {
+            ht->table[index].isDeleted = true;
+            ht->count--;
+            printf("Key %d deleted from index %d.\n", key, index);
+
+            // Optional: Resize down if load factor is too low
+            double load_factor = (double)ht->count / ht->size;
+            if (load_factor < (LOAD_FACTOR_THRESHOLD / 2) && ht->size > INITIAL_SIZE)
+            {
+                resizeAndRehash(ht_ref, ht->size / 2); // Halve the size
+            }
+            return;
+        }
+        index = (original_index + i * i) % ht->size;
+        i++;
+        if (i == ht->size)
+        {
+            break; // Searched all slots
+        }
+    }
+    printf("Key %d not found. Cannot delete.\n", key);
+}
+
+// Display the hash table
+void display(HashTable *ht)
+{
+    printf("\nHash Table Contents (Size: %d, Count: %d):\n", ht->size, ht->count);
+    for (int i = 0; i < ht->size; i++)
+    {
+        printf("Slot %d: ", i);
+        if (ht->table[i].isOccupied && !ht->table[i].isDeleted)
+        {
+            printf("(%d, %d)", ht->table[i].key, ht->table[i].value);
+        }
+        else if (ht->table[i].isDeleted)
+        {
+            printf("DELETED");
+        }
+        else
+        {
+            printf("NULL");
+        }
+        printf("\n");
+    }
+}
+
+// Free the hash table
+void freeHashTable(HashTable *ht)
+{
+    free(ht->table);
+    free(ht);
+    printf("Hash table memory freed.\n");
+}
 ```
 
 `practice.c`
 
 ```C
+int main()
+{
+    // Create a hash table with initial size
+    HashTable *table = createHashTable(INITIAL_SIZE);
+
+    // Insert key-value pairs
+    insert(&table, 10, 100);
+    insert(&table, 20, 200);
+    insert(&table, 15, 150);
+    insert(&table, 7, 70);
+    insert(&table, 8, 80);
+    insert(&table, 22, 220);
+    insert(&table, 1, 10);
+
+    // Display the hash table
+    display(table);
+
+    // Insert more elements to trigger resizing
+    insert(&table, 17, 170);
+    insert(&table, 27, 270);
+
+    // Display the hash table after resizing
+    display(table);
+
+    // Search for keys
+    int key = 15;
+    int value = search(table, key);
+    if (value != -1)
+    {
+        printf("\nKey %d found with value %d.\n", key, value);
+    }
+    else
+    {
+        printf("\nKey %d not found.\n", key);
+    }
+
+    key = 99;
+    value = search(table, key);
+    if (value != -1)
+    {
+        printf("Key %d found with value %d.\n", key, value);
+    }
+    else
+    {
+        printf("Key %d not found.\n", key);
+    }
+
+    // Delete some keys
+    deleteKey(&table, 20);
+    deleteKey(&table, 7);
+
+    // Display the hash table after deletions
+    display(table);
+
+    // Delete more keys to potentially trigger resizing down
+    deleteKey(&table, 10);
+    deleteKey(&table, 15);
+    deleteKey(&table, 8);
+
+    // Display the hash table after further deletions
+    display(table);
+
+    // Attempt to delete a non-existent key
+    deleteKey(&table, 100);
+
+    // Free the hash table
+    freeHashTable(table);
+    return 0;
+}
+
 ```
 
 
@@ -6799,6 +7268,136 @@ Hash tables are versatile and widely used in various applications due to their e
 #### Program Output
 
 ```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==14212== Memcheck, a memory error detector
+==14212== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==14212== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==14212== Command: ./practice
+==14212== 
+Inserted key 10 with value 100 at index 3.
+Inserted key 20 with value 200 at index 6.
+Inserted key 15 with value 150 at index 1.
+Inserted key 7 with value 70 at index 0.
+Resized and rehashed to new size 14.
+Inserted key 8 with value 80 at index 8.
+Inserted key 22 with value 220 at index 9.
+Inserted key 1 with value 10 at index 2.
+
+Hash Table Contents (Size: 14, Count: 7):
+Slot 0: NULL
+Slot 1: (15, 150)
+Slot 2: (1, 10)
+Slot 3: NULL
+Slot 4: NULL
+Slot 5: NULL
+Slot 6: (20, 200)
+Slot 7: (7, 70)
+Slot 8: (8, 80)
+Slot 9: (22, 220)
+Slot 10: (10, 100)
+Slot 11: NULL
+Slot 12: NULL
+Slot 13: NULL
+Inserted key 17 with value 170 at index 3.
+Resized and rehashed to new size 28.
+Inserted key 27 with value 270 at index 27.
+
+Hash Table Contents (Size: 28, Count: 9):
+Slot 0: NULL
+Slot 1: (1, 10)
+Slot 2: NULL
+Slot 3: NULL
+Slot 4: NULL
+Slot 5: NULL
+Slot 6: NULL
+Slot 7: (7, 70)
+Slot 8: (8, 80)
+Slot 9: NULL
+Slot 10: (10, 100)
+Slot 11: NULL
+Slot 12: NULL
+Slot 13: NULL
+Slot 14: NULL
+Slot 15: (15, 150)
+Slot 16: NULL
+Slot 17: (17, 170)
+Slot 18: NULL
+Slot 19: NULL
+Slot 20: (20, 200)
+Slot 21: NULL
+Slot 22: (22, 220)
+Slot 23: NULL
+Slot 24: NULL
+Slot 25: NULL
+Slot 26: NULL
+Slot 27: (27, 270)
+
+Key 15 found with value 150.
+Key 99 not found.
+Key 20 deleted from index 20.
+Key 7 deleted from index 7.
+
+Hash Table Contents (Size: 28, Count: 7):
+Slot 0: NULL
+Slot 1: (1, 10)
+Slot 2: NULL
+Slot 3: NULL
+Slot 4: NULL
+Slot 5: NULL
+Slot 6: NULL
+Slot 7: DELETED
+Slot 8: (8, 80)
+Slot 9: NULL
+Slot 10: (10, 100)
+Slot 11: NULL
+Slot 12: NULL
+Slot 13: NULL
+Slot 14: NULL
+Slot 15: (15, 150)
+Slot 16: NULL
+Slot 17: (17, 170)
+Slot 18: NULL
+Slot 19: NULL
+Slot 20: DELETED
+Slot 21: NULL
+Slot 22: (22, 220)
+Slot 23: NULL
+Slot 24: NULL
+Slot 25: NULL
+Slot 26: NULL
+Slot 27: (27, 270)
+Key 10 deleted from index 10.
+Resized and rehashed to new size 14.
+Key 15 deleted from index 2.
+Key 8 deleted from index 8.
+
+Hash Table Contents (Size: 14, Count: 4):
+Slot 0: NULL
+Slot 1: (1, 10)
+Slot 2: DELETED
+Slot 3: (17, 170)
+Slot 4: NULL
+Slot 5: NULL
+Slot 6: NULL
+Slot 7: NULL
+Slot 8: DELETED
+Slot 9: (22, 220)
+Slot 10: NULL
+Slot 11: NULL
+Slot 12: NULL
+Slot 13: (27, 270)
+Key 100 not found. Cannot delete.
+Hash table memory freed.
+==14212== 
+==14212== HEAP SUMMARY:
+==14212==     in use at exit: 0 bytes in 0 blocks
+==14212==   total heap usage: 9 allocs, 9 frees, 1,844 bytes allocated
+==14212== 
+==14212== All heap blocks were freed -- no leaks are possible
+==14212== 
+==14212== For lists of detected and suppressed errors, rerun with: -s
+==14212== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```
 
 
@@ -6983,5 +7582,311 @@ There are two primary types:
 | Iteration over All Elements      | O(n)            | O(n)       |
 
 ---
+
+## Generic Containers
+
+In the C programming language, **generic containers** refer to data structures that can store elements of any data type. Unlike languages that natively support generics (such as C++ with templates or Java with generics), C does not provide built-in mechanisms for creating truly type-agnostic data structures. However, developers have devised various techniques to implement generic behavior in C, enabling the creation of versatile and reusable containers.
+
+- **Generic containers** are data structures designed to handle multiple data types without requiring specific implementations for each type. 
+- They enhance code reusability and flexibility, allowing developers to write more abstract and maintainable code.
+- In C, achieving genericity involves creating containers that can operate on data of any type, typically by abstracting the data type through pointers or other mechanisms.
+
+### Techniques to Implement Generic Containers in C
+
+#### 1. Using `void*` Pointers
+
+The most common method to achieve genericity in C is by using `void*` (pointer to `void`) types. Since `void*` can point to any data type, it allows functions and data structures to handle different types uniformly.
+
+**Pros:**
+
+- Simple to implement.
+- Highly flexible.
+
+**Cons:**
+
+- Lack of type safety.
+- Requires explicit casting, which can lead to runtime errors.
+- Potential performance overhead due to pointer dereferencing.
+
+#### 2. Macros
+
+C preprocessor macros can generate type-specific code during compilation. By defining macros that take the data type as a parameter, developers can create type-safe generic containers.
+
+**Pros:**
+
+- Type safety is enforced at compile-time.
+- No runtime overhead.
+
+**Cons:**
+
+- Code can become harder to read and debug.
+- Increased compilation time.
+- Potential for code bloat due to multiple instances of similar code.
+
+#### 3. Code Generation
+
+Using external scripts or tools to generate type-specific implementations from a generic template. Tools like `m4`, `GPP`, or custom scripts can automate this process.
+
+**Pros:**
+
+- Maintains type safety.
+- Reduces manual coding effort.
+
+**Cons:**
+
+- Adds complexity to the build process.
+- Requires maintaining separate template files.
+
+#### 4. `_Generic` Keyword (C11)
+
+Introduced in the C11 standard, the `_Generic` keyword allows for compile-time type selection, enabling a form of generic programming by selecting different code paths based on the type of a variable.
+
+**Pros:**
+
+- Type safety is maintained.
+- No runtime overhead.
+- Cleaner syntax compared to macros.
+
+**Cons:**
+
+- Limited to selecting existing functions or operations.
+- Not as flexible as true generic programming found in other languages.
+
+### Common Generic Containers in C
+
+#### 1. Generic Linked Lists
+
+A linked list where each node contains a `void*` pointer to data, allowing storage of any data type.
+
+**Structure Example:**
+
+```c
+typedef struct Node {
+    void* data;
+    struct Node* next;
+} Node;
+
+typedef struct LinkedList {
+    Node* head;
+    Node* tail;
+    size_t size;
+} LinkedList;
+```
+
+#### 2. Dynamic Arrays (Vectors)
+
+Dynamic arrays that can resize and hold elements of any type via `void*` pointers.
+
+**Structure Example:**
+
+```c
+typedef struct Vector {
+    void** items;
+    size_t capacity;
+    size_t size;
+} Vector;
+```
+
+#### 3. Stacks and Queues
+
+Stacks and queues implemented using `void*` pointers to allow generic data storage.
+
+**Structure Example (Stack):**
+
+```c
+typedef struct Stack {
+    void** items;
+    size_t capacity;
+    size_t top;
+} Stack;
+```
+
+#### 4. Hash Tables
+
+Hash tables that use `void*` for keys and/or values, enabling storage of various data types.
+
+**Structure Example:**
+
+```c
+typedef struct HashTableEntry {
+    void* key;
+    void* value;
+    struct HashTableEntry* next;
+} HashTableEntry;
+
+typedef struct HashTable {
+    HashTableEntry** buckets;
+    size_t num_buckets;
+} HashTable;
+```
+
+
+
+### C Code Example
+
+A simple implementation of a generic linked list using `void*`:
+
+`practice.h`
+
+```C
+typedef struct Node
+{
+    void *data;
+    struct Node *next;
+} Node;
+
+Node *create_node(void *data);
+void append(Node **head, void *data);
+void print_int_list(Node *head);
+
+void free_list(Node *head);
+```
+
+`functions.c`
+
+```C
+Node *create_node(void *data)
+{
+    Node *new_node = malloc(sizeof(Node));
+    if (new_node == NULL)
+    {
+        printf("Error: malloc failed\n");
+        exit(1);
+    }
+    new_node->data = data;
+    new_node->next = NULL;
+    return new_node;
+}
+void append(Node **head, void *data)
+{
+    Node *new_node = create_node(data);
+    if (*head == NULL)
+    {
+        *head = new_node;
+        return;
+    }
+
+    Node *current = *head;
+    while (current->next != NULL)
+    {
+        current = current->next;
+    }
+    current->next = new_node;
+}
+void print_int_list(Node *head)
+{
+    Node *current = head;
+    while (current != NULL)
+    {
+        printf("%d -> ", *(int *)current->data);
+        current = current->next;
+    }
+    printf("NULL\n");
+}
+
+void free_list(Node *head)
+{
+    Node *current = head;
+    while (current != NULL)
+    {
+        Node *tmp = current;
+        current = current->next;
+        free(tmp);
+    }
+}
+```
+
+`practice.c`
+
+```C
+int main()
+{
+    Node *head = NULL;
+    int a = 1, b = 2, c = 3;
+
+    append(&head, &a);
+    append(&head, &b);
+    append(&head, &c);
+
+    print_int_list(head);
+
+    free_list(head);
+    return 0;
+}
+
+```
+
+
+
+```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+clang -std=c23 -Wall -Wextra -g -c practice.c -o ./obj/practice.o 
+clang -std=c23 -Wall -Wextra -g -c functions.c -o ./obj/functions.o 
+clang -std=c23 -Wall -Wextra -g -c functions_2.c -o ./obj/functions_2.o
+ar -rcs ./libs/libfunctions.a ./obj/functions.o ./obj/functions_2.o
+clang -std=c23 ./obj/practice.o -L./libs -lfunctions -o practice -lpthread -lm -lssl -lcrypto
+valgrind --leak-check=full ./practice 
+==12231== Memcheck, a memory error detector
+==12231== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==12231== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==12231== Command: ./practice
+==12231== 
+1 -> 2 -> 3 -> NULL
+==12231== 
+==12231== HEAP SUMMARY:
+==12231==     in use at exit: 0 bytes in 0 blocks
+==12231==   total heap usage: 4 allocs, 4 frees, 1,072 bytes allocated
+==12231== 
+==12231== All heap blocks were freed -- no leaks are possible
+==12231== 
+==12231== For lists of detected and suppressed errors, rerun with: -s
+==12231== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+
+
+### Advantages and Disadvantages
+
+#### Advantages
+
+1. **Reusability:** Write once, use with any data type.
+2. **Maintainability:** Easier to maintain a single generic implementation rather than multiple type-specific versions.
+3. **Flexibility:** Can handle various data types without modification.
+
+#### Disadvantages
+
+1. **Type Safety:** Using `void*` can lead to runtime errors if not managed carefully.
+2. **Performance Overhead:** Indirection through pointers can incur performance penalties.
+3. **Complexity:** Implementing and using generic containers can be more complex, especially with macros or code generation.
+4. **Debugging Difficulty:** Errors related to type casting or pointer misuse can be harder to trace.
+
+---
+
+## Object-Oriented Programming with C
+
+- In some circumstances, it make sense to design data structures or functions to work on any type that supplies the right operations.
+- To make this work, we will attach the functions for manipulating an object to the object itself.
+- This is the central idea behind object-oriented programming.
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+
+
+#### Output
+
+```shell
+```
+
+
 
 ## Recursion
