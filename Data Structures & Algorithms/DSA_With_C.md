@@ -9532,6 +9532,7 @@ TreeNode *createNode(int value);
 void inOrder(TreeNode *root);
 
 void freeTree(TreeNode *root);
+
 ```
 
 `functions.c`
@@ -10590,11 +10591,125 @@ Post-Order Traversal after deletion:40 80 70 60 1
 
 
 
-### Additional Concepts
+#### Adding Height to our program
+
+```C
+int treeHeight(TreeNode *root){
+    if(root == NULL){
+        return -1; // height of empty tree is -1
+    }
+    
+    int leftHeight = treeHieght(root->left);
+    int rightHeight = treeHeight(root->right);
+    return (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
+}
+```
+
+In `practice.c`
+
+```C
+int main(int argc, char *argv[])
+{
+
+    TreeNode *root = createNode(50);
+    insert(root, 30);
+    insert(root, 20);
+    insert(root, 40);
+    insert(root, 70);
+    insert(root, 60);
+    insert(root, 80);
+    root = insert(root, 1);
+
+    printf("In-Order Traversal: ");
+    inOrder(root); // 20 30 40 50 60 70 80
+    printf("\n");
+
+    printf("Pre-Order Traversal: ");
+    preOrder(root);
+    printf("\n");
+
+    printf("Post-Order Traversal: ");
+    postOrder(root);
+    printf("\n");
+
+    // Search for a value
+    int key = 40;
+    TreeNode *found = search(root, key);
+    if (found)
+    {
+        printf("Value %d found in the BST.\n", key);
+    }
+    else
+    {
+        printf("Value %d not found in the BST.\n", key);
+    }
+
+    int height = treeHeight(root);
+    printf("Height of the tree: %d\n", height);
+
+    // Delete a node
+    root = deleteNode(root, 20);
+    root = deleteNode(root, 30);
+    root = deleteNode(root, 50);
+
+    printf("In-Order Traversal after deletion:");
+    inOrder(root);
+    printf("\n");
+
+    printf("Pre-Order Traversal after deletion:");
+    preOrder(root);
+    printf("\n");
+
+    printf("Post-Order Traversal after deletion:");
+    postOrder(root);
+    printf("\n");
+
+    height = treeHeight(root);
+    printf("Height of the tree after deletion: %d\n", height);
+
+    freeTree(root);
+
+    return 0;
+}
+```
+
+`Output`
+
+```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==12706== Memcheck, a memory error detector
+==12706== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==12706== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==12706== Command: ./practice
+==12706== 
+In-Order Traversal: 1 20 30 40 50 60 70 80 
+Pre-Order Traversal: 50 30 20 1 40 70 60 80 
+Post-Order Traversal: 1 20 40 30 60 80 70 50 
+Value 40 found in the BST.
+Height of the tree: 3
+In-Order Traversal after deletion:1 40 60 70 80 
+Pre-Order Traversal after deletion:60 40 1 70 80 
+Post-Order Traversal after deletion:1 40 80 70 60 
+Height of the tree after deletion: 2
+==12706== 
+==12706== HEAP SUMMARY:
+==12706==     in use at exit: 0 bytes in 0 blocks
+==12706==   total heap usage: 9 allocs, 9 frees, 1,216 bytes allocated
+==12706== 
+==12706== All heap blocks were freed -- no leaks are possible
+==12706== 
+==12706== For lists of detected and suppressed errors, rerun with: -s
+==12706== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+
+
+#### Additional Concepts
 
 - The **size** of a tree is the number of nodes: a leaf by itself has size 1.
 
-#### Height of the Tree
+##### Height of the Tree
 
 - The height of a tree is the number of edges on the longest path from the root to a leaf.
 - 0 for a leaf, at least one in any larger tree.
@@ -10603,3 +10718,413 @@ Post-Order Traversal after deletion:40 80 70 60 1
 - A node `u` is an **ancestor** of a node `v` if `v` is contained in the subtree rooted at `u`.
   - We may write equivalently that `v` is a descendant of `u`.
 - Every node is both an ancestor and a descendent of itself.
+
+##### Key Takeways of BST:
+
+- **BST Properties**: Left child < parent < right child.
+- **Efficiency**: BST operations (search, insert, delete) have an average time complexity of **O(log n)**, but can degrade to **O(n)** if the tree becomes unbalanced.
+- **Traversal Methods**: Essential for accessing and processing all nodes in the tree.
+- **Recursive Thinking**: Many tree operations are naturally implemented using recursion.
+
+
+
+### Heap
+
+A **heap** is a special **binary tree** that satisfies two main properties:
+
+1. **Complete Binary Tree**: All levels of the tree are fully filled except possibly the last level, which is filled from left to right.
+2. **Heap Property:**
+   - **Max-Heap**: Every parent node is **greater than or equal to** its child nodes.
+   - **Min-Heap**: Every parent node is **less than or equal to** its child nodes.
+
+#### Visual Representation:
+
+**Max-Heap Example:**
+
+```css
+      10
+     /  \
+    9    8
+   / \  /
+  7  6 5
+```
+
+**Min-Heap Example:**
+
+```css
+       1
+     /   \
+    3     5
+   / \   /
+  7   9 8
+```
+
+#### Types of Heaps
+
+1. **Max-Heap**: The largest element is at the root. Useful when we need quick access to the maximum element.
+2. **Min-Heap**: The smallest element is at the root. Useful when we need quick access to the minimum element.
+
+**Applications:**
+
+- **Priority Queues**: Heaps efficiently manage elements with priorities.
+- **Heap Sort**: An efficient sorting algorithm.
+- **Graph Algorithms**: Such as Dijkstra’s shortest path. (pronounced dike.struh).
+
+#### Why Use a Heap?
+
+- **Efficient Operations**: Heaps allow insertion and deletion of the root element in **O(log n)** time.
+- **Access to Extremes**: Quickly access the maximum or minimum element.
+- **Space-Efficient**: Can be efficiently represented using arrays.
+
+#### Heap Representation in C
+
+Heaps are typically implemented using **arrays** because of their complete binary tree property. Here's how:
+
+#### Array Representation:
+
+- **Root Node**: Stored at index `0`.
+- For any node at index `i`:
+  - **Left Child**: `2*i + 1`
+  - **Right Child**: `2*i + 2`
+  - **Parent**: `(i - 1) / 2`
+
+#### Example:
+
+Consider the max-heap:
+
+```css
+      10
+     /  \
+    9    8
+   / \  /
+  7  6 5
+```
+
+**Array Representation**: `[10, 9, 8, 7, 6, 5]`
+
+
+
+#### Common Heap Operations
+
+##### Insertion
+
+**Goal**: Add a new element to the heap while maintaining the heap property.
+
+**Steps**:
+
+1. **Add** the new element at the **end** of the array.
+2. **Heapify Up**: Compare the new element with its parent and **swap** if necessary. Repeat until the heap property is restored.
+
+##### Deletion (Extract-Max or Extract-Min)
+
+**Goal**: Remove the root element (maximum for max-heap, minimum for min-heap).
+
+**Steps**:
+
+1. **Replace** the root with the **last** element in the array.
+2. **Remove** the last element.
+3. **Heapify Down**: Compare the new root with its children and **swap** with the larger child (for max-heap) or smaller child (for min-heap). Repeat until the heap property is restored.
+
+##### Heapify
+
+**Heapify** is the process of adjusting the heap to maintain the heap property after insertion or deletion.
+
+
+
+#### Example Code in C (Heap)
+
+Let’s implement a **Max-Heap** in C with the following functionalities:
+
+1. **Insert** an element.
+2. **Extract-Max** (remove and return the maximum element).
+3. **Display** the heap.
+
+##### Program Code
+
+`practice.h`
+
+```C
+typedef struct
+{
+    int data[MAX_SIZE];
+    int size;
+} MaxHeap;
+
+void initHeap(MaxHeap *heap);
+void heapifyUp(MaxHeap *heap, int index);
+void insertHeap(MaxHeap *heap, int value);
+void heapifyDown(MaxHeap *heap, int index);
+int extractMax(MaxHeap *heap);
+void displayHeap(MaxHeap *heap);
+```
+
+`functions.c`
+
+```C
+// Initialize the heap
+void initHeap(MaxHeap *heap)
+{
+    heap->size = 0;
+}
+
+// Heapify up to maintain heap property
+void heapifyUp(MaxHeap *heap, int index)
+{
+    if (index && heap->data[index] > heap->data[(index - 1) / 2])
+    {
+        // Swap current node with parent
+        int temp = heap->data[index];
+        heap->data[index] = heap->data[(index - 1) / 2];
+        heap->data[(index - 1) / 2] = temp;
+
+        // Recursively heapify the parent node
+        heapifyUp(heap, (index - 1) / 2);
+    }
+}
+
+// Insert a new element into the heap
+void insertHeap(MaxHeap *heap, int value)
+{
+    if (heap->size == MAX_SIZE)
+    {
+        printf("Heap is full!\n");
+        return;
+    }
+
+    // Insert the new element at the end
+    heap->data[heap->size] = value;
+    heap->size++;
+
+    // Heapify up to maintain heap property
+    heapifyUp(heap, heap->size - 1);
+}
+
+// Heapify down to maintain heap property
+void heapifyDown(MaxHeap *heap, int index)
+{
+    int largest = index;
+    int left = 2 * index + 1;  // Left child index
+    int right = 2 * index + 2; // Right child index
+
+    // If left child exists and is greater than current largest
+    if (left < heap->size && heap->data[left] > heap->data[largest])
+        largest = left;
+
+    // If right child exists and is greater than current largest
+    if (right < heap->size && heap->data[right] > heap->data[largest])
+        largest = right;
+
+    // If largest is not the current index
+    if (largest != index)
+    {
+        // Swap
+        int temp = heap->data[index];
+        heap->data[index] = heap->data[largest];
+        heap->data[largest] = temp;
+
+        // Recursively heapify the affected sub-tree
+        heapifyDown(heap, largest);
+    }
+}
+
+// Extract the maximum element from the heap
+int extractMax(MaxHeap *heap)
+{
+    if (heap->size <= 0)
+        return -1; // Indicates heap is empty
+
+    if (heap->size == 1)
+    {
+        heap->size--;
+        return heap->data[0];
+    }
+
+    // Store the maximum value
+    int root = heap->data[0];
+
+    // Move the last element to root
+    heap->data[0] = heap->data[heap->size - 1];
+    heap->size--;
+
+    // Heapify down from root to maintain heap property
+    heapifyDown(heap, 0);
+
+    return root;
+}
+
+// Display the heap
+void displayHeap(MaxHeap *heap)
+{
+    for (int i = 0; i < heap->size; i++)
+    {
+        printf("%d ", heap->data[i]);
+    }
+    printf("\n");
+}
+```
+
+`practice.c`
+
+```C
+int main(int argc, char *argv[])
+{
+    MaxHeap heap;
+    initHeap(&heap);
+
+    // Insert elements into the heap
+    insertHeap(&heap, 10);
+    insertHeap(&heap, 20);
+    insertHeap(&heap, 5);
+    insertHeap(&heap, 30);
+    insertHeap(&heap, 40);
+    insertHeap(&heap, 15);
+
+    printf("Heap elements after insertion: ");
+    displayHeap(&heap); // Output: 40 30 15 10 20 5
+
+    // extract the maximum element
+    int max = extractMax(&heap);
+    printf("Extracted max: %d\n", max); // Output: 40
+
+    printf("Heap elements after extracting max: ");
+    displayHeap(&heap); // Output: 30 20 15 10 5
+
+    // insert a new element
+    insertHeap(&heap, 25);
+    printf("Heap elements after inserting 25: ");
+    displayHeap(&heap); // Output: 30 20 25 10 5 15
+    return 0;
+}
+```
+
+###### **Step-by-Step Heap Operations**
+
+**a. Initial Insertions**
+
+**Inserted Elements:** `40, 30, 15, 10, 20, 5`
+
+**Heap Array Representation:**
+
+```css
+Index: 0  1  2  3  4  5
+Value: 40 30 15 10 20 5
+```
+
+**Heap Structure**:
+
+```css
+        40
+       /  \
+     30    15
+    /  \   /
+  10   20 5
+```
+
+**Verification:**
+
+- **40 ≥ 30** and **40 ≥ 15**
+- **30 ≥ 10** and **30 ≥ 20**
+- **15 ≥ 5**
+
+**Result:** Valid Max Heap
+
+**b. Extracting Max (40)**
+
+**Operation:** Remove the maximum element (40).
+
+**Steps:**
+
+1. **Replace Root with Last Element:**
+   - Move `5` to the root.
+   - Heap Array: `[5, 30, 15, 10, 20]`
+2. **Heapify Down from Root (Index 0):**
+   - **Compare 5 with children `30` (Index 1) and `15` (Index 2).**
+   - **30** is the larger child. Swap `5` with `30`.
+   - Heap Array after swap: `[30, 5, 15, 10, 20]`
+3. **Heapify Down from Child (Index 1):**
+   - **Compare 5 with children `10` (Index 3) and `20` (Index 4).**
+   - **20** is the larger child. Swap `5` with `20`.
+   - Heap Array after swap: `[30, 20, 15, 10, 5]`
+
+**Heap Structure After Extraction:**
+
+```css
+        30
+       /  \
+     20    15
+    /  \
+  10    5
+```
+
+**Verification:**
+
+- **30 ≥ 20** and **30 ≥ 15**
+- **20 ≥ 10** and **20 ≥ 5**
+- **15** has no children
+
+**Result:** Valid Max Heap
+
+**c. Inserting 25**
+
+**Steps**:
+
+1. **Insert at the End:**
+   - Add `25` at index `5`.
+   - Heap Array: `[30, 20, 15, 10, 5, 25]`
+2. **Heapify Up from Index 5:**
+   - **Parent Index:** `(5 - 1) / 2 = 2` (Value `15`)
+   - **Compare 25 with 15.** Since `25 > 15`, swap them.
+   - Heap Array after swap: `[30, 20, 25, 10, 5, 15]`
+3. **Heapify Up from New Parent Position (Index 2):**
+   - **Parent Index:** `(2 - 1) / 2 = 0` (Value `30`)
+   - **Compare 25 with 30.** Since `25 < 30`, no further swaps.
+
+**Heap Structure After Inserting `25`:**
+
+```css
+        30
+       /  \
+     20    25
+    /  \   /
+  10    5 15
+```
+
+**Heap Array Representation:**
+
+```css
+Index: 0  1  2  3  4  5
+Value: 30 20 25 10 5 15
+```
+
+**Verification:**
+
+- **30 ≥ 20** and **30 ≥ 25**
+- **20 ≥ 10** and **20 ≥ 5**
+- **25 ≥ 15**
+
+**Result:** **Valid Max Heap**
+
+##### Program Output
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Heap elements after insertion: 40 30 15 10 20 5 
+Extracted max: 40
+Heap elements after extracting max: 30 20 15 10 5 
+Heap elements after inserting 25: 30 20 25 10 5 15 
+```
+
+#### Key Takeaways
+
+- **Heap Property:**
+  - **Max-Heap**: Parent ≥ Children
+  - **Min-Heap**: Parent ≤ Children
+- **Complete Binary Tree**: Efficiently represented using arrays.
+- **Heap Operations:**
+  - **Insertion**: O(log n)
+  - **Extraction**: O(log n)
+  - The time to complete the whole heapifyUp and heapifyDown operation is proportional to the depth of the heap, which will typically be O(log n).
+- **Applications:**
+  - **Priority Queues**: Managing tasks with priorities.
+  - **Heap Sort**: An efficient sorting algorithm.
+  - **Graph Algorithms**: Such as finding the shortest path.
