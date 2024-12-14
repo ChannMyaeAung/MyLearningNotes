@@ -10559,6 +10559,110 @@ int main(int argc, char *argv[])
              80
 ```
 
+#### Explanation of `FreeTree()`
+
+Consider the following BST:
+
+```css
+        50
+       /  \
+     30    70
+    / \    / \
+  20  40  60 80
+```
+
+- **Node Values:** 50 (root), 30, 70, 20, 40, 60, 80
+
+Let's walk through how `freeTree` deallocates each node in the BST using **Post-Order Traversal**.
+
+**a. Initial Call**
+
+- **Function Call:** `freeTree(root)` where `root` points to node `50`.
+
+**b. Processing the Left Subtree of 50**
+
+1. **Call:** `freeTree(30)`
+2. Call: `freeTree(20)`
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Action:** `free(20)` → Node `20` is deallocated.
+3. Call: `freeTree(40)`
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Action:** `free(40)` → Node `40` is deallocated.
+4. **Action:** `free(30)` → Node `30` is deallocated.
+
+**State of the Tree**:
+
+```css
+        50
+          \
+           70
+          / \
+        60 80
+```
+
+**Processing the Right Subtree of 50**
+
+1. **Call:** `freeTree(70)`
+2. Call: `freeTree(60)`
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Action:** `free(60)` → Node `60` is deallocated.
+3. Call: `freeTree(80)`
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Call:** `freeTree(NULL)` → Returns immediately (no action).
+   - **Action:** `free(80)` → Node `80` is deallocated.
+4. **Action:** `free(70)` → Node `70` is deallocated.
+
+**State of the Tree:**
+
+```css
+        50
+```
+
+**Final Action on Root**
+
+- **Action:** `free(50)` → Node `50` is deallocated.
+
+**State of the Tree:**
+
+```css
+    (Empty Tree)
+```
+
+**Visual Representation of the Deallocation Process**
+
+```css
+freeTree(50)
+├─ freeTree(30)
+│  ├─ freeTree(20)
+│  │  ├─ freeTree(NULL)
+│  │  └─ freeTree(NULL)
+│  │     └─ Returns
+│  ├─ freeTree(NULL)
+│  ├─ Action: free(20)
+│  ├─ freeTree(40)
+│  │  ├─ freeTree(NULL)
+│  │  └─ freeTree(NULL)
+│  │     └─ Returns
+│  ├─ Action: free(40)
+│  └─ Action: free(30)
+├─ freeTree(70)
+│  ├─ freeTree(60)
+│  │  ├─ freeTree(NULL)
+│  │  └─ freeTree(NULL)
+│  │     └─ Returns
+│  ├─ Action: free(60)
+│  ├─ freeTree(80)
+│  │  ├─ freeTree(NULL)
+│  │  └─ freeTree(NULL)
+│  │     └─ Returns
+│  ├─ Action: free(80)
+│  └─ Action: free(70)
+└─ Action: free(50)
+```
+
 
 
 #### Program Output
@@ -10831,7 +10935,9 @@ Consider the max-heap:
 
 
 
-#### Example Code in C (Heap)
+### Max-Heap
+
+#### Example Code in C (Max-Heap)
 
 Let’s implement a **Max-Heap** in C with the following functionalities:
 
@@ -11114,7 +11220,375 @@ Heap elements after extracting max: 30 20 15 10 5
 Heap elements after inserting 25: 30 20 25 10 5 15 
 ```
 
-#### Key Takeaways
+### Min-Heap
+
+A **Min-Heap** is a special type of **binary tree** that satisfies the following two main properties:
+
+1. **Complete Binary Tree**: All levels of the tree are fully filled except possibly the last level, which is filled from left to right.
+2. **Heap Property:**
+   - **Min-Heap**: Every parent node is **less than or equal to** its child nodes.
+
+**Visual Representation:**
+
+```css
+       5
+      / \
+     9   8
+    / \  /
+  15 10 12
+
+```
+
+In this min-heap:
+
+- The smallest element (`5`) is at the root.
+- Every parent node is smaller than its children.
+
+**Complete Binary Tree**:
+
+- Ensures that the heap is balanced, leading to efficient operations.
+- Can be efficiently represented using arrays.
+
+**Heap Property**:
+
+- **Min-Heap**: For any given node `N`, the value of `N` is less than or equal to the values of its children.
+- This property ensures that the smallest element is always at the root of the heap.
+
+#### Min-Heap Usage
+
+Min-heaps are widely used due to their efficient performance for specific operations:
+
+- **Priority Queues**: Quickly access and remove the element with the highest priority (smallest element in min-heap).
+- **Graph Algorithms**: Such as Dijkstra’s shortest path algorithm.
+- **Heap Sort**: An efficient sorting algorithm.
+- **Scheduling Algorithms**: Managing tasks based on priority.
+
+#### Common operations of Min-Heap
+
+##### a. Insertion
+
+**Goal**: Add a new element to the heap while maintaining the heap property.
+
+**Steps**:
+
+1. **Add** the new element at the **end** of the array.
+2. **Heapify Up**: Compare the new element with its parent and **swap** if it's smaller. Repeat until the heap property is restored.
+
+##### b. Extraction (Extract-Min)
+
+**Goal**: Remove and return the smallest element (the root) from the heap.
+
+**Steps**:
+
+1. **Replace** the root with the **last** element in the array.
+2. **Remove** the last element.
+3. **Heapify Down**: Compare the new root with its children and **swap** with the smaller child if necessary. Repeat until the heap property is restored.
+
+##### c. Heapify
+
+**Heapify** is the process of adjusting the heap to maintain the heap property after insertion or extraction.
+
+- **Heapify Up**: Used after insertion.
+- **Heapify Down**: Used after extraction.
+
+#### **Array Representation:**
+
+- **Root Node**: Stored at index `0`.
+- For any node at index `i`:
+  - **Left Child**: `2*i + 1`
+  - **Right Child**: `2*i + 2`
+  - **Parent**: `(i - 1) / 2`
+
+🌟 **Example:**
+
+Consider the min-heap:
+
+```css
+       5
+      / \
+     9   8
+    / \  /
+  15 10 12
+```
+
+**Array Representation**: `[5, 9, 8, 15, 10, 12]`
+
+#### Example Code in C (Min-Heap)
+
+`practice.h`
+
+```C
+#define MAX_SIZE 100
+
+typedef struct
+{
+    int data[MAX_SIZE];
+    int size;
+} MinHeap;
+
+void initHeap(MinHeap *heap);
+void heapifyUp(MinHeap *heap, int index);
+void insertHeap(MinHeap *heap, int key);
+void heapifyDown(MinHeap *heap, int index);
+int extractMin(MinHeap *heap);
+void displayHeap(MinHeap *heap);
+```
+
+`functions.c`
+
+```C
+// Initialize the heap
+void initHeap(MinHeap *heap)
+{
+    heap->size = 0;
+}
+
+// Heapify up to maintain heap property
+void heapifyUp(MinHeap *heap, int index)
+{
+    if (index && heap->data[index] < heap->data[(index - 1) / 2])
+    {
+        // Swap current node with parent
+        int temp = heap->data[index];
+        heap->data[index] = heap->data[(index - 1) / 2];
+        heap->data[(index - 1) / 2] = temp;
+
+        // Recursively heapify the parent node
+        heapifyUp(heap, (index - 1) / 2);
+    }
+}
+
+// Insert a new element into the heap
+void insertHeap(MinHeap *heap, int value)
+{
+    if (heap->size == MAX_SIZE)
+    {
+        printf("Heap is full!\n");
+        return;
+    }
+
+    // Insert the new element at the end
+    heap->data[heap->size] = value;
+    heap->size++;
+
+    // Heapify up to maintain heap property
+    heapifyUp(heap, heap->size - 1);
+}
+
+// Heapify down to maintain heap property
+void heapifyDown(MinHeap *heap, int index)
+{
+    int smallest = index;
+    int left = 2 * index + 1;  // Left child index
+    int right = 2 * index + 2; // Right child index
+
+    // If left child exists and is smaller than current smallest
+    if (left < heap->size && heap->data[left] < heap->data[smallest])
+        smallest = left;
+
+    // If right child exists and is smaller than current smallest
+    if (right < heap->size && heap->data[right] < heap->data[smallest])
+        smallest = right;
+
+    // If smallest is not the current index
+    if (smallest != index)
+    {
+        // Swap
+        int temp = heap->data[index];
+        heap->data[index] = heap->data[smallest];
+        heap->data[smallest] = temp;
+
+        // Recursively heapify the affected sub-tree
+        heapifyDown(heap, smallest);
+    }
+}
+
+// Extract the minimum element from the heap
+int extractMin(MinHeap *heap)
+{
+    if (heap->size <= 0)
+        return -1; // Indicates heap is empty
+
+    if (heap->size == 1)
+    {
+        heap->size--;
+        return heap->data[0];
+    }
+
+    // Store the minimum value
+    int root = heap->data[0];
+
+    // Move the last element to root
+    heap->data[0] = heap->data[heap->size - 1];
+    heap->size--;
+
+    // Heapify down from root to maintain heap property
+    heapifyDown(heap, 0);
+
+    return root;
+}
+
+// Display the heap
+void displayHeap(MinHeap *heap)
+{
+    for (int i = 0; i < heap->size; i++)
+    {
+        printf("%d ", heap->data[i]);
+    }
+    printf("\n");
+}
+```
+
+`practice.c`
+
+```C
+// Main function to demonstrate heap operations
+int main() {
+    MinHeap heap;
+    initHeap(&heap);
+
+    // Insert elements into the heap
+    insertHeap(&heap, 10);
+    insertHeap(&heap, 20);
+    insertHeap(&heap, 5);
+    insertHeap(&heap, 30);
+    insertHeap(&heap, 40);
+    insertHeap(&heap, 15);
+
+    printf("Heap elements after insertion: ");
+    displayHeap(&heap); // Expected Output: 5 10 15 30 40 20
+
+    // Extract the minimum element
+    int min = extractMin(&heap);
+    printf("Extracted min: %d\n", min); // Expected Output: 5
+
+    printf("Heap elements after extracting min: ");
+    displayHeap(&heap); // Expected Output: 10 20 15 30 40
+
+    // Insert a new element
+    insertHeap(&heap, 25);
+    printf("Heap elements after inserting 25: ");
+    displayHeap(&heap); // Expected Output: 10 20 15 30 40 25
+
+    return 0;
+}
+```
+
+
+
+#### Code Output
+
+```shell
+chan@CMA:~/C_Programming/practice$ ./practice
+Heap elements after insertion: 5 20 10 30 40 15 
+Extracted min: 5
+Heap elements after extraction: 10 20 15 30 40 
+Heap elements after inserting 25: 10 20 15 30 40 25 
+
+```
+
+##### **Step-by-Step Explanation:**
+
+1. **After Insertion**:
+
+   - Inserted elements in the order: `10`, `20`, `5`, `30`, `40`, `15`.
+   - The heap organizes itself to maintain the min-heap property.
+   - Resulting heap: `[5, 10, 15, 30, 40, 20]`
+
+   ```css
+           5
+         /   \
+       10     15
+      /  \    /
+    30   40  20
+   ```
+
+   - **Root Node (Index 0):** `5`
+
+   - **Left Child of 5 (Index 1):** `10`
+
+   - **Right Child of 5 (Index 2):** `15`
+
+   - **Left Child of 10 (Index 3):** `30`
+
+   - **Right Child of 10 (Index 4):** `40`
+
+   - **Left Child of 15 (Index 5):** `20`
+
+   
+
+2. **After Extracting Min (5)**:
+
+   - The smallest element `5` is removed.
+   - The last element `20` is moved to the root.
+   - Heapify down adjusts the heap to maintain the min-heap property.
+   - Resulting heap: `[10, 20, 15, 30, 40]`
+
+   ```css
+           10
+         /    \
+       20      15
+      /  \
+    30   40
+   ```
+
+   - **Root Node (Index 0):** `10` (after replacing `5` with the last element `20` and heapifying down)
+
+   - **Left Child of 10 (Index 1):** `20`
+
+   - **Right Child of 10 (Index 2):** `15`
+
+   - **Left Child of 20 (Index 3):** `30`
+
+   - **Right Child of 20 (Index 4):** `40`
+
+3. **After Inserting 25**:
+
+   - Inserted `25` into the heap.
+   - Heapify up ensures the min-heap property is maintained.
+   - Resulting heap: `[10, 20, 15, 30, 40, 25]`
+
+   ```css
+           10
+         /    \
+       20      15
+      /  \    /
+    30   40  25
+   ```
+
+   - **Root Node (Index 0):** `10`
+
+   - **Left Child of 10 (Index 1):** `20`
+
+   - **Right Child of 10 (Index 2):** `15`
+
+   - **Left Child of 20 (Index 3):** `30`
+
+   - **Right Child of 20 (Index 4):** `40`
+
+   - **Left Child of 15 (Index 5):** `25`
+
+**Min-Heap Property**:
+
+- The smallest element is always at the root.
+- Every parent node is smaller than or equal to its child nodes.
+
+**Array Representation**:
+
+- Efficiently represents a complete binary tree.
+- Parent and child relationships can be easily calculated using indices.
+
+**Heap Operations**:
+
+- **Insertion**: O(log n) time complexity due to heapify up.
+- **Extraction (Extract-Min)**: O(log n) time complexity due to heapify down.
+- **Display**: O(n) time complexity to traverse the heap.
+
+**Applications**:
+
+- Priority queues, graph algorithms, heap sort, and more.
+
+### Key Takeaways
 
 - **Heap Property:**
   - **Max-Heap**: Parent ≥ Children
@@ -11128,3 +11602,7 @@ Heap elements after inserting 25: 30 20 25 10 5 15
   - **Priority Queues**: Managing tasks with priorities.
   - **Heap Sort**: An efficient sorting algorithm.
   - **Graph Algorithms**: Such as finding the shortest path.
+
+---
+
+## Heapsort
