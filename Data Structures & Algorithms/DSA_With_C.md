@@ -13886,7 +13886,7 @@ Understanding the fundamental properties of 2-3 Trees is crucial for their imple
    - For a **2-node** with key `k`, all keys in the left subtree are less than `k`, and all keys in the right subtree are greater than `k`.
    - For a  3-node with keys  `k1` and  `k2` ( `k1 < k2`):
      - All keys in the leftmost subtree are less than `k1`.
-     - Keys in the middle subtree are between `k1` and `k2`.
+     - Keys in the middle subtree are between `k1` and `k2`. `k1` < values < `k2`
      - Keys in the rightmost subtree are greater than `k2`.
 4. **No Duplicate Keys:**
    - Each key in the tree is unique.
@@ -13898,6 +13898,101 @@ Understanding the fundamental properties of 2-3 Trees is crucial for their imple
 - **Balanced Structure:** Guarantees `O(log n)` time complexity for search, insertion, and deletion.
 - **Simpler Implementation Compared to B-Trees:** Easier to understand and implement for educational purposes.
 - **Consistent Performance:** Avoids the worst-case scenarios of unbalanced trees, such as linked lists.
+
+### **Visual Representation:**
+
+Let's say we start with an empty 2-3 tree and insert the following sequence of keys:
+`10, 20, 5, 15, 30`
+
+- **Insert 10:**
+  Initially empty:
+
+  ```css
+  (Empty)
+  ```
+
+  After inserting 10:
+
+  ```css
+  [10]
+  ```
+
+  This is just a single node (a 2-node with one key).
+
+- **Insert 20:**
+  Insert 20 into the leaf that currently has key 10. Now that leaf will have two keys: 10 and 20, forming a 3-node.
+
+  ```css
+  [10 | 20]
+  ```
+
+  The tree is still just one node, but now it’s a 3-node because it has two keys.
+
+- **Insert 5:**
+  We try to insert 5 into the existing 3-node `[10 | 20]`. Inserting 5 will give the node three keys: 5, 10, and 20. A 2-3 node can’t hold three keys, so we must split.
+
+  Temporary:
+
+  ```css
+  [5 | 10 | 20]
+  ```
+
+  Upon splitting, the middle key (10) moves up to become the root. The left key (5) becomes the left child, and the right key (20) becomes the right child:
+
+  ```css
+       [10]
+      /    \
+   [5]    [20]
+  ```
+
+  Now we have a root with one key (10) and two children: [5] and [20]. Each child is a leaf node with one key.
+
+- **Insert 15:**
+  The keys are currently arranged as:
+
+  ```css
+       [10]
+      /    \
+   [5]    [20]
+  ```
+
+  We need to insert 15. Compare 15 with 10: `15 > 10`, so we go to the right child `[20]`. Insert 15 there. The `[20]` leaf becomes `[15 | 20]`:
+
+  ```css
+       [10]
+      /    \
+   [5]    [15 | 20]
+  ```
+
+  This is valid. The structure remains balanced and no further splits are needed.
+
+- **Insert 30:**
+  Insert 30 into the tree:
+
+  Compare with 10: `30 > 10`, go right. The right child is `[15 | 20]`. Insert 30 there:
+  Now we have `[15 | 20 | 30]`, which is a temporary 3-key leaf. We must split it.
+
+  The middle key (20) goes up to the parent. The parent currently is `[10]`, which has only one key. After adding the middle key (20), we get a parent with `[10 | 20]`. The left part `[15]` remains the left child of the new subtree, and the right part `[30]` becomes a new child:
+
+  The tree restructures to:
+
+  ```css
+           [10 | 20]
+         /     |     \
+      [5]    [15]    [30]
+  ```
+
+  Now we have a well-balanced 2-3 tree. All leaves (5, 15, 30) are at the same level.
+
+**In summary, the tree after inserting 10, 20, 5, 15, 30 is:**
+
+```css
+       [10 | 20]
+      /    |     \
+   [5]   [15]   [30]
+```
+
+Each leaf is at the same level, and internal nodes have either 2 or 3 children.
 
 ### 2-3 Tree Node Structure in C
 
@@ -14142,27 +14237,424 @@ Deletion in 2-3 Trees is more involved as it may require merging nodes or redist
 
 For comprehensive deletion implementation, consider studying B-Trees or more advanced balanced trees like Red-Black Trees, which offer similar balanced properties with more straightforward deletion algorithms.
 
-### Complete 2-3 Tree Implementation
+---
+
+## Red-Black Tree
+
+A **Red-Black Tree** is a type of **self-balancing binary search tree (BST)**. It ensures that the tree remains approximately balanced during insertions and deletions, guaranteeing efficient operations. 
+
+- A red-black tree is a 2-3-4 tree (i.e all nodes have 2,3, or 4 children and 1, 2, or 3 internal keys) where each node is represented by a little binary tree with a black root and zero, one, or two red extender nodes as follows:
+- The invariant for a red-black tree is that
+  - No two red nodes are adjacent.
+  - Every path contains the same number of black nodes.
+- From the variant, it follows that every path has between k and 2k nodes, where k is the black-height, the common number of black nodes on each path.
+- From this, we can prove that the height of the tree is `O(log n)`.
+- Searching in a red-black tree is identical to searching in any other binary search tree.
+  - We simply ignore the color bit on each node.
+  - So search takes `O(log n)` time.
+- For insertions, we use the standard binary search tree insertion algorithm, and insert the new node as a red node.
+  - This may violate the first part of the invariant (it doesn't violate the second because it doesn't change the number of black nodes on any path).
+  - In this case, we need to fix up the constraint by recoloring nodes and possibly performing a single or double rotation.
+- Which operations we need to do depend on the color of the new node’s uncle.
+- If the uncle is red, we can recolor the node’s parent, uncle, and grandparent and get rid of the double-red edge between the new node and its parent without
+  changing the number of black nodes on any path. 
+- In this case, the grandparent becomes red, which may create a new double-red edge which must be fixed
+  recursively. 
+- Thus up to O(log n) such recolorings may occur at a total cost of O(log n).
+- If the uncle is black (which includes the case where the uncle is a null pointer), a rotation (possibly a double rotation) and recoloring is necessary. 
+- In this case,  the new grandparent is always black, so there are no more double-red edges. 
+- So at most two rotations occur after any insertion.
+- Deletion is more complicated but can also be done in O(log n) recolorings and O(1) (in this case up to 3) rotations. 
+- Because deletion is simpler in red-black
+  trees than in AVL trees, and because operations on red-black trees tend to have slightly smaller constants than corresponding operation on AVL trees, red-black
+  trees are more often used than AVL trees in practice.
+
+![Screenshot from 2024-12-20 20-59-20](/home/chan/Pictures/Screenshots/Screenshot from 2024-12-20 20-59-20.png)
+
+![Screenshot from 2024-12-20 20-59-33](/home/chan/Pictures/Screenshots/Screenshot from 2024-12-20 20-59-33.png)
+
+### Red-Black Tree Properties
+
+To maintain balance, Red-Black Trees adhere to the following properties:
+
+1. **Node Color:**
+   - Each node is either **red** or **black**.
+2. **Root Property:**
+   - The **root** of the tree is always **black**.
+3. **Leaf Property:**
+   - All **leaves** (NIL or NULL nodes) are considered **black**.
+4. **Red Property:**
+   - If a node is **red**, then both its **children** are **black**.
+   - This ensures that **no two red nodes appear consecutively**.
+5. **Black-Height Property:**
+   - Every path from a given node to any of its descendant **NIL** nodes contains the **same number of black nodes**.
+   - This uniformity ensures the tree remains balanced.
+
+### How Red-Black Trees Work
+
+Red-Black Trees use these properties to perform efficient insertions, deletions, and searches while maintaining balance. The key operations involve **rotations** and **recoloring** to fix any violations of the properties after modifications.
+
+### Red-Black Tree Implementation in C
+
+Implementing a Red-Black Tree in C is more involved than standard BSTs due to the need to maintain additional properties. Below is a simplified implementation focusing on **insertion** and **searching**. **Deletion** is more complex.
 
 #### Program Code
 
 `practice.h`
 
 ```C
+typedef enum
+{
+    RED,
+    BLACK
+} Color;
+
+typedef struct RBNode
+{
+    int data;
+    Color color;
+    struct RBNode *left, *right, *parent;
+} RBNode;
+
+RBNode *createNode(int data);
+void leftRotate(RBNode **root, RBNode *x);
+void rightRotate(RBNode **root, RBNode *y);
+
+void fixViolation(RBNode **root, RBNode *z);
+
+void insertRB(RBNode **root, int data);
+
+RBNode *searchRB(RBNode *root, int data);
+
+void inorderTraversal(RBNode *root);
+
+void printInOrder(RBNode *root);
+
+void freeTree(RBNode *root);
 ```
 
 `functions.c`
 
 ```C
+// Function to create a new Red-Black Tree node
+RBNode* createNode(int data) {
+    RBNode* newNode = (RBNode*)malloc(sizeof(RBNode));
+    if (!newNode) {
+        printf("Memory allocation error\n");
+        exit(1);
+    }
+    newNode->data = data;
+    newNode->color = RED; // New nodes are initially red
+    newNode->left = newNode->right = newNode->parent = NULL;
+    return newNode;
+}
+
+// Function to perform a left rotation
+void leftRotate(RBNode** root, RBNode* x) {
+    RBNode* y = x->right;
+    x->right = y->left;
+    if (y->left != NULL)
+        y->left->parent = x;
+    
+    y->parent = x->parent;
+    if (x->parent == NULL)
+        *root = y;
+    else if (x == x->parent->left)
+        x->parent->left = y;
+    else
+        x->parent->right = y;
+    
+    y->left = x;
+    x->parent = y;
+}
+
+// Function to perform a right rotation
+void rightRotate(RBNode** root, RBNode* y) {
+    RBNode* x = y->left;
+    y->left = x->right;
+    if (x->right != NULL)
+        x->right->parent = y;
+    
+    x->parent = y->parent;
+    if (y->parent == NULL)
+        *root = x;
+    else if (y == y->parent->left)
+        y->parent->left = x;
+    else
+        y->parent->right = x;
+    
+    x->right = y;
+    y->parent = x;
+}
+
+// Function to fix violations after insertion
+void fixViolation(RBNode** root, RBNode* z) {
+    while (z->parent != NULL && z->parent->color == RED) {
+        RBNode* parent = z->parent;
+        RBNode* grandparent = z->parent->parent;
+        
+        // Case 1: Parent is left child of grandparent
+        if (parent == grandparent->left) {
+            RBNode* uncle = grandparent->right;
+            
+            // Case 1a: Uncle is red
+            if (uncle != NULL && uncle->color == RED) {
+                grandparent->color = RED;
+                parent->color = BLACK;
+                uncle->color = BLACK;
+                z = grandparent;
+            }
+            // Case 1b: Uncle is black or NULL
+            else {
+                if (z == parent->right) {
+                    leftRotate(root, parent);
+                    z = parent;
+                    parent = z->parent;
+                }
+                rightRotate(root, grandparent);
+                // Swap colors
+                parent->color = BLACK;
+                grandparent->color = RED;
+            }
+        }
+        // Case 2: Parent is right child of grandparent
+        else {
+            RBNode* uncle = grandparent->left;
+            
+            // Case 2a: Uncle is red
+            if (uncle != NULL && uncle->color == RED) {
+                grandparent->color = RED;
+                parent->color = BLACK;
+                uncle->color = BLACK;
+                z = grandparent;
+            }
+            // Case 2b: Uncle is black or NULL
+            else {
+                if (z == parent->left) {
+                    rightRotate(root, parent);
+                    z = parent;
+                    parent = z->parent;
+                }
+                leftRotate(root, grandparent);
+                // Swap colors
+                parent->color = BLACK;
+                grandparent->color = RED;
+            }
+        }
+    }
+    (*root)->color = BLACK; // Ensure root is always black
+}
+
+// Function to insert a node into the Red-Black Tree
+void insertRB(RBNode** root, int data) {
+    RBNode* z = createNode(data);
+    RBNode* y = NULL;
+    RBNode* x = *root;
+    
+    // Standard BST insertion
+    while (x != NULL) {
+        y = x;
+        if (z->data < x->data)
+            x = x->left;
+        else if (z->data > x->data)
+            x = x->right;
+        else {
+            printf("Duplicate value %d not inserted.\n", data);
+            free(z);
+            return;
+        }
+    }
+    
+    z->parent = y;
+    if (y == NULL)
+        *root = z; // Tree was empty
+    else if (z->data < y->data)
+        y->left = z;
+    else
+        y->right = z;
+    
+    // Fix Red-Black Tree properties
+    fixViolation(root, z);
+}
+
+// Function to search for a value in the Red-Black Tree
+RBNode* searchRB(RBNode* root, int data) {
+    while (root != NULL) {
+        if (data < root->data)
+            root = root->left;
+        else if (data > root->data)
+            root = root->right;
+        else
+            return root; // Found
+    }
+    return NULL; // Not found
+}
+
+// Function for in-order traversal to display the tree
+void inorderTraversal(RBNode* root) {
+    if (root != NULL) {
+        inorderTraversal(root->left);
+        printf("%d(%s) ", root->data, root->color == RED ? "R" : "B");
+        inorderTraversal(root->right);
+    }
+}
+
+// Function to print the Red-Black Tree in in-order
+void printInOrder(RBNode* root) {
+    printf("In-order Traversal: ");
+    inorderTraversal(root);
+    printf("\n");
+}
+
+void freeTree(RBNode *root)
+{
+    if (root != NULL)
+    {
+        freeTree(root->left);
+        freeTree(root->right);
+        free(root);
+    }
+}
 ```
+
+**Code Breakdown:**
+
+1. **Enumerations and Structures:**
+   - `Color`: Enumerated type to represent node colors (`RED` or `BLACK`).
+   - `RBNode`: Structure representing a node in the Red-Black Tree, containing:
+     - `data`: The integer value stored.
+     - `color`: The color of the node.
+     - `left`, `right`, `parent`: Pointers to child nodes and parent node.
+2. **Node Creation:**
+   - `createNode`: Allocates memory for a new node, initializes its data, sets color to `RED`, and initializes child and parent pointers to `NULL`.
+3. **Rotations:**
+   - Left Rotate (`leftRotate`):
+     - Rotates the subtree to the left, adjusting pointers accordingly.
+   - Right Rotate (`rightRotate`):
+     - Rotates the subtree to the right, adjusting pointers accordingly.
+4. **Fixing Violations (`fixViolation`):**
+   - After insertion, the tree might violate Red-Black properties.
+   - The function corrects these violations by performing rotations and recoloring.
+   - It handles cases based on the color of the node's uncle and the relative positions of the nodes.
+5. **Insertion (`insertRB`):**
+   - Inserts a new node into the tree following standard BST insertion.
+   - After insertion, calls `fixViolation` to maintain Red-Black properties.
+   - Prevents insertion of duplicate values.
+6. **Searching (`searchRB`):**
+   - Standard BST search for a given value.
+   - Returns the node if found; otherwise, returns `NULL`.
+7. **Traversal (`inorderTraversal` & `printInOrder`):**
+   - Performs an in-order traversal of the tree.
+   - Displays each node's data along with its color (`R` for Red, `B` for Black).
 
 `practice.c`
 
 ```C
+int main()
+{
+    RBNode *root = NULL;
+
+    int values[] = {10, 20, 30, 15, 25, 5, 1};
+    int n = sizeof(values) / sizeof(values[0]);
+
+    printf("Inserting values: ");
+    for (int i = 0; i < n; i++)
+    {
+        printf("%d ", values[i]);
+        insertRB(&root, values[i]);
+    }
+    printf("\n");
+	
+    
+    // display in-order traversal
+    printInOrder(root);
+
+    // Search for a value
+    int key = 15;
+    RBNode *found = searchRB(root, key);
+    if (found)
+    {
+        printf("Value %d found in the Red-Black Tree. Color: %s\n", key, found->color == RED ? "Red" : "Black");
+    }
+    else
+    {
+        printf("Value %d not found in the Red-Black Tree.\n", key);
+    }
+
+    // Search for a non-existing value
+    key = 100;
+    found = searchRB(root, key);
+
+    if (found)
+    {
+        printf("Value %d found in the Red-Black Tree. Color: %s\n", key, found->color == RED ? "Red" : "Black");
+    }
+    else
+    {
+        printf("Value %d not found in the Red-Black Tree.\n", key);
+    }
+
+    freeTree(root);
+    return 0;
+}
+
 ```
 
 #### Program Output
 
 ```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==39468== Memcheck, a memory error detector
+==39468== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==39468== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==39468== Command: ./practice
+==39468== 
+Inserting values: 10 20 30 15 25 5 1 
+In-order Traversal: 1(R) 5(B) 10(R) 15(B) 20(B) 25(R) 30(B) 
+Value 15 found in the Red-Black Tree. Color: Black
+Value 100 not found in the Red-Black Tree.
+==39468== 
+==39468== HEAP SUMMARY:
+==39468==     in use at exit: 0 bytes in 0 blocks
+==39468==   total heap usage: 8 allocs, 8 frees, 1,248 bytes allocated
+==39468== 
+==39468== All heap blocks were freed -- no leaks are possible
+==39468== 
+==39468== For lists of detected and suppressed errors, rerun with: -s
+==39468== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+chan@CMA:~/C_Programming/practice$ 
 ```
 
+
+
+#### Visual Representation
+
+After inserting the values `{10, 20, 30, 15, 25, 5, 1}`, the Red-Black Tree maintains its properties. Here's a possible representation:
+
+```css
+           15(B)
+         /       \
+      5(R)      25(R)
+     /   \       /    \
+   1(B) 10(B) 20(B) 30(B)
+```
+
+This structure satisfies all Red-Black Tree properties:
+
+1. **Root is Black.**
+2. **Red nodes have Black children.**
+3. **All paths from root to leaves have the same number of Black nodes.**
+
+### Key Takeaways
+
+**Red-Black Trees:**
+
+- A self-balancing binary search tree ensuring efficient operations.
+- Maintains balance through node coloring and rotations.
+- Guarantees **O(log n)** time complexity for insertion, deletion, and searching.
+- Widely used in standard libraries and applications requiring ordered data structures.
+
+---
+
+## B-Trees
