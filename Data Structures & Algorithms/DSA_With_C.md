@@ -14637,7 +14637,15 @@ Value 100 not found in the Red-Black Tree.
 chan@CMA:~/C_Programming/practice$ 
 ```
 
+#### Visual Representation of All Rotations in RB Tree
 
+![Screenshot 2024-12-22 193804](C:\Users\User\Pictures\Screenshots\Screenshot 2024-12-22 193804.png)
+
+![Screenshot 2024-12-22 193755](C:\Users\User\Pictures\Screenshots\Screenshot 2024-12-22 193755.png)
+
+![Screenshot 2024-12-22 193743](C:\Users\User\Pictures\Screenshots\Screenshot 2024-12-22 193743.png)
+
+![Screenshot 2024-12-22 193735](C:\Users\User\Pictures\Screenshots\Screenshot 2024-12-22 193735.png)
 
 #### Visual Representation
 

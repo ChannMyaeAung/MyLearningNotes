@@ -1634,3 +1634,92 @@ teachers
      - **Together**: They enable pagination by returning a specific subset of documents based on the current page.
      
      This approach ensures that we can efficiently paginate through a large dataset by fetching only the necessary documents for each page.
+
+```
+lib ---
+	actions.ts (Next.js server actions)
+	data.ts
+	models.ts
+	utils.ts
+```
+
+Example `action.ts` with MongoDB.
+
+```ts
+"use server";
+import { revalidatePath } from "next/cache";
+import bcrypt from "bcrypt";
+import { Product, User } from "./models";
+import { connectToDB } from "./utils";
+import { redirect } from "next/navigation";
+
+export const addUser = async (formData: FormData) => {
+  const { username, email, password, mobile, address, isAdmin, isActive } =
+    Object.fromEntries(formData);
+
+  try {
+    await connectToDB();
+
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new Error("User with this email already exists");
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password as string, salt);
+
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      mobile,
+      address,
+      isAdmin,
+      isActive,
+    });
+
+    await newUser.save();
+  } catch (err) {
+    console.error(err);
+    if (err instanceof Error) {
+      throw new Error(err.message);
+    } else {
+      throw new Error("An unknown error occurred");
+    }
+  }
+  revalidatePath("/dashboard/users");
+  redirect("/dashboard/users");
+};
+
+export const addProduct = async (formData: FormData) => {
+  const { title, desc, price, stock, color, size } =
+    Object.fromEntries(formData);
+
+  try {
+    await connectToDB();
+
+    const newProduct = new Product({
+      title,
+      desc,
+      price,
+      stock,
+      color,
+      size,
+    });
+
+    await newProduct.save();
+  } catch (err) {
+    console.error(err);
+    if (err instanceof Error) {
+      throw new Error(err.message);
+    } else {
+      throw new Error("An unknown error occurred");
+    }
+  }
+  revalidatePath("/dashboard/products");
+  redirect("/dashboard/products");
+};
+
+```
+
