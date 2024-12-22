@@ -9888,8 +9888,19 @@ TreeNode* deleteNode(struct Node* root, int key) {
         }
         // Case 3: Two children
         else {
+            // find the min value in the right tree of the node let's say the root is 7 and the child min node we find is 9
             TreeNode* temp = findMin(root->right);
+            
+            // change the root value (7 in this case) to the min value we find which is 9. 
+            // so now we have two 9
+            //    10
+            //   /  \
+            //  9
+            //   \
+            //    9 (we will call our delete func recursive on this 9)
             root->data = temp->data;
+            
+            // recursive on the right node
             root->right = deleteNode(root->right, temp->data);
         }
     }
@@ -14646,6 +14657,264 @@ This structure satisfies all Red-Black Tree properties:
 2. **Red nodes have Black children.**
 3. **All paths from root to leaves have the same number of Black nodes.**
 
+#### Implementing Deletion in Red-Black Trees
+
+`functions.c`
+
+```C
+// Function to replace subtree u with subtree v
+static void transplant(RBNode **root, RBNode *u, RBNode *v)
+{
+    if (u->parent == NULL)
+    {
+        // If u is root, update root to v
+        *root = v;
+    }
+    else if (u == u->parent->left)
+    {
+        // If u is left child, set parent's left child to v
+        u->parent->left = v;
+    }
+    else
+    {
+        // If u is right child, set parent's right child to v
+        u->parent->right = v;
+    }
+    if (v != NULL)
+    {
+        // Update parent pointer of v
+        v->parent = u->parent;
+    }
+}
+
+// Function to find the node with the minimum value in a subtree
+static RBNode *minimum(RBNode *node)
+{
+    while (node->left != NULL)
+    {
+        node = node->left;
+    }
+    return node;
+}
+
+// Function to fix Red-Black Tree properties after deletion
+static void deleteFixup(RBNode **root, RBNode *x)
+{
+    while (x != *root && (x == NULL || x->color == BLACK))
+    {
+        if (x == x->parent->left)
+        {
+            RBNode *w = x->parent->right; // Sibling of x
+            if (w && w->color == RED)
+            {
+                // Case 1: Sibling w is red
+                w->color = BLACK;
+                x->parent->color = RED;
+                leftRotate(root, x->parent);
+                w = x->parent->right;
+            }
+            if ((w->left == NULL || w->left->color == BLACK) &&
+                (w->right == NULL || w->right->color == BLACK))
+            {
+                // Case 2: Both of w's children are black
+                if (w)
+                    w->color = RED;
+                x = x->parent;
+            }
+            else
+            {
+                if (w->right == NULL || w->right->color == BLACK)
+                {
+                    // Case 3: w's right child is black, left child is red
+                    if (w->left)
+                        w->left->color = BLACK;
+                    w->color = RED;
+                    rightRotate(root, w);
+                    w = x->parent->right;
+                }
+                // Case 4: w's right child is red
+                if (w)
+                {
+                    w->color = x->parent->color;
+                    x->parent->color = BLACK;
+                    if (w->right)
+                        w->right->color = BLACK;
+                    leftRotate(root, x->parent);
+                }
+                x = *root;
+            }
+        }
+        else
+        {
+            RBNode *w = x->parent->left; // Sibling of x
+            if (w && w->color == RED)
+            {
+                // Case 1: Sibling w is red
+                w->color = BLACK;
+                x->parent->color = RED;
+                rightRotate(root, x->parent);
+                w = x->parent->left;
+            }
+            if ((w->right == NULL || w->right->color == BLACK) &&
+                (w->left == NULL || w->left->color == BLACK))
+            {
+                // Case 2: Both of w's children are black
+                if (w)
+                    w->color = RED;
+                x = x->parent;
+            }
+            else
+            {
+                if (w->left == NULL || w->left->color == BLACK)
+                {
+                    // Case 3: w's left child is black, right child is red
+                    if (w->right)
+                        w->right->color = BLACK;
+                    w->color = RED;
+                    leftRotate(root, w);
+                    w = x->parent->left;
+                }
+                // Case 4: w's left child is red
+                if (w)
+                {
+                    w->color = x->parent->color;
+                    x->parent->color = BLACK;
+                    if (w->left)
+                        w->left->color = BLACK;
+                    rightRotate(root, x->parent);
+                }
+                x = *root;
+            }
+        }
+    }
+    if (x != NULL)
+        x->color = BLACK;
+}
+
+// Function to delete a node with given data from the Red-Black Tree
+void deleteRB(RBNode **root, int data)
+{
+    // Find the node to be deleted
+    RBNode *z = searchRB(*root, data);
+    if (z == NULL)
+    {
+        // Node not found
+        printf("Value %d not found in the Red-Black Tree.\n", data);
+        return;
+    }
+
+    RBNode *y = z;                 // Node to be removed or moved
+    int yOriginalColor = y->color; // Store original color of y
+    RBNode *x = NULL;              // Child of y that will be moved
+
+    if (z->left == NULL)
+    {
+        // Case 1: z has no left child
+        x = z->right;
+        transplant(root, z, z->right);
+    }
+    else if (z->right == NULL)
+    {
+        // Case 2: z has no right child
+        x = z->left;
+        transplant(root, z, z->left);
+    }
+    else
+    {
+        // Case 3: z has two children
+        y = minimum(z->right);     // Find z's in-order successor
+        yOriginalColor = y->color; // Store original color of y
+        x = y->right;              // x is y's right child
+
+        if (y->parent == z)
+        {
+            // If y is z's direct child
+            if (x != NULL)
+                x->parent = y;
+        }
+        else
+        {
+            // Replace y with its right child
+            transplant(root, y, y->right);
+            y->right = z->right;
+            if (y->right != NULL)
+                y->right->parent = y;
+        }
+        // Replace z with y
+        transplant(root, z, y);
+        y->left = z->left;
+        if (y->left != NULL)
+            y->left->parent = y;
+        y->color = z->color; // Preserve y's color
+    }
+
+    // Free the memory of the deleted node
+    free(z);
+
+    if (yOriginalColor == BLACK)
+    {
+        // If the removed node was black, fix the tree
+        deleteFixup(root, x);
+    }
+}
+```
+
+#### Final Program Output with Delete function
+
+```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==30495== Memcheck, a memory error detector
+==30495== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==30495== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==30495== Command: ./practice
+==30495== 
+Inserting values: 10 20 30 15 25 5 1 
+In-order Traversal: 1(R) 5(B) 10(R) 15(B) 20(B) 25(R) 30(B) 
+Value 15 found in the Red-Black Tree. Color: Black
+Value 100 not found in the Red-Black Tree.
+Deleting value 20
+In-order Traversal: 1(R) 5(B) 10(R) 15(B) 25(B) 30(B) 
+==30495== 
+==30495== HEAP SUMMARY:
+==30495==     in use at exit: 0 bytes in 0 blocks
+==30495==   total heap usage: 8 allocs, 8 frees, 1,248 bytes allocated
+==30495== 
+==30495== All heap blocks were freed -- no leaks are possible
+==30495== 
+==30495== For lists of detected and suppressed errors, rerun with: -s
+==30495== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+```
+
+#### Red-Black Tree Diagram
+
+Before Deletion of 20
+
+```css
+        20(B)
+       /     \
+    10(R)    25(R)
+    /   \       \
+  5(B) 15(B)  30(B)
+ /
+1(R)
+```
+
+After Deletion of 20
+
+```css
+        25(B)
+       /     \
+    10(R)    30(B)
+    /   \
+  5(B) 15(B)
+ /
+1(R)
+```
+
+
+
 ### Key Takeaways
 
 **Red-Black Trees:**
@@ -14658,3 +14927,64 @@ This structure satisfies all Red-Black Tree properties:
 ---
 
 ## B-Trees
+
+A **B-Tree** is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. Unlike binary search trees, B-Trees can have multiple children per node, which helps in reducing the tree's height and optimizing disk reads.
+
+Useful Animation on B-Trees: https://youtu.be/K1a2Bk8NrYQ?si=6e0rIKTN7JCAYfiU
+
+### Key Properties of B-Trees
+
+1. **Balanced**: All leaf nodes are at the same depth.
+2. **Order**: A B-Tree of order `m` can have a maximum of `m` children.
+3. **Nodes:**
+   - Each node contains a certain number of keys.
+   - Keys within a node are stored in a sorted manner.
+   - The number of keys in a node is between ⎡m/2⎤ - 1 and m - 1.
+4. **Children:**
+   - A non-leaf node with `k` keys has `k + 1` children.
+   - Children pointers are arranged such that all keys in the `i`-th child are between the `i-1`-th and `i`-th key in the node.
+
+- A B-tree is a generalization of a 2–3 tree where each node has between `M/2`and `M − 1` children, where `M` is some large constant chosen so that a node (including up to M − 1 pointers and up to M − 2 keys) will just fit inside a single block.
+- When a node would otherwise end up with `M` children, it splits into two nodes with M/2 children each, and **moves its middle key up into its parent**. 
+- As in 2–3 trees this may **eventually require the root to split and a new root to be created**; in practice, M is often large enough that a small fixed height is enough to span as much data as the storage system is capable of holding.
+- Searches in B-trees require looking through log<sub>M</sub> n nodes, at a cost of O(M ) time per node. If M is a constant the total time is asymptotically O(log n). 
+- But the reason for using B-trees is that the O(M) cost of reading a block is trivial compare to the much larger constant time to find the block on the disk; and so it is better to minimize the number of disk accesses (by making M large) than reduce the CPU time.
+
+### Advantages of B-Trees
+
+- **Minimized Disk Access**: Designed to work well on systems that read and write large blocks of data.
+- **Efficient Search, Insert, Delete**: Operations are performed in O(log n) time.
+- **Dynamic Structure**: Grows and shrinks as needed, maintaining balance.
+
+### Applications of B-Trees
+
+- **Databases**: Indexing large datasets to allow quick retrieval.
+- **File Systems**: Managing directories and files efficiently.
+- **Operating Systems**: Managing memory and storage.
+
+
+
+### B-Tree Implementation in C (Simple)
+
+#### Program Code
+
+`practice.h`
+
+```C
+```
+
+`functions.c`
+
+```C
+```
+
+`practice.c`
+
+```C
+```
+
+#### Program Output
+
+```shell
+```
+
