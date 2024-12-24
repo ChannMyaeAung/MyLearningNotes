@@ -14948,14 +14948,41 @@ Useful Animation on B-Trees: https://youtu.be/K1a2Bk8NrYQ?si=6e0rIKTN7JCAYfiU
    - Each node contains a certain number of keys.
    - Keys within a node are stored in a sorted manner.
    - The number of keys in a node is between ⎡m/2⎤ - 1 and m - 1.
+     - Let's say m is 4, so the minimum key a node must have is [4/2] - 1 = 1 and the maximum key a node can have is 4 - 1 = 3. Hence, the number of keys a node can have is between 1 and 3.
 4. **Children:**
    - A non-leaf node with `k` keys has `k + 1` children.
    - Children pointers are arranged such that all keys in the `i`-th child are between the `i-1`-th and `i`-th key in the node.
+   
+     - Let's say we have a node with 3 keys which will have 4 children (leaves).
+   
+     ```css
+     			[10, 20, 30]
+     
+     		/    |        |         \
+       [x < 10] [10<x<20] [20<x<30]  [x > 30]
+     ```
+   
+     - The left most child will have value less than the left most value of its parent.
+     - The middle left child will have value between the left most value and the middle value of its parent.
+     - The middle right child will have value between the middle value and the right most value of its parent.
+     - The right most child will have value greater than the right most value of its parent.
 
 - A B-tree is a generalization of a 2–3 tree where each node has between `M/2`and `M − 1` children, where `M` is some large constant chosen so that a node (including up to M − 1 pointers and up to M − 2 keys) will just fit inside a single block.
 - When a node would otherwise end up with `M` children, it splits into two nodes with M/2 children each, and **moves its middle key up into its parent**. 
+
+  - ```css
+    [10, 20, 30, 40, 50]
+    ```
+  - Let's say the maximum key a node can have is 4.
+  - ```css
+    	[30]
+     /       \
+    [10. 20]  [40, 50]
+    ```
+  - The middle key will becomes the root. If there is a root already there, the value will be merge to that root.
+
 - As in 2–3 trees this may **eventually require the root to split and a new root to be created**; in practice, M is often large enough that a small fixed height is enough to span as much data as the storage system is capable of holding.
-- Searches in B-trees require looking through log<sub>M</sub> n nodes, at a cost of O(M ) time per node. If M is a constant the total time is asymptotically O(log n). 
+- Searches in B-trees require looking through log<sub>M</sub> n nodes, at a cost of O(M) time per node. If M is a constant the total time is asymptotically O(log n). 
 - But the reason for using B-trees is that the O(M) cost of reading a block is trivial compare to the much larger constant time to find the block on the disk; and so it is better to minimize the number of disk accesses (by making M large) than reduce the CPU time.
 
 ### Advantages of B-Trees
@@ -14974,16 +15001,551 @@ Useful Animation on B-Trees: https://youtu.be/K1a2Bk8NrYQ?si=6e0rIKTN7JCAYfiU
 
 ### B-Tree Implementation in C (Simple)
 
-#### Program Code
+#### Code Intro with explanation and/or visualization
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+// Minimum degree (defines the range for number of keys)
+#define T 3
+
+// B-Tree node structure
+typedef struct BTreeNode {
+    int *keys;               // An array of keys
+    int t;                   // Minimum degree
+    struct BTreeNode **C;    // An array of child pointers
+    int n;                   // Current number of keys
+    bool leaf;               // Is true when node is leaf. Otherwise false
+} BTreeNode;
+```
+
+##### Creating a New B-Tree Node
+
+```c
+BTreeNode* createNode(int t, bool leaf) {
+    BTreeNode* node = (BTreeNode*) malloc(sizeof(BTreeNode));
+    node->t = t;
+    node->leaf = leaf;
+
+    node->keys = (int*) malloc(sizeof(int) * (2 * t - 1));
+    node->C = (BTreeNode**) malloc(sizeof(BTreeNode*) * (2 * t));
+
+    node->n = 0;
+    return node;
+}
+```
+
+##### B-Tree Structure
+
+```c
+typedef struct BTree {
+    BTreeNode* root;
+    int t;
+} BTree;
+```
+
+##### Initializing a B-Tree
+
+```c
+BTree* initializeBTree(int t) {
+    BTree* tree = (BTree*) malloc(sizeof(BTree));
+    tree->t = t;
+    tree->root = createNode(t, true);
+    return tree;
+}
+```
+
+##### Searching in a B-Tree
+
+```c
+BTreeNode *search(BTreeNode *root, int key)
+{
+    int i = 0;
+
+    // checks if the search key is > the current key at index i
+    while (i < root->n && key > root->keys[i])
+    {
+        // increment i to continue checking the next key
+        i++;
+    }
+
+    if (i < root->n && root->keys[i] == key)
+    {
+        return root;
+    }
+
+    if (root->leaf)
+    {
+        return NULL;
+    }
+
+    // once the loop finishes, the value of i will indicate the appropriate child node to search next.
+    return search(root->C[i], key);
+}
+```
+
+###### Visualization of searching in B-Tree
+
+- Let's say we want to find the value 30 in the following node:
+
+```css
+ i  i = 1 i = 2 (found it!)
+ ↓   ↓    ↓
+[10, 20, 30]
+```
+
+- If we want to find the value 14 in the following node:
+
+  ```css
+             i          i = 1     i = 2 
+   			 ↓          ↓         ↓
+  			[10,      20,         30]
+             /      |             |           \
+       [5,6,7,8] [11,12,13,14] [21,22,23,24]  [32,33,34,35]
+  ```
+
+- Since 12 is between 10 and 20, we don't move forward
+
+##### Splitting a Child
+
+Before inserting a new key, if the child node is full, it needs to be split.
+
+```c
+// i = index in the parent's child array where the new child will be inserted
+void splitChild(BTreeNode *parent, int i, BTreeNode *fullChild)
+{
+    // Minimum degree
+    int t = parent->t;
+
+    // A new node to hold the latter half of fullChild's keys
+    BTreeNode *newChild = createNode(t, fullChild->leaf);
+
+    // # of keys in newChild after splitting.
+    newChild->n = t - 1;
+
+    // copy the last (t-1) keys of fullChild to newChild
+    for (int j = 0; j < t - 1; j++)
+    {
+        newChild->keys[j] = fullChild->keys[j + t];
+    }
+
+    // Copy the last t children of fullChild to newChild
+    if (!fullChild->leaf)
+    {
+        for (int j = 0; j < t; j++)
+        {
+            newChild->C[j] = fullChild->C[j + t];
+        }
+    }
+
+    // Update the # of keys in fullChild
+    fullChild->n = t - 1;
+
+    // Create space for newChild in parent
+    // shifts the child pointers in the parent node to make room for the new child
+    for (int j = parent->n; j >= i + 1; j--)
+    {
+        parent->C[j + 1] = parent->C[j];
+    }
+
+    // inserts newChild as a child of parent at position i + 1
+    parent->C[i + 1] = newChild;
+
+    // Move keys in parent to make space for the middle key
+    for (int j = parent->n - 1; j >= i; j--)
+    {
+        parent->keys[j + 1] = parent->keys[j];
+    }
+
+    // Move the middle key up to the parent
+    parent->keys[i] = fullChild->keys[t - 1];
+    parent->n += 1;
+}
+```
+
+###### Visualization of Splitting in B-Trees
+
+```css
+                [40, 80]
+               /    |     \
+[10, 20, 30, 35, 40]   [60, 70]   [90, 100]
+
+```
+
+
+
+T = 3 as we have defined, we can have # of keys between 1 and 3.
+
+**Parent Node:** `[40, 80]` with **2 keys** (valid, 2≤keys≤5)
+
+**Children:**
+
+- **Child 0:** `[10, 20, 30, 35, 40]` with **5 keys** (**overfull** if inserting another key, but assuming we need to split now)
+- **Child 1:** `[60, 70]` with **2 keys** (valid)
+- **Child 2:** `[90, 100]` with **2 keys** (valid)
+
+###### **Step-by-Step Splitting Process**
+
+**Step 1: Identify the Overfull Child**
+
+- **Overfull Child:** `[10, 20, 30, 35, 40]` (5 keys, which is the maximum allowed but needs splitting if inserting another key)
+
+**Step 2: Apply `splitChild` Function**
+
+1. **Parameters:**
+   - **Parent Node:** `[40, 80]`
+   - **Index `i`:** `0` (Child 0 is overfull)
+   - **Full Child:** `[10, 20, 30, 35, 40]`
+   - **Minimum Degree t=3.**
+2. **Determine Split Parameters:**
+   - **Median Key (to promote):** `30` (3rd key, index t−1=2)
+   - **Keys to be in the left node after split:** First t−1=2 keys: `[10, 20]`
+   - **Keys to be in the right node after split:** Last t−1=2 keys: `[35, 40]`
+   - **Promoted Key:** `30`
+3. **Create `newChild` and Assign Keys:**
+   - **`newChild->keys`:** `[35, 40]`
+   - **`newChild->n`:** `2` (correct as t−1=2)
+4. **Update `fullChild`:**
+   - **`fullChild->keys`:** `[10, 20]` (first two keys)
+   - **`fullChild->n`:** `2`
+5. **Promote the Median Key to Parent:**
+   - **Parent's Keys Before Promotion:** `[40, 80]`
+   - **Insert `30` into Parent:** After insertion, Parent's keys become `[30, 40, 80]`
+   - **Parent's Key Count:** `3` (valid, 2≤3≤5)
+6. **Update Parent's Children Pointers:**
+   - Parent's Children After Split:
+     - **Child 0:** `[10, 20]`
+     - **Child 1:** `[35, 40]` (`newChild`)
+     - **Child 2:** `[60, 70]`
+     - **Child 3:** `[90, 100]`
+
+#### **Visual Representation After Correct Split**
+
+```css
+                 [30, 40, 80]
+                 /      |      |      \
+       [10, 20]    [35, 40]   [60, 70]   [90, 10
+```
+
+###### **Detailed Steps Mapped to `splitChild` Function**
+
+Let’s align the corrected example with your `splitChild` function:
+
+1. **Create New Child:**
+
+   ```c
+   BTreeNode *newChild = createNode(t, fullChild->leaf);
+   ```
+
+   - **`newChild`:** Created as a new node, same leaf status as `fullChild`.
+
+2. **Assign Keys to `newChild`:**
+
+   ```c
+   cnewChild->n = t - 1; // newChild->n = 2
+   for (int j = 0; j < t - 1; j++)
+   {
+       newChild->keys[j] = fullChild->keys[j + t];
+   }
+   ```
+
+   - **Keys Moved:** `[35, 40]` (assuming `fullChild->keys` are `[10, 20, 30, 35, 40]`)
+   - **Explanation:** For  t=3 , j+t iterates as follows:
+     - j=0: `newChild->keys[0] = fullChild->keys[3] = 35`
+     - j=1j: `newChild->keys[1] = fullChild->keys[4] = 40`
+
+3. **Assign Children to `newChild` (if not a leaf):**
+
+   ```c
+   if (!fullChild->leaf)
+   {
+       for (int j = 0; j < t; j++)
+       {
+           newChild->C[j] = fullChild->C[j + t];
+       }
+   }
+   ```
+
+   - **In this example:** Assuming the `fullChild` is a leaf, so no children to assign.
+
+4. **Update `fullChild` Key Count:**
+
+   ```c
+   fullChild->n = t - 1; // fullChild->n = 2
+   ```
+
+   - **`fullChild` After Split:** `[10, 20]` with `n = 2`
+
+5. **Shift Parent's Children to Make Room for `newChild`:**
+
+   ```c
+   for (int j = parent->n; j >= i + 1; j--)
+   {
+       parent->C[j + 1] = parent->C[j];
+   }
+   ```
+
+   - **Shifting Children:** Existing children are shifted to the right to accommodate the new child.
+
+6. **Insert `newChild` into Parent's Children:**
+
+   ```c
+   parent->C[i + 1] = newChild;
+   ```
+
+   - Parent's Children After Insertion:
+     - **Child 0:** `[10, 20]`
+     - **Child 1:** `[35, 40]` (`newChild`)
+     - **Child 2:** `[60, 70]`
+     - **Child 3:** `[90, 100]`
+
+7. **Shift Parent's Keys to Make Room for Promoted Key:**
+
+   ```c
+   for (int j = parent->n - 1; j >= i; j--)
+   {
+       parent->keys[j + 1] = parent->keys[j];
+   }
+   ```
+
+   - **Shifting Keys:** Existing keys are shifted to the right to insert the promoted key.
+
+8. **Promote the Median Key to Parent:**
+
+   ```c
+   parent->keys[i] = fullChild->keys[t - 1]; // parent->keys[0] = 30
+   parent->n += 1; // parent->n = 3
+   ```
+
+   - **Promoted Key:** `30`
+   - **Parent's Keys After Promotion:** `[30, 40, 80]`
+
+**Final Balanced B-Tree Structure**
+
+```css
+                  [30, 40, 80]
+                 /      |      |      \
+       [10, 20]    [35, 40]   [60, 70]   [90, 100
+```
+
+##### Inserting a Key
+
+Insertion involves finding the correct position for the new key and ensuring that nodes are split if necessary to maintain B-Tree properties.
+
+```c
+void insertNonFull(BTreeNode* node, int key) {
+    int i = node->n - 1;
+
+    if (node->leaf) {
+        // Find the location where new key must be inserted
+        while (i >= 0 && node->keys[i] > key) {
+            node->keys[i + 1] = node->keys[i];
+            i--;
+        }
+
+        // Insert the new key at found location
+        node->keys[i + 1] = key;
+        node->n += 1;
+    } else {
+        // Find the child which is going to have the new key
+        while (i >= 0 && node->keys[i] > key)
+            i--;
+
+        // Check if the found child is full
+        if (node->C[i + 1]->n == 2 * node->t - 1) {
+            // If the child is full, split it
+            splitChild(node, i + 1, node->C[i + 1]);
+
+            // After split, the middle key of C[i+1] goes up and
+            // C[i+1] is split into two. Decide which of the two
+            // will have the new key
+            if (node->keys[i + 1] < key)
+                i++;
+        }
+        insertNonFull(node->C[i + 1], key);
+    }
+}
+
+void insert(BTree* tree, int key) {
+    BTreeNode* root = tree->root;
+
+    // If root is full, then tree grows in height
+    if (root->n == 2 * tree->t - 1) {
+        BTreeNode* s = createNode(tree->t, false);
+        s->C[0] = root;
+        splitChild(s, 0, root);
+
+        // New root has two children now. Decide which child to insert the key
+        int i = 0;
+        if (s->keys[0] < key)
+            i++;
+        insertNonFull(s->C[i], key);
+
+        tree->root = s;
+    } else {
+        insertNonFull(root, key);
+    }
+}
+```
+
+##### Traversing the B-Tree
+
+A simple in-order traversal to print the keys.
+
+```c
+void traverse(BTreeNode* root) {
+    if (root != NULL) {
+        int i;
+        for (i = 0; i < root->n; i++) {
+            if (!root->leaf)
+                traverse(root->C[i]);
+            printf("%d ", root->keys[i]);
+        }
+        if (!root->leaf)
+            traverse(root->C[i]);
+    }
+}
+```
+
+#### Full Program Code
 
 `practice.h`
 
 ```C
+// Minimum degree (defines the range for number of keys)
+#define T 3
+
+// B-Tree node structure
+typedef struct BTreeNode {
+    int *keys;               // An array of keys
+    int t;                   // Minimum degree
+    struct BTreeNode **C;    // An array of child pointers
+    int n;                   // Current number of keys
+    bool leaf;               // Is true when node is leaf. Otherwise false
+} BTreeNode;
+
+typedef struct BTree
+{
+    BTreeNode *root;
+    int t;
+} BTree;
+
+BTreeNode *createNode(int t, bool leaf);
+
+BTree *initializeBTree(int t);
+BTreeNode *search(BTreeNode *root, int key);
+void splitChild(BTreeNode *parent, int i, BTreeNode *fullChild);
+
+void insertNonFull(BTreeNode *node, int key);
+void insert(BTree *tree, int key);
 ```
 
 `functions.c`
 
 ```C
+BTreeNode *createNode(int t, bool leaf)
+{
+    BTreeNode *node = malloc(sizeof(BTreeNode));
+    node->t = t;
+    node->leaf = leaf;
+
+    node->keys = malloc(sizeof(int) * (2 * t - 1));
+    node->C = malloc(sizeof(BTreeNode *) * (2 * t));
+
+    node->n = 0;
+    return node;
+}
+
+BTree *initializeBTree(int t)
+{
+    BTree *tree = malloc(sizeof(BTree));
+    tree->t = t;
+    tree->root = createNode(t, true);
+    return tree;
+}
+BTreeNode *search(BTreeNode *root, int key)
+{
+    int i = 0;
+
+    // checks if the search key is > the current key at index i
+    while (i < root->n && key > root->keys[i])
+    {
+        // increment i to continue checking the next key
+        i++;
+    }
+
+    if (i < root->n && root->keys[i] == key)
+    {
+        return root;
+    }
+
+    if (root->leaf)
+    {
+        return NULL;
+    }
+
+    // once the loop finishes, the value of i will indicate the appropriate child node to search next.
+    return search(root->C[i], key);
+}
+
+// i = index in the parent's child array where the new child will be inserted
+void splitChild(BTreeNode *parent, int i, BTreeNode *fullChild)
+{
+    // Minimum degree
+    int t = parent->t;
+
+    // A new node to hold the latter half of fullChild's keys
+    BTreeNode *newChild = createNode(t, fullChild->leaf);
+
+    // # of keys in newChild after splitting.
+    newChild->n = t - 1;
+
+    // copy the last (t-1) keys of fullChild to newChild
+    for(int j = 0; j < t - 1; j++){
+        newChild->keys[j] = fullChild->keys[j + t];
+    }
+
+    // Copy the last t children of fullChild to newChild
+    if(!fullChild->leaf){
+        for(int j = 0; j < t; j++){
+            newChild->C[j] = fullChild->C[j + t];
+        }
+    }
+
+    // Update the # of keys in fullChild
+    fullChild->n = t - 1;
+
+    // Create space for newChild in parent
+    // shifts the child pointers in the parent node to make room for the new child
+    for(int j = parent->n; j >= i + 1; j--){
+        parent->C[j + 1] = parent->C[j];
+    }
+
+    // inserts newChild as a child of parent at position i + 1
+    parent->C[i + 1] = newChild;
+
+    // Move keys in parent to make space for the middle key
+    for(int j = parent->n - 1; j >= i; j--){
+        parent->keys[j + 1] = parent->keys[j];
+    }
+
+    // Move the middle key up to the parent
+    parent->keys[i] = fullChild->keys[t - 1];
+    parent->n += 1;
+}
+
+void insertNonFull(BTreeNode *node, int key)
+{
+}
+void insert(BTree *tree, int key)
+{
+}
+
+void traverse(BTreeNode *root)
+{
+}
 ```
 
 `practice.c`
@@ -14995,4 +15557,10 @@ Useful Animation on B-Trees: https://youtu.be/K1a2Bk8NrYQ?si=6e0rIKTN7JCAYfiU
 
 ```shell
 ```
+
+
+
+---
+
+## Splay Trees
 
