@@ -202,6 +202,13 @@ void insertNonFull(BTreeNode *node, int key)
             i--;
         }
 
+        // if the key already exists in the internal node, increment its count
+        if (i >= 0 && node->keys[i].value == key)
+        {
+            node->keys[i].count++;
+            return;
+        }
+
         // check if the found child is full
         if (node->C[i + 1]->n == 2 * node->t - 1)
         {
@@ -214,6 +221,12 @@ void insertNonFull(BTreeNode *node, int key)
             if (node->keys[i + 1].value < key)
             {
                 i++;
+            }
+            else if (key == node->keys[i + 1].value)
+            {
+                // if the key equals the middle key, increment count
+                node->keys[i + 1].count++;
+                return;
             }
         }
         // recursively call insertNonFull on the chosen child
@@ -240,6 +253,12 @@ void insert(BTree *tree, int key)
         if (s->keys[0].value < key)
         {
             i++;
+        }
+        else if (s->keys[0].value == key)
+        {
+            // if the key equals the middle key after split, increment count
+            s->keys[0].count++;
+            return;
         }
 
         // call insertNonFull() on the appropriate child node to insert the new key
@@ -693,6 +712,29 @@ int main()
 #### Program Output
 
 ```shell
+chan@CMA:~/C_Programming/test$ ./final
+Enter the minimum degree (t) for the B-Tree: 3
+Inserting keys: 10 20 5 6 12 30 7 17 6 10 10 
+Traversal of the constructed B-tree is: 
+5(1) 6(2) 7(1) 10(3) 12(1) 17(1) 20(1) 30(1) 
+Key 6 found in the B-Tree with count 2.
+
+Deleting key 6...
+Traversal after deletion is: 5(1) 6(1) 7(1) 10(3) 12(1) 17(1) 20(1) 30(1) 
+Key 6 found in the B-Tree.
+
+Deleting key 6...
+Traversal after deletion is: 5(1) 7(1) 10(3) 12(1) 17(1) 20(1) 30(1) 
+Key 6 not found in the B-Tree.
+
+Deleting key 10...
+Traversal after deletion is: 5(1) 7(1) 12(3) 17(1) 20(1) 30(1) 
+Key 10 not found in the B-Tree.
+
+Deleting key 10...
+The key 10 does not exist in the tree.
+Traversal after deletion is: 5(1) 7(1) 12(3) 17(1) 20(1) 30(1) 
+Key 10 not found in the B-Tree.
 
 ```
 

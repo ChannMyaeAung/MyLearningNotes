@@ -246,3 +246,10 @@ Deletion in B⁺ Trees is intricate. Here's a high-level overview without code:
    - Update internal nodes to reflect any changes in keys due to merging or borrowing.
 
 **Note:** Implementing deletion requires careful handling of various cases and maintaining the tree's balance. Due to its complexity, a full implementation is beyond this guide's scope.
+
+**Limitations:**
+
+- **Parent Pointers:** The current implementation lacks parent pointers, making it necessary to traverse from the root to find a node's parent. This can be inefficient for large trees.
+- **Deletion Operation:** The deletion operation is not implemented due to its complexity.
+- **Data Storage:** The current implementation stores only keys. In practice, leaf nodes should store pointers to actual data records.
+- **Error Handling:** Minimal error handling is included. A production-quality implementation should handle memory allocation failures and other edge cases.
