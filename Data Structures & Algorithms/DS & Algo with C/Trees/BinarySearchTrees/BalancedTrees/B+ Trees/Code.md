@@ -1,5 +1,7 @@
 # Implementation of B+Tree in C
 
+#### Program Code
+
 `hello.h`
 
 ```C
@@ -7,7 +9,7 @@
 #ifndef HELLO_H
 #define HELLO_H
 
-#define M 4 //
+#define M 4 // Order of the B+ Tree
 
 typedef struct BPTreeNode
 {
@@ -31,10 +33,11 @@ BPTreeNode *split_internal(BPTreeNode *internal, int *new_key);
 
 BPTreeNode *insert_into_parent(BPTreeNode *root, BPTreeNode *left, int key, BPTreeNode *right);
 BPTreeNode *insert(BPTreeNode *root, int key);
-void print_tree(BPTreeNode *root);
+void print_tree(BPTreeNode *root, int level);
 
 void free_tree(BPTreeNode *root);
-#endif // HELLO_H
+
+BPTreeNode *find_parent(BPTreeNode *current, BPTreeNode *child);
 ```
 
 `hello.c`
@@ -54,6 +57,7 @@ void free_tree(BPTreeNode *root);
 #include <assert.h>
 #include "hello.h"
 
+// Function to create a new B+ Tree node
 BPTreeNode *create_node(bool is_leaf)
 {
     BPTreeNode *node = malloc(sizeof(BPTreeNode));
@@ -73,6 +77,26 @@ BPTreeNode *create_node(bool is_leaf)
     return node;
 }
 
+// Recursive function to find the parent of a given child node
+BPTreeNode *find_parent(BPTreeNode *current, BPTreeNode *child)
+{
+    if (current == NULL || current->is_leaf)
+        return NULL;
+
+    for (int i = 0; i <= current->num_keys; i++)
+    {
+        if (current->children[i] == child)
+        {
+            return current;
+        }
+        BPTreeNode *parent = find_parent(current->children[i], child);
+        if (parent != NULL)
+            return parent;
+    }
+    return NULL;
+}
+
+// Function to search for a key in the B+ Tree
 BPTreeNode *search(BPTreeNode *root, int key)
 {
     if (root == NULL)
@@ -104,13 +128,13 @@ BPTreeNode *search(BPTreeNode *root, int key)
     }
 }
 
+// Function to insert a key into a leaf node
 void insert_into_leaf(BPTreeNode *leaf, int key)
 {
     int i = leaf->num_keys - 1;
-    // find the position to insert the new key
+    // Find the position to insert the new key
     while (i >= 0 && leaf->keys[i] > key)
     {
-
         // Shift the keys to the right one space
         leaf->keys[i + 1] = leaf->keys[i];
         i--;
@@ -119,6 +143,7 @@ void insert_into_leaf(BPTreeNode *leaf, int key)
     leaf->num_keys++;
 }
 
+// Function to split a leaf node
 BPTreeNode *split_leaf(BPTreeNode *leaf, int *new_key)
 {
     BPTreeNode *new_leaf = create_node(true);
@@ -141,6 +166,7 @@ BPTreeNode *split_leaf(BPTreeNode *leaf, int *new_key)
     return new_leaf;
 }
 
+// Function to insert a key and child into an internal node
 void insert_into_internal(BPTreeNode *internal, int key, BPTreeNode *child)
 {
     int i = internal->num_keys - 1;
@@ -156,15 +182,13 @@ void insert_into_internal(BPTreeNode *internal, int key, BPTreeNode *child)
     internal->num_keys++;
 }
 
-// function to split an internal node and return the new internal node
+// Function to split an internal node
 BPTreeNode *split_internal(BPTreeNode *internal, int *new_key)
 {
     BPTreeNode *new_internal = create_node(false);
     int mid = M / 2;
     *new_key = internal->keys[mid];
     new_internal->num_keys = internal->num_keys - mid - 1;
-
-    // Move keys and children to the new internal node
     for (int i = 0; i < new_internal->num_keys; i++)
     {
         new_internal->keys[i] = internal->keys[mid + 1 + i];
@@ -172,7 +196,6 @@ BPTreeNode *split_internal(BPTreeNode *internal, int *new_key)
     }
     new_internal->children[new_internal->num_keys] = internal->children[internal->num_keys + 1];
     internal->num_keys = mid;
-
     return new_internal;
 }
 
@@ -191,46 +214,7 @@ BPTreeNode *insert_into_parent(BPTreeNode *root, BPTreeNode *left, int key, BPTr
     }
 
     // Case 2: Find the parent of the node being split.
-    BPTreeNode *parent = NULL;
-    BPTreeNode *current = root;
-
-    while (!current->is_leaf)
-    {
-        int i;
-        for (i = 0; i < current->num_keys; i++)
-        {
-            if (current->children[i] == left)
-            {
-                parent = current;
-                break;
-            }
-            else if (key < current->keys[i])
-            {
-                current = current->children[i];
-                break;
-            }
-            else if (left->keys[0] > current->keys[i])
-            {
-                // Continue to the next child if the new key is greater
-                if (i == current->num_keys - 1)
-                {
-                    current = current->children[i + 1];
-                    break;
-                }
-            }
-        }
-
-        if (parent != NULL)
-        {
-            break;
-        }
-
-        // If we have iterated through all keys and not found the parent
-        if (i == current->num_keys)
-        {
-            current = current->children[i];
-        }
-    }
+    BPTreeNode *parent = find_parent(root, left);
 
     // If parent is still not found, there's an inconsistency in the tree.
     if (parent == NULL)
@@ -252,6 +236,8 @@ BPTreeNode *insert_into_parent(BPTreeNode *root, BPTreeNode *left, int key, BPTr
 
     return root;
 }
+
+// Function to insert a key into the B+ Tree
 BPTreeNode *insert(BPTreeNode *root, int key)
 {
     if (root == NULL)
@@ -274,7 +260,7 @@ BPTreeNode *insert(BPTreeNode *root, int key)
         leaf = leaf->children[i];
     }
 
-    // insert the key into the leaf node
+    // Insert the key into the leaf node
     insert_into_leaf(leaf, key);
 
     // Check for overflow
@@ -283,12 +269,13 @@ BPTreeNode *insert(BPTreeNode *root, int key)
         int new_key;
         BPTreeNode *new_leaf = split_leaf(leaf, &new_key);
 
-        // insert the new key into the parent
+        // Insert the new key into the parent
         root = insert_into_parent(root, leaf, new_key, new_leaf);
     }
     return root;
 }
 
+// Function to print the B+ Tree structure
 void print_tree(BPTreeNode *root, int level)
 {
     if (root == NULL)
@@ -310,6 +297,7 @@ void print_tree(BPTreeNode *root, int level)
     }
 }
 
+// Function to free all nodes in the B+ Tree
 void free_tree(BPTreeNode *root)
 {
     if (root == NULL)
@@ -347,7 +335,7 @@ int main()
     }
 
     printf("B+ Tree Structure: \n");
-    print_tree(root, 0);
+    print_tree(root, 0); // Start from level 0
 
     int search_key = 6;
     BPTreeNode *result = search(root, search_key);
@@ -364,5 +352,38 @@ int main()
     root = NULL;
     return 0;
 }
+```
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==19875== Memcheck, a memory error detector
+==19875== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==19875== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==19875== Command: ./final
+==19875== 
+B+ Tree Structure: 
+Level 0: 10 20 
+Level 1: 5 6 7 
+Level 1: 10 12 17 
+Level 1: 20 30 
+Key 6 found in the B+ tree.
+==19875== 
+==19875== HEAP SUMMARY:
+==19875==     in use at exit: 0 bytes in 0 blocks
+==19875==   total heap usage: 5 allocs, 5 frees, 1,280 bytes allocated
+==19875== 
+==19875== All heap blocks were freed -- no leaks are possible
+==19875== 
+==19875== For lists of detected and suppressed errors, rerun with: -s
+==19875== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+```css
+Level 0:        		[ 10 | 20 ]
+               		/      	|        \
+Level 1:  [5 | 6 | 7]  [10 | 12 | 17]  [20 | 30]
 ```
 
