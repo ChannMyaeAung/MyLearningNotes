@@ -255,6 +255,9 @@ Adjacency Matrix:
 
 An adjacency list represents a graph as an array of lists. The array index represents each vertex, and each list contains the adjacent vertices (and possibly weights).
 
+- These lists may be represented as linked lists or in languages like C may be represented by variable-length arrays.
+- Adjacency lists are more commonly used than adjacency matrices.
+
 **Pros:**
 
 - Efficient for sparse graphs, using O(V + E) space.
@@ -278,30 +281,48 @@ typedef struct AdjListNode {
 
 // Structure to represent an adjacency list
 typedef struct AdjList {
-    AdjListNode* head;
+    AdjListNode* head; // pointer to the first node in the adjacency list
 } AdjList;
 
 // Structure to represent the graph
 typedef struct Graph {
     int numVertices;
-    AdjList* array;
+    AdjList* array; // array of adjacency lists
 } Graph;
 
-// Function to create a new adjacency list node
+// Function to create a new adjacency list node with the specified destination vertex
 AdjListNode* newAdjListNode(int dest) {
     AdjListNode* newNode = malloc(sizeof(AdjListNode));
+    if(!newNode){
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     newNode->dest = dest;
     newNode->next = NULL;
     return newNode;
 }
 
-// Initialize the graph
+// Initialize the graph with the given number of vertices
 Graph* createGraph(int vertices) {
+    // allocate memory for the Graph structure
     Graph* graph = malloc(sizeof(Graph));
+    if(!graph){
+        printf("Memory allocation error\n");
+        exit(1);
+    }
+    
+    // set te num of Vertices
     graph->numVertices = vertices;
 
     // Create an array of adjacency lists
     graph->array = malloc(vertices * sizeof(AdjList));
+    if(!graph->array){
+        printf("Memory allocation error\n");
+        free(graph);
+        exit(1);
+    }
+    
+    // Initialize each adjacency list as empty
     for(int i = 0; i < vertices; i++)
         graph->array[i].head = NULL;
 
@@ -312,10 +333,12 @@ Graph* createGraph(int vertices) {
 void addEdge(Graph* graph, int src, int dest, int directed) {
     // Add an edge from src to dest
     AdjListNode* newNode = newAdjListNode(dest);
+    
+    // insert at the beginning of the src vertex's adjacency list
     newNode->next = graph->array[src].head;
     graph->array[src].head = newNode;
 
-    // If undirected, add an edge from dest to src
+    // If undirected, also add an edge from dest to src
     if(!directed) {
         newNode = newAdjListNode(src);
         newNode->next = graph->array[dest].head;
@@ -334,6 +357,19 @@ void printGraph(Graph* graph) {
         }
         printf("\n");
     }
+}
+
+void freeGraph(Graph *graph){
+    for(int v = 0; v < graph->numVertices; v++){
+        AdjListNode *temp = graph->array[v].head;
+        while(temp){
+            AdjListNode *toFree = temp;
+            temp = temp->next;
+            free(toFree);
+        }
+    }
+    free(graph->array);
+    free(graph);
 }
 
 int main() {
@@ -357,11 +393,39 @@ int main() {
 **Output:**
 
 ```shell
-Vertex 0: -> 4 -> 1
-Vertex 1: -> 3 -> 2 -> 4 -> 0
-Vertex 2: -> 3 -> 1
-Vertex 3: -> 4 -> 2 -> 1
-Vertex 4: -> 3 -> 1 -> 0
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==15325== Memcheck, a memory error detector
+==15325== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==15325== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==15325== Command: ./final
+==15325== 
+Vertex 0:  -> 4 -> 1
+Vertex 1:  -> 4 -> 3 -> 2 -> 0
+Vertex 2:  -> 3 -> 1
+Vertex 3:  -> 4 -> 2 -> 1
+Vertex 4:  -> 3 -> 1 -> 0
+==15325== 
+==15325== HEAP SUMMARY:
+==15325==     in use at exit: 0 bytes in 0 blocks
+==15325==   total heap usage: 17 allocs, 17 frees, 1,304 bytes allocated
+==15325== 
+==15325== All heap blocks were freed -- no leaks are possible
+==15325== 
+==15325== For lists of detected and suppressed errors, rerun with: -s
+==15325== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+**Graph**
+
+```css
+        0
+       / \
+      /   \
+     1-----4
+    / \   /
+   /   \ /
+  2-----3
 ```
 
 
@@ -371,20 +435,256 @@ Vertex 4: -> 3 -> 1 -> 0
 `hello.h`
 
 ```C
+#include <stdbool.h>
+#ifndef HELLO_H
+#define HELLO_H
+
+struct graph
+{
+    int n; // num of vertices
+    int m; // number of edges
+    struct successors
+    {
+        int d;   // num of successors
+        int len; // number of slots in array
+        int isSorted;
+        int list[]; // actual list of successors start here
+    } *alist[];     // array list
+};
+
+typedef struct graph *Graph;
+Graph graphCreate(int n);
+void graphDestroy(Graph g);
+void graphAddEdge(Graph g, int u, int v); // u = source, v = sink
+int graphVertexCount(Graph g);
+int graphEdgeCount(Graph g);
+int graphOutDegree(Graph g, int source);
+int graphHasEdge(Graph g, int source, int sink);
+
+void graphForeach(Graph g, int source, void (*f)(Graph g, int source, int sink, void *data), void *data);
+
+void printGraph(Graph g);
+#endif // HELLO_H
 ```
 
 `functions.c`
 
 ```C
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <limits.h>
+#include <glob.h>
+#include <assert.h>
+#include "hello.h"
+
+// create a new graph with n vertices labeled 0..n-1 and no edges
+Graph graphCreate(int n)
+{
+    Graph g;
+    int i;
+    g = malloc(sizeof(struct graph) + sizeof(struct successors *) * n);
+    assert(g);
+
+    g->n = n;
+    g->m = 0;
+
+    for (i = 0; i < n; i++)
+    {
+        g->alist[i] = malloc(sizeof(struct successors));
+        assert(g->alist[i]);
+        g->alist[i]->d = 0;
+        g->alist[i]->len = 0;
+        g->alist[i]->isSorted = 1;
+    }
+    return g;
+}
+
+// free all space used by graph
+void graphDestroy(Graph g)
+{
+    for (int i = 0; i < g->n; i++)
+    {
+        free(g->alist[i]);
+    }
+    free(g);
+}
+// add an edge to an existing graph
+void graphAddEdge(Graph g, int u, int v)
+{
+    assert(u >= 0);
+    assert(u < g->n);
+    assert(v >= 0);
+
+    // do we need to grow the list?
+    while (g->alist[u]->d >= g->alist[u]->len)
+    {
+        // +1 because it might have been 0
+        g->alist[u]->len = g->alist[u]->len * 2 + 1;
+        g->alist[u] = realloc(g->alist[u], sizeof(struct successors) + sizeof(int) * g->alist[u]->len);
+    }
+
+    // now add the new sink
+    g->alist[u]->list[g->alist[u]->d++] = v;
+    g->alist[u]->isSorted = 0;
+
+    // bump edge count
+    g->m++;
+}
+// return the number of vertices in the graph
+int graphVertexCount(Graph g)
+{
+    return g->n;
+}
+int graphEdgeCount(Graph g)
+{
+    return g->m;
+}
+
+// return the out-degree of a vertex
+int graphOutDegree(Graph g, int source)
+{
+    assert(source >= 0);
+    assert(source < g->n);
+    return g->alist[source]->d;
+}
+
+// when we are willing to call bsearch
+#define BSEARCH_THRESHOLD (10)
+
+static int intcmp(const void *a, const void *b)
+{
+    return *((const int *)a) - *((const int *)b);
+}
+
+// return 1 if edge (source, sink) exists, 0 otherwise
+int graphHasEdge(Graph g, int source, int sink)
+{
+    int i;
+    assert(source >= 0);
+    assert(source < g->n);
+    assert(sink >= 0);
+    assert(sink < g->n);
+
+    if (graphOutDegree(g, source) >= BSEARCH_THRESHOLD)
+    {
+        // make sure it is sorted
+        if (!g->alist[source]->isSorted)
+        {
+            qsort(g->alist[source]->list, g->alist[source]->d, sizeof(int), intcmp);
+        }
+
+        // call bsearch to do binary search
+        return bsearch(&sink, g->alist[source]->list, g->alist[source]->d, sizeof(int), intcmp) != 0;
+    }
+    else
+    {
+        // just do a simple linear search
+        for (i = 0; i < g->alist[source]->d; i++)
+        {
+            if (g->alist[source]->list[i] == sink)
+            {
+                return 1;
+            }
+        }
+        return 0;
+    }
+}
+
+void graphForeach(Graph g, int source, void (*f)(Graph g, int source, int sink, void *data), void *data)
+{
+    int i;
+    assert(source >= 0);
+    assert(source < g->n);
+
+    for (i = 0; i < g->alist[source]->d; i++)
+    {
+        f(g, source, g->alist[source]->list[i], data);
+    }
+}
 ```
 
 `main.c`
 
 ```C
+#include <stdlib.h>
+#include <stdio.h>
+#include "hello.h"
+
+int main()
+{
+    int V = 5;
+    Graph graph = graphCreate(V);
+    graphAddEdge(graph, 0, 1);
+    graphAddEdge(graph, 0, 4);
+    graphAddEdge(graph, 1, 2);
+    graphAddEdge(graph, 1, 3);
+    graphAddEdge(graph, 1, 4);
+    graphAddEdge(graph, 2, 3);
+    graphAddEdge(graph, 3, 4);
+    printGraph(graph);
+    graphDestroy(graph);
+    return 0;
+}
 ```
 
 **Output**:
 
 ```shell
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==21912== Memcheck, a memory error detector
+==21912== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==21912== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==21912== Command: ./final
+==21912== 
+Vertex 0: 1 4 
+Vertex 1: 2 3 4 
+Vertex 2: 3 
+Vertex 3: 4 
+Vertex 4: 
+==21912== 
+==21912== HEAP SUMMARY:
+==21912==     in use at exit: 0 bytes in 0 blocks
+==21912==   total heap usage: 13 allocs, 13 frees, 1,244 bytes allocated
+==21912== 
+==21912== All heap blocks were freed -- no leaks are possible
+==21912== 
+==21912== For lists of detected and suppressed errors, rerun with: -s
+==21912== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
 ```
 
+**Graph**:
+
+```css
+Graph Representation:
+
+0
+ | \
+ v  v
+1 → 4
+ |\
+ v v
+2 → 3
+      |
+      v
+      4
+```
+
+
+
+## Choosing Between Adjacency Matrix and Adjacency List
+
+- **Use an adjacency matrix when:**
+  - The graph is dense (number of edges is close to V²).
+  - We need to frequently check for the existence of specific edges.
+- **Use an adjacency list when:**
+  - The graph is sparse (number of edges is much less than V²).
+  - We need to efficiently iterate over the neighbors of a vertex.
