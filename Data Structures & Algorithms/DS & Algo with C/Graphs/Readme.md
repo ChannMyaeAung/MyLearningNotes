@@ -64,6 +64,261 @@ vertex   arcs	     vertex
 
 ![Screenshot from 2025-01-01 21-54-17](/home/chan/Pictures/Screenshots/Screenshot from 2025-01-01 21-54-17.png)
 
+
+
+## Key Terminologies of Graph
+
+### 1. In-Degree
+
+**Definition:** The **in-degree** of a vertex in a **directed graph** is the number of edges **incoming** to that vertex. In other words, it counts how many edges point **toward** the vertex.
+
+**Applicability:**
+
+- **Directed Graphs (Digraphs):** In-degree is relevant.
+- **Undirected Graphs:** In-degree is equivalent to the degree of the vertex.
+
+**Example:** Consider a directed graph with vertices **A**, **B**, and **C**:
+
+```css
+A → B
+C → B
+```
+
+- **In-Degree of B:** 2 (edges from A and C)
+- **In-Degree of A:** 0
+- **In-Degree of C:** 0
+
+**Visualization:**
+
+```css
+A → B ← C
+```
+
+------
+
+### 2. Out-Degree
+
+**Definition:** The **out-degree** of a vertex in a **directed graph** is the number of edges **outgoing** from that vertex. It counts how many edges originate **from** the vertex.
+
+**Applicability:**
+
+- **Directed Graphs (Digraphs):** Out-degree is relevant.
+- **Undirected Graphs:** Out-degree is equivalent to the degree of the vertex.
+
+**Example:** Using the same directed graph:
+
+```css
+A → B
+C → B
+```
+
+- **Out-Degree of A:** 1 (edge to B)
+- **Out-Degree of B:** 0
+- **Out-Degree of C:** 1 (edge to B)
+
+**Visualization:**
+
+```css
+A → B ← C
+```
+
+------
+
+### 3. Adjacency
+
+**Definition:** Two vertices are **adjacent** if there is an **edge** connecting them. In other words, they are **neighbors** in the graph.
+
+**Types of Adjacency:**
+
+- **Directed Graphs:** Adjacency can be **outward** or **inward** based on the direction of the edge.
+- **Undirected Graphs:** Adjacency is **bidirectional** since edges have no direction.
+
+**Example:** Consider an undirected graph:
+
+```css
+A — B — C
+```
+
+- Adjacency:
+  - A is adjacent to B.
+  - B is adjacent to A and C.
+  - C is adjacent to B.
+
+**Visualization:**
+
+```css
+A — B — C
+```
+
+------
+
+### 4. Path
+
+**Definition:** A **path** in a graph is a sequence of **vertices** where each consecutive pair is connected by an **edge**. Paths can be:
+
+- **Simple Path:** No repeated vertices.
+- **Closed Path (Cycle):** Starts and ends at the same vertex.
+
+**Applicability:**
+
+- **Directed Graphs:** Paths must follow the direction of edges.
+- **Undirected Graphs:** Paths can traverse edges in any direction.
+
+**Example:** In an undirected graph:
+
+```css
+A — B — C — D
+```
+
+- **Path from A to D:** A → B → C → D
+- **Simple Path:** A → B → C → D
+- **Closed Path (Cycle):** A → B → C → A (if the edge A—C exists)
+
+**Visualization:**
+
+```css
+A — B — C — D
+```
+
+------
+
+### 5. Cycle
+
+**Definition:** A **cycle** is a **closed path** where the first and last vertices are the same, and **no other vertices are repeated**. In other words, it's a path that starts and ends at the same vertex without traversing any edge more than once.
+
+**Types of Cycles:**
+
+- **Directed Cycle:** All edges follow the direction consistently.
+- **Undirected Cycle:** Edges have no direction, forming a loop.
+
+**Example:** In a directed graph:
+
+```css
+A → B → C → A
+```
+
+- **Cycle:** A → B → C → A
+
+In an undirected graph:
+
+```css
+A — B
+|   |
+D — C
+```
+
+- **Cycle:** A — B — C — D — A
+
+**Visualization:**
+
+*Directed Cycle:*
+
+```css
+A → B
+↑   ↓
+C ← D
+```
+
+*Undirected Cycle:*
+
+```css
+A — B
+|   |
+D — C
+```
+
+------
+
+### 6. Connectedness
+
+**Definition:** **Connectedness** describes how **vertices** are connected within a graph.
+
+- **Connected Graph:** In an **undirected graph**, every pair of vertices is connected by at least one path.
+- **Disconnected Graph:** There exists at least one pair of vertices with no connecting path.
+- **Strongly Connected (Directed Graph):** For every pair of vertices **u** and **v**, there is a path from **u** to **v** and a path from **v** to **u**.
+- **Weakly Connected (Directed Graph):** The underlying undirected graph is connected, but directed paths may not exist in both directions.
+
+**Examples:**
+
+*Undirected Connected Graph:*
+
+```css
+A — B — C
+    |
+    D
+```
+
+- All vertices are connected via paths.
+
+*Undirected Disconnected Graph:*
+
+```css
+A — B    C — D
+```
+
+- No path between {A, B} and {C, D}.
+
+*Directed Strongly Connected Graph:*
+
+```css
+A  → B  → C
+↑         |
+|_________|
+```
+
+- Paths exist between all pairs in both directions.
+
+*Directed Weakly Connected Graph:*
+
+```css
+A → B    C
+```
+
+- The underlying undirected graph is connected if ignoring edge directions, but no path from C to others.
+
+**Visualization:**
+
+*Connected Undirected Graph:*
+
+```css
+A — B — C
+    |
+    D
+```
+
+*Disconnected Undirected Graph:*
+
+```css
+A — B    C — D
+```
+
+*Strongly Connected Directed Graph:*
+
+```css
+A  → B  → C
+↑         |
+|_________|
+```
+
+*Weakly Connected Directed Graph:*
+
+```css
+A → B    C
+```
+
+### Summary of Graph's Key Terminology
+
+| Term              | Directed Graphs              | Undirected Graphs         | Description                                                  |
+| ----------------- | ---------------------------- | ------------------------- | ------------------------------------------------------------ |
+| **In-Degree**     | Yes                          | Equivalent to degree      | Number of incoming edges to a vertex.                        |
+| **Out-Degree**    | Yes                          | Equivalent to degree      | Number of outgoing edges from a vertex.                      |
+| **Adjacency**     | Direction matters            | Bidirectional             | Whether two vertices are connected by an edge.               |
+| **Path**          | Follows edge direction       | Any direction             | Sequence of vertices connected by edges, respecting direction in directed graphs. |
+| **Cycle**         | Direction consistent         | No direction              | A closed path with no repeated vertices except the starting and ending vertex. |
+| **Connectedness** | Strongly or Weakly Connected | Connected or Disconnected | How vertices are interconnected within the graph.            |
+
+
+
 ## Why graphs are useful
 
 - Graphs can be used to model any situation where we have things that are related to each other in pairs. 
@@ -428,9 +683,25 @@ Vertex 4:  -> 3 -> 1 -> 0
   2-----3
 ```
 
+### What Are Source and Sink in a Directed Graph?
 
+1. **Source (in-degree = 0)**
+   A **source** in a directed graph is a vertex with **no incoming edges**. In other words, there is no edge pointing **into** this vertex.
+2. **Sink (out-degree = 0)**
+   A **sink** in a directed graph is a vertex with **no outgoing edges**. In other words, there is no edge **going out** of this vertex.
+3. In an **undirected** graph, every edge is bidirectional, so the notion of source/sink in the same sense (in-degree/out-degree) does not directly apply.
+4. In **flow networks** (a special case of directed graphs with capacities), the terms **source** and **sink** often refer to the **designated** start and end points for flow, but the idea that a “sink” has no outgoing edges can still hold in many contexts.
+
+#### Example
+
+- If we have a directed edge (u→v), then u is the **origin** of that edge, and v is the **destination**.
+- A **source** vertex has **outgoing** edges but **no** incoming edges (nobody points to it).
+- A **sink** vertex has **incoming** edges but **no** outgoing edges (it does not point to any other vertex).
 
 #### **Implementation Example #2**:
+
+- **Source (in-degree = 0)**
+  A **source** in a directed graph is a vertex with **no incoming edges**. In other words, there is no edge pointing **into** this vertex.
 
 `hello.h`
 
@@ -443,6 +714,8 @@ struct graph
 {
     int n; // num of vertices
     int m; // number of edges
+    
+    // represents the successors (outgoin edges of a vertex) with
     struct successors
     {
         int d;   // num of successors
@@ -464,6 +737,7 @@ int graphHasEdge(Graph g, int source, int sink);
 void graphForeach(Graph g, int source, void (*f)(Graph g, int source, int sink, void *data), void *data);
 
 void printGraph(Graph g);
+void printEdge(Graph g, int source, int sink, void *data);
 #endif // HELLO_H
 ```
 
@@ -515,7 +789,9 @@ void graphDestroy(Graph g)
     }
     free(g);
 }
+
 // add an edge to an existing graph
+// add an edge from vertex u to v
 void graphAddEdge(Graph g, int u, int v)
 {
     assert(u >= 0);
@@ -532,6 +808,8 @@ void graphAddEdge(Graph g, int u, int v)
 
     // now add the new sink
     g->alist[u]->list[g->alist[u]->d++] = v;
+    
+    // marks the successor list as unsorted
     g->alist[u]->isSorted = 0;
 
     // bump edge count
@@ -563,7 +841,7 @@ static int intcmp(const void *a, const void *b)
     return *((const int *)a) - *((const int *)b);
 }
 
-// return 1 if edge (source, sink) exists, 0 otherwise
+// return 1 if an edge (source to sink) exists, 0 otherwise
 int graphHasEdge(Graph g, int source, int sink)
 {
     int i;
@@ -572,6 +850,7 @@ int graphHasEdge(Graph g, int source, int sink)
     assert(sink >= 0);
     assert(sink < g->n);
 
+    // if the number of successors (outgoing edges) meets the threshold, we will use bsearch, otherwise, we will use linear search
     if (graphOutDegree(g, source) >= BSEARCH_THRESHOLD)
     {
         // make sure it is sorted
@@ -597,6 +876,7 @@ int graphHasEdge(Graph g, int source, int sink)
     }
 }
 
+// Iterates over all outgoing edges from source, applying the callback functioin f to each edge.
 void graphForeach(Graph g, int source, void (*f)(Graph g, int source, int sink, void *data), void *data)
 {
     int i;
@@ -607,6 +887,23 @@ void graphForeach(Graph g, int source, void (*f)(Graph g, int source, int sink, 
     {
         f(g, source, g->alist[source]->list[i], data);
     }
+}
+
+void printGraph(Graph g)
+{
+    for (int i = 0; i < g->n; i++)
+    {
+        printf("Vertex %d: ", i);
+        for (int j = 0; j < g->alist[i]->d; j++)
+        {
+            printf(" -> %d", g->alist[i]->list[j]);
+        }
+        printf("\n");
+    }
+}
+
+void printEdge(Graph g, int source, int sink, void *data){
+    printf("Edge from %d to %d\n", source, sink);
 }
 ```
 
@@ -629,7 +926,35 @@ int main()
     graphAddEdge(graph, 2, 3);
     graphAddEdge(graph, 3, 4);
     printGraph(graph);
-    graphDestroy(graph);
+
+    // Test graphVertexCount
+    int vertexCount = graphVertexCount(graph);
+    printf("Number of vertices: %d\n", vertexCount);
+
+    // Test graphEdgeCount
+    int edgeCount = graphEdgeCount(graph);
+    printf("Number of edges: %d\n", edgeCount);
+
+    // Test graphHasEdge
+    printf("Has edge(0, 1): %s\n", graphHasEdge(graph, 0, 1) ? "Yes" : "No");
+    printf("Has edge(1, 4): %s\n", graphHasEdge(graph, 1, 4) ? "Yes" : "No");
+    printf("Has edge(2, 4): %s\n", graphHasEdge(graph, 2, 4) ? "Yes" : "No");
+
+    // Test graphOutDegree
+    for (int i = 0; i < graphVertexCount(graph); i++)
+    {
+        printf("Out-degree of vertext %d: %d\n", i, graphOutDegree(graph, i));
+    }
+
+    // Test graphForeach
+    printf("All edges in the graph:\n");
+    graphForeach(graph, 0, printEdge, NULL);
+    graphForeach(graph, 1, printEdge, NULL);
+    graphForeach(graph, 2, printEdge, NULL);
+    graphForeach(graph, 3, printEdge, NULL);
+    graphForeach(graph, 4, printEdge, NULL);
+
+        graphDestroy(graph);
     return 0;
 }
 ```
@@ -639,26 +964,43 @@ int main()
 ```shell
 chan@CMA:~/C_Programming/test$ make valgrind
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
-==21912== Memcheck, a memory error detector
-==21912== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==21912== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==21912== Command: ./final
-==21912== 
-Vertex 0: 1 4 
-Vertex 1: 2 3 4 
-Vertex 2: 3 
-Vertex 3: 4 
+==10430== Memcheck, a memory error detector
+==10430== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==10430== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==10430== Command: ./final
+==10430== 
+Vertex 0:  -> 1 -> 4
+Vertex 1:  -> 2 -> 3 -> 4
+Vertex 2:  -> 3
+Vertex 3:  -> 4
 Vertex 4: 
-==21912== 
-==21912== HEAP SUMMARY:
-==21912==     in use at exit: 0 bytes in 0 blocks
-==21912==   total heap usage: 13 allocs, 13 frees, 1,244 bytes allocated
-==21912== 
-==21912== All heap blocks were freed -- no leaks are possible
-==21912== 
-==21912== For lists of detected and suppressed errors, rerun with: -s
-==21912== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-
+Number of vertices: 5
+Number of edges: 7
+Has edge(0, 1): Yes
+Has edge(1, 4): Yes
+Has edge(2, 4): No
+Out-degree of vertext 0: 2
+Out-degree of vertext 1: 3
+Out-degree of vertext 2: 1
+Out-degree of vertext 3: 1
+Out-degree of vertext 4: 0
+All edges in the graph:
+Edge from 0 to 1
+Edge from 0 to 4
+Edge from 1 to 2
+Edge from 1 to 3
+Edge from 1 to 4
+Edge from 2 to 3
+Edge from 3 to 4
+==10430== 
+==10430== HEAP SUMMARY:
+==10430==     in use at exit: 0 bytes in 0 blocks
+==10430==   total heap usage: 13 allocs, 13 frees, 1,244 bytes allocated
+==10430== 
+==10430== All heap blocks were freed -- no leaks are possible
+==10430== 
+==10430== For lists of detected and suppressed errors, rerun with: -s
+==10430== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```
 
 **Graph**:
@@ -667,18 +1009,16 @@ Vertex 4:
 Graph Representation:
 
 0
- | \
- v  v
+↓  ↘
 1 → 4
- |\
- v v
+↓ ↘
 2 → 3
-      |
-      v
-      4
+      ↘
+       4
 ```
 
-
+- **Vertex 4** has an out-degree of **0**, meaning it has no outgoing edges. This makes **vertex 4** the **sink**.
+- There is no edge leading **into** vertex 0, so its in-degree = 0. Thus, **vertex 0** is the **source**.
 
 ## Choosing Between Adjacency Matrix and Adjacency List
 
