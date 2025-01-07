@@ -259,7 +259,6 @@ Vertex	Distance from Source
 
 **Explanation:**
 
-- *
 - **Vertex 0:** Distance is **0** (source vertex).
 - **Vertex 1:** Shortest path is directly from **0 → 1** with a total weight of **-1**.
 - **Vertex 2:** Shortest path is **0 → 1 → 2** with a total weight of **-1 + 3 = 2**.
