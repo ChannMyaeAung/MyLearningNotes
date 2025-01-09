@@ -504,7 +504,464 @@ void printPath(int next[][V], int i, int j)
         return;
     }
     printf("-> %d", next[i][j]);
-    printPath(next, next[i][j], j);
+    if(next[i][j] != j){
+        printPath(next, next[i][j], j);
+    }
+}
+
+// Function that implements Floyd-Warshall algorithm
+void floydWarshall(int graph[][V], int dist[][V], int next[][V])
+{
+    // Initialize the solution matrix same as input graph matrix
+    for (int i = 0; i < V; i++)
+    {
+        for (int j = 0; j < V; j++)
+        {
+            dist[i][j] = graph[i][j];
+            if (graph[i][j] != INF && i != j)
+            {
+                next[i][j] = j;
+            }
+            else
+            {
+                next[i][j] = -1;
+            }
+        }
+    }
+
+    // Floyd-Warshall algorithm
+    for (int k = 0; k < V; k++)
+    {
+        // Pick all vertices as source one by one
+        for (int i = 0; i < V; i++)
+        {
+            // Pick all vertices as destination for the above picked source
+            for (int j = 0; j < V; j++)
+            {
+                // if i and j are distinct, exisiting paths from i to k and from k to j and the new path thru k offers shorter distances, 
+                if (i != j && dist[i][k] != INF && dist[k][j] != INF && dist[i][k] + dist[k][j] < dist[i][j])
+                {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                    next[i][j] = next[i][k];
+                }
+            }
+        }
+    }
+
+    // Print the shortest distance matrix
+    printSolution(dist);
+
+    // Print all the shortest paths
+    printf("\nShortest paths:\n");
+    for (int i = 0; i < V; i++)
+    {
+        for (int j = 0; j < V; j++)
+        {
+            if (i != j)
+            {
+                printf("Path from %d to %d: ", i, j);
+                if (dist[i][j] == INF)
+                {
+                    printf("No path exists.\n");
+                }
+                else
+                {
+                    printf("%d ", i);
+                    printPath(next, i, j);
+                    printf("(Weight: %d)\n", dist[i][j]);
+                }
+            }
+        }
+    }
+}
+
+```
+
+**Key Steps:**
+
+1. **Initialization:**
+   - **Distance Matrix (`dist`):** Initially, it's a copy of the `graph` matrix.
+   - **Next Matrix (`next`):** Used for path reconstruction. `next[i][j]` stores the next vertex on the shortest path from `i` to `j`.
+2. **Iteration:**
+   - For each vertex `k` (acting as an intermediate vertex), update the `dist` and `next` matrices by checking if a path through `k` offers a shorter route between any two vertices `i` and `j`.
+3. **Path Reconstruction:**
+   - Utilize the `next` matrix to reconstruct the actual shortest paths.
+
+`main.c`
+
+```C
+#include <stdlib.h>
+#include <stdio.h>
+#include "hello.h"
+
+int main()
+{
+    /* Let us create the following weighted graph
+         0 --> 1 (5)
+         0 --> 3 (10)
+         1 --> 2 (3)
+         2 --> 3 (1)
+         3 --> 2 (-2)
+     */
+
+    int graph[V][V] = {
+        {0, 5, INF, 10},
+        {INF, 0, 3, INF},
+        {INF, INF, 0, 1},
+        {INF, INF, -2, 0}};
+
+    // Initialize distance and next matrices
+    int dist[V][V];
+    int next[V][V];
+
+    // Run Floyd-Warshall algorithm with path reconstruction
+    floydWarshall(graph, dist, next);
+
+    return 0;
+}
+```
+
+**Detailed Calculation Process**:
+
+**Initialization**:
+
+**Distance Matrix (`dist`):**
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | 0    | 5    | INF  | 10   |
+| 1       | INF  | 0    | 3    | INF  |
+| 2       | INF  | INF  | 0    | 1    |
+| 3       | INF  | INF  | -2   | 0    |
+
+```c
+for (int i = 0; i < V; i++)
+    {
+        for (int j = 0; j < V; j++)
+        {
+            dist[i][j] = graph[i][j];
+            if (graph[i][j] != INF && i != j)
+            {
+                next[i][j] = j;
+            }
+            else
+            {
+                next[i][j] = -1;
+            }
+        }
+    }
+```
+
+
+
+**Next Matrix (`next`)**:
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | -1   | 1    | -1   | 3    |
+| 1       | -1   | -1   | 2    | -1   |
+| 2       | -1   | -1   | -1   | 3    |
+| 3       | -1   | -1   | 2    | -1   |
+
+(*`-1` indicates no direct path.*)
+
+**Iteration Over Intermediate Vertices (`k = 0, 1, 2, 3`):**
+
+**a. When `k = 0`:**
+
+- **Evaluating paths through Vertex 0.**
+- No shorter paths are found as Vertex 0 is only a starting point.
+
+**Distance and Next matrices remain unchanged.**
+
+**When `k = 1`:**
+
+- **Evaluating paths through Vertex 1.**
+
+**Updates:**
+
+```c
+if (i != j && dist[i][k] != INF && dist[k][j] != INF && dist[i][k] + dist[k][j] < dist[i][j])
+                {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                    next[i][j] = next[i][k];
+                }
+```
+
+
+
+- **Path 0 → 1 → 2:** (i = 0, k = 1, j = 2)
+  - `dist[i][k] + dist[k][j] < dist[i][j]`
+  - Current `dist[0][2] = INF`
+  - New possible distance = `dist[0][1] + dist[1][2] = 5 + 3 = 8`
+  - **Update `dist[0][2]` to `8`**
+  - **Update `next[0][2]` to `1`** (`next[i][j] = next[i][k];`)
+
+**Updated Distance Matrix:**
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | 0    | 5    | 8    | 10   |
+| 1       | INF  | 0    | 3    | INF  |
+| 2       | INF  | INF  | 0    | 1    |
+| 3       | INF  | INF  | -2   | 0    |
+
+**Updated Next Matrix**:
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | -1   | 1    | 1    | 3    |
+| 1       | -1   | -1   | 2    | -1   |
+| 2       | -1   | -1   | -1   | 3    |
+| 3       | -1   | -1   | 2    | -1   |
+
+**When `k = 2`:**
+
+- **Evaluating paths through Vertex 2.**
+
+**Updates:**
+
+- **Path 0 → 1 → 2 → 3:** (i = 0, k = 2, j = 3)
+  - `dist[i][k] + dist[k][j] < dist[i][j]`
+  - Current `dist[0][3] = 10`
+  - New possible distance = `dist[0][2] + dist[2][3] = 8 + 1 = 9`
+  - **Update `dist[0][3]` to `9`**
+  - **Update `next[0][3]` to `3`** (`next[i][j] = next[i][k];`)
+- **Path 1 → 2 → 3:** (i = 1, k = 2, j = 3)
+  - Current `dist[1][3] = INF`
+  - New possible distance = `dist[1][2] + dist[2][3] = 3 + 1 = 4`
+  - **Update `dist[1][3]` to `4`**
+  - **Update `next[1][3]` to `3`** (`next[i][j] = next[i][k];`)
+
+**Updated Distance Matrix:**
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | 0    | 5    | 8    | 9    |
+| 1       | INF  | 0    | 3    | 4    |
+| 2       | INF  | INF  | 0    | 1    |
+| 3       | INF  | INF  | -2   | 0    |
+
+**Updated Next Matrix**:
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | -1   | 1    | 1    | 1    |
+| 1       | -1   | -1   | 2    | 3    |
+| 2       | -1   | -1   | -1   | 3    |
+| 3       | -1   | -1   | 2    | -1   |
+
+**When `k = 3`:**
+
+- **Evaluating paths through Vertex 3.**
+
+**Updates:**
+
+- **Path 0 → 1 → 2 → 3 → 2:**
+  - `dist[i][k] + dist[k][j] < dist[i][j]`
+  - Current `dist[0][2] = 8`
+  - New possible distance = `dist[0][3] + dist[3][2] = 9 + (-2) = 7`
+  - **Update `dist[0][2]` to `7`**
+  - **Update `next[0][2]` to `1`** (`next[i][j] = next[i][k];`)
+- **Path 1 → 2 → 3 → 2:** (i = 1, k = 3, j = 2)
+  - Current `dist[1][2] = 3`
+  - New possible distance = `dist[1][3] + dist[3][2] = 4 + (-2) = 2`
+  - **Update `dist[1][2]` to `2`**
+  - **Update `next[1][2]` to `3`**
+
+**Final Distance Matrix:**
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | 0    | 5    | 7    | 9    |
+| 1       | INF  | 0    | 2    | 4    |
+| 2       | INF  | INF  | 0    | 1    |
+| 3       | INF  | INF  | -2   | 0    |
+
+**Updated Next Matrix**:
+
+| from/to | 0    | 1    | 2    | 3    |
+| ------- | ---- | ---- | ---- | ---- |
+| 0       | -1   | 1    | 1    | 3    |
+| 1       | -1   | -1   | 3    | 3    |
+| 2       | -1   | -1   | -1   | 3    |
+| 3       | -1   | -1   | 2    | -1   |
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Following matrix shows the shortest distances between every pair of vertices:
+      0      5      7      9
+    INF      0      2      4
+    INF    INF      0      1
+    INF    INF     -2      0
+
+Shortest paths:
+Path from 0 to 1: 0 -> 1(Weight: 5)
+Path from 0 to 2: 0 -> 1-> 2(Weight: 7)
+Path from 0 to 3: 0 -> 1-> 2-> 3(Weight: 9)
+Path from 1 to 0: No path exists.
+Path from 1 to 2: 1 -> 2(Weight: 2)
+Path from 1 to 3: 1 -> 2-> 3(Weight: 4)
+Path from 2 to 0: No path exists.
+Path from 2 to 1: No path exists.
+Path from 2 to 3: 2 -> 3(Weight: 1)
+Path from 3 to 0: No path exists.
+Path from 3 to 1: No path exists.
+Path from 3 to 2: 3 -> 2(Weight: -2)
+
+```
+
+**Shortest Paths Explained**
+
+Let's delve into the reconstructed shortest paths:
+
+1. **Path from 0 to 1:**
+   - **Sequence:** `0 → 1`
+   - **Total Weight:** `5`
+   - **Explanation:** Direct edge from Vertex 0 to Vertex 1.
+2. **Path from 0 to 2:**
+   - **Sequence:** `0 → 1 → 2`
+   - **Total Weight:** `5 + 3 = 8`
+   - With Intermediate Vertex 3:
+     - Path: `0 → 1 → 2 → 3 → 2`
+     - Total Weight: `5 + 3 + 1 - 2 = 7`
+   - **Final Shortest Path:** `7`
+3. **Path from 0 to 3:**
+   - **Sequence:** `0 → 1 → 2 → 3`
+   - **Total Weight:** `5 + 3 + 1 = 9`
+4. **Path from 1 to 2:**
+   - **Sequence:** `1 → 2`
+   - **Total Weight:** `3`
+   - With Intermediate Vertex 3:
+     - Path: `1 → 2 → 3 → 2`
+     - Total Weight: `3 + 1 - 2 = 2`
+   - **Final Shortest Path:** `2`
+5. **Path from 1 to 3:**
+   - **Sequence:** `1 → 2 → 3`
+   - **Total Weight:** `3 + 1 = 4`
+6. **Path from 2 to 3:**
+   - **Sequence:** `2 → 3`
+   - **Total Weight:** `1`
+7. **Path from 3 to 2:**
+   - **Sequence:** `3 → 2`
+   - **Total Weight:** `-2`
+   - **Explanation:** Direct edge with a negative weight.
+
+**Graph Representation:**
+
+- **Vertices:** 0, 1, 2, 3
+- **Edges with Weights:**
+  - **0 → 1** (Weight: 5)
+  - **0 → 3** (Weight: 10)
+  - **1 → 2** (Weight: 3)
+  - **2 → 3** (Weight: 1)
+  - **3 → 2** (Weight: -2)
+
+**Visualization:**
+
+```css
+    (0)
+   /   \
+ 5/     \10
+ /       \
+(1)---->(3)
+  \     |
+   \3   | -2
+    \   |
+     v  ↓
+     (2)
+      |
+      |1
+      v
+     (3)
+```
+
+---
+
+### Negative Cycle Detection
+
+- **Importance:** Detecting negative cycles is crucial as they invalidate the concept of shortest paths.
+
+- **Implementation:** As shown earlier, after running the main algorithm, check if any `dist[i][i] < 0`. If so, report the presence of a negative cycle.
+
+  ```c
+  // After running the main algorithm
+  int hasNegativeCycle = 0;
+  for (int i = 0; i < V; i++) {
+      if (dist[i][i] < 0) {
+          hasNegativeCycle = 1;
+          break;
+      }
+  }
+  
+  if (hasNegativeCycle) {
+      printf("Graph contains a negative weight cycle.\n");
+  }
+  ```
+
+### Complete C implementation with Negative Cycle Detection and Path Reconstruction
+
+#### Program Code
+
+`hello.h`
+
+```C
+#include <stdbool.h>
+#ifndef HELLO_H
+#define HELLO_H
+
+// define the num of vertices
+#define V 4
+
+// Define a value for infinity
+#define INF 99999
+
+void printSolution(int dist[][V]);
+
+void printPath(int next[][V], int i, int j);
+
+void floydWarshall(int graph[][V], int dist[][V], int next[][V]);
+
+#endif // HELLO_H
+```
+
+`hello.c`
+
+```C
+// Function to print the solution
+void printSolution(int dist[][V])
+{
+    printf("Following matrix shows the shortest distances between every pair of vertices:\n");
+    for (int i = 0; i < V; i++)
+    {
+        for (int j = 0; j < V; j++)
+        {
+            if (dist[i][j] == INF)
+                printf("%7s", "INF");
+            else
+                printf("%7d", dist[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void printPath(int next[][V], int i, int j)
+{
+    if (next[i][j] == -1)
+    {
+        return;
+    }
+    if (i == j)
+    {
+        return;
+    }
+    printf("-> %d", next[i][j]);
+    if (next[i][j] != j)
+    {
+        printPath(next, next[i][j], j);
+    }
 }
 
 // Function that implements Floyd-Warshall algorithm
@@ -578,10 +1035,6 @@ void floydWarshall(int graph[][V], int dist[][V], int next[][V])
 `main.c`
 
 ```C
-#include <stdlib.h>
-#include <stdio.h>
-#include "hello.h"
-
 int main()
 {
     /* Let us create the following weighted graph
@@ -605,6 +1058,25 @@ int main()
     // Run Floyd-Warshall algorithm with path reconstruction
     floydWarshall(graph, dist, next);
 
+    // Check for negative weight cycles
+    int hasNegativeCycle = 0;
+    for (int i = 0; i < V; i++)
+    {
+        if (dist[i][i] < 0)
+        {
+            hasNegativeCycle = 1;
+            break;
+        }
+    }
+
+    if (hasNegativeCycle)
+    {
+        printf("\nThe graph contains negative weight cycle\n");
+    }
+    else
+    {
+        printf("\nThe graph does not contain negative weight cycle\n");
+    }
     return 0;
 }
 ```
@@ -635,5 +1107,6 @@ Path from 3 to 0: No path exists.
 Path from 3 to 1: No path exists.
 Path from 3 to 2: 3 -> 2(Weight: -2)
 
+The graph does not contain negative weight cycle
 ```
 
