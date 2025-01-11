@@ -266,6 +266,28 @@ int main(int argc, char **argv)
 
 #### Program Output
 
+Creating a graph with `n = 4` vertices.
+
+| Vertex(v) | Conditions Met                                               | Neighbors Added                                              |
+| --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 0         | Even (0 % 2 == 0): Add 0 / 2 = 0.<br/> 3 * 0 = 0 < 4: Adds 0. <br/> 0 + 1 = 1 < 4: Adds 1 | [0, 0, 1, -1] (-1 is sentinel value added to indicate the end of the neighbors list). |
+| 1         | 1 is not even. <br/> 3 * 1 = 3 < 4: Adds 3. <br/> 1 + 1 = 2 < 4: Adds 2 | [3, 2, -1]                                                   |
+| 2         | 2 % 2 == 0: Adds 2/ 2 = 1. <br/> 3 * 2 = 6 >=4: No edge <br/> 2 + 1 = 3 < 4: Adds 3. | [1, 3, -1]                                                   |
+| 3         | 3 is not even. <br/> 3 * 3 = 9 >= 4: No Edge. <br/> 3 + 1 = 4 >= 4: No Edge | [-1]                                                         |
+
+```css
+0 → 0 (self-loop)
+0 → 0 (another self-loop)
+0 → 1
+1 → 3
+1 → 2
+2 → 1
+2 → 3
+3 (No outgoing edges)
+```
+
+
+
 ```shell
 chan@CMA:~/C_Programming/test$ make valgrind
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final g 4
@@ -300,7 +322,48 @@ digraph G {
   - Vertex `2` has edges to `1` and `3`.
   - Vertex `3` has no outgoing edges (except potential self-loop if added).
 
-#### Outputing with 'd' (Tree)
+#### Outputing with 'd' (DFS + Tree)
+
+**Depth-First Search (DFS) Traversal (`dfs`)**
+
+**Purpose:** Traverses the graph starting from the root vertex (`0`) and builds a DFS tree by recording parent-child relationships.
+
+**Process:**
+
+1. **Initialization:**
+   - Start at **Vertex 0**.
+   - Mark **Vertex 0** as visited (`parent[0] = 0`).
+2. **Exploration from Vertex 0:**
+   - **Neighbors:** `0`, `0`, `1`.
+   - **First Neighbor (`0`):** Already visited (self-loop), skip.
+   - **Second Neighbor (`0`):** Already visited (self-loop), skip.
+   - **Third Neighbor (`1`):** Not visited, proceed to visit **Vertex 1**.
+3. **Exploration from Vertex 1:**
+   - Mark **Vertex 1** as visited (`parent[1] = 0`).
+   - **Neighbors:** `3`, `2`.
+   - **First Neighbor (`3`):** Not visited, proceed to visit **Vertex 3**.
+   - **Second Neighbor (`2`):** Not visited, proceed to visit **Vertex 2**.
+4. **Exploration from Vertex 3:**
+   - Mark **Vertex 3** as visited (`parent[3] = 1`).
+   - **Neighbors:** *(None)*.
+   - Backtrack to **Vertex 1**.
+5. **Exploration from Vertex 2:**
+   - Mark **Vertex 2** as visited (`parent[2] = 1`).
+   - **Neighbors:** `1`, `3`.
+   - **First Neighbor (`1`):** Already visited, skip.
+   - **Second Neighbor (`3`):** Already visited, skip.
+   - Backtrack to **Vertex 1**, then to **Vertex 0**.
+
+**Final Parent Relationships**:
+
+| Vertex | Parent |
+| ------ | ------ |
+| 0      | 0      |
+| 1      | 0      |
+| 2      | 1      |
+| 3      | 1      |
+
+
 
 ```shell
 chan@CMA:~/C_Programming/test$ make valgrind
@@ -355,15 +418,181 @@ digraph G {
 `hello.h`
 
 ```C
+#define MAX 100
+
+extern int graph[MAX][MAX]; // adjacency matrix representation of the graph
+extern int visited[MAX];    // visited array for traversals
+extern int n;               // num of nodes in the graph
+
+void dfs(int v);
+void bfs(int start);
 ```
 
 `hello.c`
 
 ```C
+
+void dfs(int v)
+{
+    // mark the current node as visited and print the node
+    visited[v] = 1;
+    printf("%d ", v);
+	
+    for (int i = 0; i < n; i++)
+    {
+        // if there's an edge and the node is unvisited
+        if (graph[v][i] == 1 && !visited[i])
+        {
+            // recursively visit the node
+            dfs(i);
+        }
+    }
+}
+void bfs(int start)
+{
+    int queue[MAX];
+    int front = 0, rear = 0;
+
+    // initialize visited array for BFS
+    for (int i = 0; i < n; i++)
+    {
+        visited[i] = 0;
+    }
+
+    // mark the starting node as visited
+    visited[start] = 1;
+    
+    // enqueue the starting node
+    queue[rear++] = start;
+
+    while (front < rear)
+    {
+        int v = queue[front++];
+        printf("%d ", v);
+
+        for (int i = 0; i < n; i++)
+        {
+            if (graph[v][i] == 1 && !visited[i])
+            {
+                visited[i] = 1;
+                queue[rear++] = i;
+            }
+        }
+    }
+}
 ```
 
 `main.c`
 
 ```c
+#include <stdlib.h>
+#include <stdio.h>
+#include "hello.h"
+
+int main()
+{
+    int edges, u, v;
+
+    printf("Enter the number of nodes: ");
+    scanf("%d", &n);
+
+    printf("Enter the number of edges: ");
+    scanf("%d", &edges);
+
+    // Initialize adjacency matrix with zeros
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            graph[i][j] = 0;
+        }
+    }
+
+    // Define each edge
+    printf("Enter each edge in the format 'u v' (0-indexed):\n");
+    for (int i = 0; i < edges; i++)
+    {
+        scanf("%d %d", &u, &v);
+        graph[u][v] = 1;
+        graph[v][u] = 1; // since the graph is undirected
+    }
+
+    // perform DFS starting from vertex 0
+    printf("DFS traversal starting from vertex 0: ");
+    for (int i = 0; i < n; i++)
+    {
+        visited[i] = 0;
+    }
+    dfs(0);
+    printf("\n");
+
+    // Perform BFS starting from vertex 0
+    printf("BFS traversal starting from vertex 0: ");
+    bfs(0);
+    printf("\n");
+    return 0;
+}
 ```
 
+```shell
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==20626== Memcheck, a memory error detector
+==20626== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==20626== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==20626== Command: ./final
+==20626== 
+Enter the number of nodes: 5
+Enter the number of edges: 5
+Enter each edge in the format 'u v' (0-indexed):
+0 1
+0 2
+1 2
+1 3
+2 4
+DFS traversal starting from vertex 0: 0 1 2 4 3 
+BFS traversal starting from vertex 0: 0 1 2 3 4 
+==20626== 
+==20626== HEAP SUMMARY:
+==20626==     in use at exit: 0 bytes in 0 blocks
+==20626==   total heap usage: 2 allocs, 2 frees, 2,048 bytes allocated
+==20626== 
+==20626== All heap blocks were freed -- no leaks are possible
+==20626== 
+==20626== For lists of detected and suppressed errors, rerun with: -s
+==20626== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+```css
+    0
+   / \
+  1---2
+  |    \
+  3     4
+
+```
+
+**Possible DFS Order** (depending on neighbor iteration order):
+Starting from 0, neighbors are 1 and 2.
+
+- Visit 0.
+- Go to 1 (neighbor of 0).
+- From 1, neighbors are 0 (visited), 2, 3.
+  - Skip 0 as it's visited, go to 2.
+  - From 2, neighbors are 0 (visited), 1 (visited), 4.
+    - Skip 0, 1, and go to 4.
+    - 4's neighbor 2 is visited, so backtrack.
+  - Back to 1, next neighbor is 3.
+    - Visit 3, then backtrack.
+- Back to 0, next neighbor is 2, but 2 is already visited.
+
+**BFS Traversal** starting from vertex 0:
+
+- The BFS algorithm will explore neighbors level by level.
+- **BFS Order:**
+  - Start at 0: enqueued neighbors 1, 2.
+  - Dequeue 0, then enqueue its neighbors (1,2).
+  - Dequeue 1: enqueue neighbor 3 (since 2 is already enqueued or visited).
+  - Dequeue 2: enqueue neighbor 4 (since 0,1 already visited or enqueued).
+  - Dequeue 3: no new neighbors.
+  - Dequeue 4: no new neighbors.

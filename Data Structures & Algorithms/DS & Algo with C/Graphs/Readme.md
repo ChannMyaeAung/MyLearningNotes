@@ -347,7 +347,7 @@ There are two primary ways to represent graphs in C:
 1. **Adjacency Matrix**
 2. **Adjacency List**
 
-### Adjacency Matrix
+### 1. Adjacency Matrix
 
 - An adjacency matrix is a 2D array where each cell `(i, j)` indicates whether there's an edge from vertex `i` to vertex `j`. 
 - An adjacency matrix for a graph of N vertices is an N * N matrix M.
@@ -391,7 +391,7 @@ There are two primary ways to represent graphs in C:
 
 
 
-**Implementation Example:**
+#### **Implementation Example:**
 
 - `adjMatrix`: A 2D array representing the adjacency matrix. If `adjMatrix[i][j]` is `1`, there is an edge between vertex `i` and vertex `j`; otherwise, there is no edge.
 
@@ -683,7 +683,7 @@ Vertex 4:  -> 3 -> 1 -> 0
   2-----3
 ```
 
-### What Are Source and Sink in a Directed Graph?
+#### What Are Source and Sink in a Directed Graph?
 
 1. **Source (in-degree = 0)**
    A **source** in a directed graph is a vertex with **no incoming edges**. In other words, there is no edge pointing **into** this vertex.
@@ -1020,7 +1020,7 @@ Graph Representation:
 - **Vertex 4** has an out-degree of **0**, meaning it has no outgoing edges. This makes **vertex 4** the **sink**.
 - There is no edge leading **into** vertex 0, so its in-degree = 0. Thus, **vertex 0** is the **source**.
 
-## Choosing Between Adjacency Matrix and Adjacency List
+#### Choosing Between Adjacency Matrix and Adjacency List
 
 - **Use an adjacency matrix when:**
   - The graph is dense (number of edges is close to V²).
@@ -1028,3 +1028,122 @@ Graph Representation:
 - **Use an adjacency list when:**
   - The graph is sparse (number of edges is much less than V²).
   - We need to efficiently iterate over the neighbors of a vertex.
+
+---
+
+### 3. Edge List
+
+- An **edge list** is one way to represent a graph. 
+- It consists of a list (or array) of edges, where each edge is represented by a pair (or tuple) of vertices that it connects, and possibly a weight if the graph is weighted.
+
+
+
+#### Implementation in C 
+
+Below is an example C program that uses an edge list to represent a graph and performs a simple traversal-like operation (printing all edges).
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct {
+    int u;
+    int v;
+} Edge;
+
+typedef struct {
+    int numVertices;
+    int numEdges;
+    Edge* edges;
+} Graph;
+
+Graph* createGraph(int vertices, int edgesCount) {
+    Graph* graph = (Graph*)malloc(sizeof(Graph));
+    graph->numVertices = vertices;
+    graph->numEdges = edgesCount;
+    graph->edges = (Edge*)malloc(edgesCount * sizeof(Edge));
+    return graph;
+}
+
+void addEdge(Graph* graph, int edgeIndex, int u, int v) {
+    if(edgeIndex < graph->numEdges) {
+        graph->edges[edgeIndex].u = u;
+        graph->edges[edgeIndex].v = v;
+    }
+}
+
+void printEdges(Graph* graph) {
+    printf("Edge List:\n");
+    for(int i = 0; i < graph->numEdges; i++) {
+        printf("Edge %d: %d -- %d\n", i, graph->edges[i].u, graph->edges[i].v);
+    }
+}
+
+int main() {
+    int vertices, edgesCount;
+    printf("Enter number of vertices: ");
+    scanf("%d", &vertices);
+
+    printf("Enter number of edges: ");
+    scanf("%d", &edgesCount);
+
+    Graph* graph = createGraph(vertices, edgesCount);
+
+    printf("Enter edges in format 'u v' (0-indexed vertices):\n");
+    for(int i = 0; i < edgesCount; i++) {
+        int u, v;
+        scanf("%d %d", &u, &v);
+        addEdge(graph, i, u, v);
+    }
+
+    printEdges(graph);
+
+    // Clean up
+    free(graph->edges);
+    free(graph);
+    return 0;
+}
+
+```
+
+```shell
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==17289== Memcheck, a memory error detector
+==17289== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==17289== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==17289== Command: ./practice
+==17289== 
+Enter number of vertices: 4
+Enter number of edges: 3
+Enter edges in format 'u v' (0-indexed vertices):
+0 1
+1 2
+2 3
+Edge List:
+Edge 0: 0 -- 1
+Edge 1: 1 -- 2
+Edge 2: 2 -- 3
+==17289== 
+==17289== HEAP SUMMARY:
+==17289==     in use at exit: 0 bytes in 0 blocks
+==17289==   total heap usage: 4 allocs, 4 frees, 2,088 bytes allocated
+==17289== 
+==17289== All heap blocks were freed -- no leaks are possible
+==17289== 
+==17289== For lists of detected and suppressed errors, rerun with: -s
+==17289== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+- This means we have 4 vertices (`0, 1, 2, 3`) and 3 edges connecting them as follows: (0,1), (1,2), and (2,3).
+- For the first edge, `u = 0` and `v = 1`, so `edges[0]` becomes {0, 1}.
+
+- For the second edge, `u = 1` and `v = 2`, so `edges[1]` becomes {1, 2}.
+
+- For the third edge, `u = 2` and `v = 3`, so `edges[2]` becomes {2, 3}.
+
+### Summary of Use Cases:
+
+- **Edge List**: Best for algorithms that need to process all edges or when edge modifications occur frequently. Not as ideal for neighbor queries.
+- **Adjacency Matrix**: Best for dense graphs or when very fast edge lookups are required.
+- **Adjacency List**: Generally preferred for most graph algorithms on sparse graphs due to its balance of space and neighbor iteration efficiency.
