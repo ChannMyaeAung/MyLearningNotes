@@ -28,6 +28,39 @@ Kruskal's algorithm finds extensive use in various fields due to its efficiency 
 
 These applications leverage Kruskal's algorithm for its simplicity, efficiency, and capability to produce optimal solutions in scenarios where the structure of connections matters most and costs must be minimized.
 
+## **Time and Space Complexity of Kruskal's Algorithm:**
+
+1. **Time Complexity:**
+
+   - **Sorting Edges:**
+     The algorithm begins by sorting all edges by weight. If there are E edges, sorting takes O(E log⁡ E) time.
+     Since E can be at most V<sup>2</sup> in a dense graph, log ⁡E is O(log⁡ V), making the sorting step O(E log⁡ V) in such cases.
+   - **Union-Find Operations:**
+     For each edge, the algorithm performs two `find` operations and potentially one `union` operation. With path compression and union by rank optimizations, each `find` or `union` operation runs in nearly constant amortized time, specifically O(α(V)), where α is the inverse Ackermann function, which grows extremely slowly and can be treated as a constant for all practical purposes.
+   - **Iterating over Edges:**
+     After sorting, the algorithm processes each edge, but the union-find operations do not dominate the complexity due to their near-constant time.
+
+   Combining these factors, the **overall time complexity** is dominated by the sorting step, which results in:
+
+   Time Complexity: O(E log⁡ E) ≈ O(E log⁡ V)
+
+   (since sorting E edges where E ≤ V<sup>2</sup> gives O(E log⁡ V) in dense graphs).
+
+2. **Space Complexity:**
+
+   - **Graph Storage:**
+     The graph is typically provided as a list of edges, which takes O(E) space.
+   - **Union-Find Structure:**
+     The union-find data structure maintains arrays for parent pointers and ranks, which together use O(V)space.
+   - **Auxiliary Structures:**
+     Additional space is used for temporary arrays (e.g., for storing the MST edges), but this is bounded by O(V) since the MST contains V−1 edges.
+
+   Thus:
+
+   **Space Complexity:** O(V+E)
+
+   because the primary storage needs are for the union-find arrays and the list of edges.
+
 ## Algorithm Steps:
 
 1. **Sort Edges:** Start by sorting all the edges of the graph in non-decreasing order of their weights.
