@@ -113,11 +113,14 @@ The capacity for forward and reverse paths are considered separately.
 `hello.h`
 
 ```C
+// represent colors for BFS traversal states
 #define A 0
 #define B 1
 #define C 2
+
+
 #define MAX_NODES 1000
-#define O 1000000000
+#define O 1000000000 // represent infinity to initialize the 'increment' variable in the Ford-Fulkerson algorithm
 
 extern int n; // num of vertices
 extern int e; // num of edges
@@ -269,7 +272,7 @@ int fordFulkerson(int source, int sink)
     // Updating the residual values of edges
     while (bfs(source, sink))
     {
-        int increment = O;  // Initialize to a large number (infinity)
+        int increment = O;  // Initialize to a large number 'O' (alphabet O)(infinity)
         
         // Determine the minimum residual capacity along the path found by BFS
         for (u = n - 1; pred[u] >= 0; u = pred[u])
@@ -346,6 +349,12 @@ Max Flow: 6
 - **Flow Matrix (`flow[][]`):** Initialized to **0** for all edges.
 - **Max Flow (`max_flow`):** Starts at **0**.
 
+**Num of Vertices (n = 6) && Num of Edges (e = 7)**:
+
+![ford-fulkerson-1](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-1.png)
+
+
+
 **Augmenting Path 1:** `0 → 1 → 2 → 5`
 
 - **Residual Capacities:**
@@ -372,6 +381,8 @@ Max Flow: 6
   - `flow[3][5] += 3` → `flow[3][5] = 3`
 - **Total Max Flow:** `2 + 3 = 5`
 
+![ford-fulkerson-2.png](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-2.png.png)
+
 **Augmenting Path 3:** `0 → 1 → 2 → 4 → 3 → 5`
 
 - **Residual Capacities:**
@@ -389,18 +400,427 @@ Max Flow: 6
   - `flow[3][5] += 1` → `flow[3][5] = 4`
 - **Total Max Flow:** `5 + 1 = 6`
 
+![ford-fulkerson-3](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-3.png)
+
 **Final Check:**
 
 After these iterations, attempting to find another augmenting path:
 
 - **No Additional Paths Available:**
   - Residual Capacities:
-    - `0 → 1`: 6 - 3 = 3
+    - `0 → 1`: 8 - 3 = 5
     - `0 → 4`: 3 - 3 = 0
-    - `1 → 2`: 7 - 3 = 4
+    - `1 → 2`: 9 - 3 = 6
     - `2 → 5`: 2 - 2 = 0
     - `4 → 3`: 4 - 4 = 0
     - `3 → 5`: 5 - 4 = 1
 - **Result:**
   No further augmenting paths can increase the flow without exceeding capacities.
 - **Final Max Flow:** **6**
+
+---
+
+## C Implementation (DFS-Based)
+
+#### Program Code
+
+`hello.h`
+
+```c
+#define V 6
+
+// A DFS based func to find an augmenting path
+// Returns true if there is a path from source 's' to sink 't' in the residual graph
+// Also fills parent[] to store the path
+bool dfs(int rGraph[V][V], int s, int t, bool visited[], int parent[]);
+
+// Implementation of Ford-Fulkerson algorithm for max flow
+int fordFulkerson(int graph[V][V], int s, int t);
+```
+
+**Graph Representation:**
+
+- The graph is defined as a 2D array (`graph[V][V]`) where each cell `[u][v]` represents the capacity of the edge from vertex `u` to `v`. If there's no edge, the capacity is `0`.
+
+**Residual Graph:**
+
+- A residual graph (`residualGraph`) is created as a copy of the original graph. This graph will be updated as flows are sent along paths.
+
+**DFS for Finding Augmenting Path:**
+
+- The `dfs` function searches for an augmenting path from source to sink in the residual graph. It marks visited nodes and uses the `parent` array to store the path found.
+
+**Ford-Fulkerson Algorithm Steps:**
+
+- Repeatedly find an augmenting path using DFS.
+- Once a path is found, determine the minimum capacity along that path (`pathFlow`).
+- Update the residual capacities along the path: decrease forward edge capacities and increase reverse edge capacities.
+- Add the path flow to the total `maxFlow`.
+- Continue this process until no more augmenting paths can be found.
+
+`hello.c`
+
+```c
+/**
+ * @brief Performs a Depth-First Search (DFS) to find an augmenting path.
+ *
+ * @param rGraph The residual graph.
+ * @param s The src vertex.
+ * @param t The sink vertex.
+ * @param visited Array to keep track of visited vertices.
+ * @param parent Array to store the augmenting path.
+ * @return true if an augmenting path is found; otherwise, false.
+ */
+bool dfs(int rGraph[V][V], int s, int t, bool visited[], int parent[])
+{
+    // mark the source node as visited
+    visited[s] = true;
+    if (s == t)
+    {
+        return true; // reached sink
+    }
+
+    // Iterate through all vertices to find adjacent vertices with available capacity.
+    for (int v = 0; v < V; v++)
+    {
+        // if there's available capacity and v is not visited yet.
+        if (!visited[v] && rGraph[s][v] > 0)
+        {
+            // set the predecessor for path reconstruction
+            parent[v] = s;
+            
+            // recursively attempt to find a path from this vertex to the sink.
+            if (dfs(rGraph, v, t, visited, parent))
+            {
+                return true;
+            }
+        }
+    }
+    
+    // No augmenting path found from this vertex.
+    return false;
+}
+
+/**
+ * @brief Implements the Ford-Fulkerson algorithm to compute the maximum flow.
+ *
+ * @param graph The original graph represented as an adjacency matrix.
+ * @param s The source vertex.
+ * @param t The sink vertex.
+ * @return The maximum flow from source to sink.
+ */
+int fordFulkerson(int graph[V][V], int s, int t)
+{
+    int u, v;
+
+    // Create a residual graph and fill with initial capacities.
+    int rGraph[V][V];
+    for (u = 0; u < V; u++)
+    {
+        for (v = 0; v < V; v++)
+        {
+            rGraph[u][v] = graph[u][v];
+        }
+    }
+
+    int maxFlow = 0;
+    int parent[V]; // array to store path
+
+    // Augment the flow while there is a path from src to sink.
+    while (true)
+    {
+        // Mark all nodes as not visited for this iteration
+        bool visited[V];
+        memset(visited, 0, sizeof(visited));
+        memset(parent, -1, sizeof(parent));
+
+        // if no augmenting path found, break
+        if (!dfs(rGraph, s, t, visited, parent))
+        {
+            break;
+        }
+
+        // find min residual capacity of the augmenting path found.
+        int pathFlow = INT_MAX;
+        for (v = t; v != s; v = parent[v])
+        {
+            u = parent[v];
+            if (rGraph[u][v] < pathFlow)
+            {
+                pathFlow = rGraph[u][v];
+            }
+        }
+
+        // Update residual capacities of the edges and reverse edges along the path
+        for (v = t; v != s; v = parent[v])
+        {
+            u = parent[v];
+            rGraph[u][v] -= pathFlow; // Reduce capacity in the forward direction.
+            rGraph[v][u] += pathFlow; // Increase capacity in the reverse direction.
+        }
+
+        // Add path flow to overall flow
+        maxFlow += pathFlow;
+    }
+
+    return maxFlow;
+}
+```
+
+`main.c`
+
+```c
+int main()
+{
+    int graph[V][V] = {
+        {0, 16, 13, 0, 0, 0},
+        {0, 0, 10, 12, 0, 0},
+        {0, 4, 0, 0, 14, 0},
+        {0, 0, 9, 0, 0, 20},
+        {0, 0, 0, 7, 0, 4},
+        {0, 0, 0, 0, 0, 0}};
+
+    int s = 0;
+    int t = 5;
+
+    printf("The maximum possible flow is %d\n", fordFulkerson(graph, s, t));
+    return 0;
+}
+```
+
+#### Program Step-by-Step Execution
+
+|      | 0    | 1    | 2    | 3    | 4    | 5    |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| 0    | 0    | 16   | 13   | 0    | 0    | 0    |
+| 1    | 0    | 0    | 10   | 12   | 0    | 0    |
+| 2    | 0    | 4    | 0    | 0    | 14   | 0    |
+| 3    | 0    | 0    | 9    | 0    | 0    | 20   |
+| 4    | 0    | 0    | 0    | 7    | 0    | 4    |
+| 5    | 0    | 0    | 0    | 0    | 0    | 0    |
+
+Vertices: 0 (Source), 1, 2, 3, 4, 5 (Sink)
+
+Edges and Capacities:
+- 0 → 1: 16
+- 0 → 2: 13
+- 1 → 2: 10
+- 1 → 3: 12
+- 2 → 1: 4
+- 2 → 4: 14
+- 3 → 2: 9
+- 3 → 5: 20
+- 4 → 3: 7
+- 4 → 5: 4
+
+**Initial Graph Flow:**
+
+![ford-fulkerson-dfs-1](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-1.png)
+
+**Iteration 1:**
+
+- **Find Augmenting Path:** `0 → 1 → 3 → 5`
+
+  **Path Details:**
+
+  - `0 → 1`: Capacity = 16
+  - `1 → 3`: Capacity = 12
+  - `3 → 5`: Capacity = 20
+
+  **Bottleneck Capacity:** `min(16, 12, 20) = 12`
+
+- **Update Residual Capacities:**
+
+```css
+rGraph[0][1] -= 12 => 16 - 12 = 4
+rGraph[1][3] -= 12 => 12 - 12 = 0
+rGraph[3][5] -= 12 => 20 - 12 = 8
+
+// Reverse flows
+rGraph[1][0] += 12 => 0 + 12 = 12
+rGraph[3][1] += 12 => 0 + 12 = 12
+rGraph[5][3] += 12 => 0 + 12 = 12
+```
+
+- **Update Max Flow:**
+
+```css
+maxFlow += 12 => 0 + 12 = 12
+```
+
+**Flow Graph After Iteration 1:**
+
+![ford-fulkerson-dfs-2](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-2.png)
+
+**Iteration 2:**
+
+- **Find Augmenting Path:** `0 → 2 → 4 → 5`
+
+  **Path Details:**
+
+  - `0 → 2`: Capacity = 13
+  - `2 → 4`: Capacity = 14
+  - `4 → 5`: Capacity = 4
+
+  **Bottleneck Capacity:** `min(13, 14, 4) = 4`
+
+- **Update Residual Capacities:**
+
+```css
+rGraph[0][2] -= 4 => 13 - 4 = 9
+rGraph[2][4] -= 4 => 14 - 4 = 10
+rGraph[4][5] -= 4 => 4 - 4 = 0
+
+// Reverse flows
+rGraph[2][0] += 4 => 0 + 4 = 4
+rGraph[4][2] += 4 => 0 + 4 = 4
+rGraph[5][4] += 4 => 0 + 4 = 4
+```
+
+- **Update Max Flow**:
+
+```css
+maxFlow += 4 => 12 + 4 = 16
+```
+
+**Flow Graph After Iteration 2:**
+
+![ford-fulkerson-dfs-3](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-3.png)
+
+**Iteration 3:**
+
+- **Find Augmenting Path:** `0 → 1 → 2 → 4 → 3 → 5`
+
+  **Path Details:**
+
+  - `0 → 1`: Capacity = 4
+  - `1 → 2`: Capacity = 10
+  - `2 → 4`: Capacity = 10
+  - `4 → 3`: Capacity = 7
+  - `3 → 5`: Capacity = 8
+
+  **Bottleneck Capacity:** `min(4, 10, 10, 7, 8) = 4`
+
+- **Update Residual Capacities:**
+
+```css
+rGraph[0][1] -= 4 => 4 - 4 = 0
+rGraph[1][2] -= 4 => 10 - 4 = 6
+rGraph[2][4] -= 4 => 10 - 4 = 6
+rGraph[4][3] -= 4 => 7 - 4 = 3
+rGraph[3][5] -= 4 => 8 - 4 = 4
+
+// Reverse flows
+rGraph[1][0] += 4 => 12 + 4 = 16
+rGraph[2][1] += 4 => 0 + 4 = 4
+rGraph[4][2] += 4 => 4 + 4 = 8
+rGraph[3][4] += 4 => 0 + 4 = 4
+rGraph[5][3] += 4 => 12 + 4 = 16
+```
+
+- **Update Max Flow**:
+
+```css
+maxFlow += 4 => 16 + 4 = 20
+```
+
+**Flow Graph After Iteration 3:**
+
+![ford-fulkerson-dfs-4](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-4.png)
+
+**Iteration 4:**
+
+- **Find Augmenting Path:** `0 → 2 → 1 → 3 → 5`
+
+  **Path Details:**
+
+  - `0 → 2`: Capacity = 9
+  - `2 → 1`: Capacity = 4
+  - `1 → 3`: Capacity = 0 (No available capacity)
+
+  **Issue:** No capacity in `1 → 3`. Dead end.
+
+- **Alternative Path:** `0 → 2 → 4 → 3 → 5`
+
+  **Path Details:**
+
+  - `0 → 2`: Capacity = 9
+  - `2 → 4`: Capacity = 6
+  - `4 → 3`: Capacity = 3
+  - `3 → 5`: Capacity = 4
+
+  **Bottleneck Capacity:** `min(9, 6, 3, 4) = 3`
+
+- **Update Residual Capacities:**
+
+```css
+rGraph[0][2] -= 3 => 9 - 3 = 6
+rGraph[2][4] -= 3 => 6 - 3 = 3
+rGraph[4][3] -= 3 => 3 - 3 = 0
+rGraph[3][5] -= 3 => 4 - 3 = 1
+
+// Reverse flows
+rGraph[2][0] += 3 => 4 + 3 = 7
+rGraph[4][2] += 3 => 8 + 3 = 11
+rGraph[3][4] += 3 => 4 + 3 = 7
+rGraph[5][3] += 3 => 16 + 3 = 19
+```
+
+- **Update Max Flow:**
+
+```css
+maxFlow += 3 => 20 + 3 = 23
+```
+
+**Flow Graph After Iteration 4:**
+
+![ford-fulkerson-dfs-5](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-5.png)
+
+**Iteration 5:**
+
+- **Find Augmenting Path:** `0 → 2 → 1 → 2 → 4 → 3 → 5`
+
+  **Path Details:**
+
+  - `0 → 2`: Capacity = 6
+  - `2 → 1`: Capacity = 4
+  - `1 → 2`: Capacity = 6
+  - `2 → 4`: Capacity = 3
+  - `4 → 3`: Capacity = 0 (No available capacity)
+
+  **Issue:** No capacity in `4 → 3`. Dead end.
+
+- **Alternative Paths:**
+  No further augmenting paths available from source to sink with available capacity.
+
+- **Termination:**
+  No augmenting paths found. Algorithm terminates.
+
+- **Final Max Flow:** **23**
+
+**Final Flow Graph Structure**
+
+![ford-fulkerson-dfs-5](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-5.png)
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==14960== Memcheck, a memory error detector
+==14960== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==14960== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==14960== Command: ./final
+==14960== 
+The maximum possible flow is 23
+==14960== 
+==14960== HEAP SUMMARY:
+==14960==     in use at exit: 0 bytes in 0 blocks
+==14960==   total heap usage: 1 allocs, 1 frees, 1,024 bytes allocated
+==14960== 
+==14960== All heap blocks were freed -- no leaks are possible
+==14960== 
+==14960== For lists of detected and suppressed errors, rerun with: -s
+==14960== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
