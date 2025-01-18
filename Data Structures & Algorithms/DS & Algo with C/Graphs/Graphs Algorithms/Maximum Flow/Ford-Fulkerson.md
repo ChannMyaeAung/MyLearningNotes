@@ -351,10 +351,7 @@ Max Flow: 6
 
 **Num of Vertices (n = 6) && Num of Edges (e = 7)**:
 
-![ford-fulkerson-1](github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-1.png)
-
 ![ford-fulkerson-1](Img/ford-fulkerson-1.png)
-
 
 **Augmenting Path 1:** `0 → 1 → 2 → 5`
 
@@ -382,7 +379,9 @@ Max Flow: 6
   - `flow[3][5] += 3` → `flow[3][5] = 3`
 - **Total Max Flow:** `2 + 3 = 5`
 
-![ford-fulkerson-2.png](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-2.png.png)
+![ford-fulkerson-2.png](Img/ford-fulkerson-2.png.png)
+
+[ford-fulkerson-2.png](Img/ford-fulkerson-2.png.png)
 
 **Augmenting Path 3:** `0 → 1 → 2 → 4 → 3 → 5`
 
@@ -401,7 +400,7 @@ Max Flow: 6
   - `flow[3][5] += 1` → `flow[3][5] = 4`
 - **Total Max Flow:** `5 + 1 = 6`
 
-![ford-fulkerson-3](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-3.png)
+![ford-fulkerson-3](Img/ford-fulkerson-3.png)
 
 **Final Check:**
 
@@ -616,7 +615,7 @@ Edges and Capacities:
 
 **Initial Graph Flow:**
 
-![ford-fulkerson-dfs-1](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-1.png)
+![ford-fulkerson-dfs-1](Img/ford-fulkerson-dfs-1.png)
 
 **Iteration 1:**
 
@@ -651,7 +650,7 @@ maxFlow += 12 => 0 + 12 = 12
 
 **Flow Graph After Iteration 1:**
 
-![ford-fulkerson-dfs-2](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-2.png)
+![ford-fulkerson-dfs-2](Img/ford-fulkerson-dfs-2.png)
 
 **Iteration 2:**
 
@@ -686,7 +685,7 @@ maxFlow += 4 => 12 + 4 = 16
 
 **Flow Graph After Iteration 2:**
 
-![ford-fulkerson-dfs-3](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-3.png)
+![ford-fulkerson-dfs-3](Img/ford-fulkerson-dfs-3.png)
 
 **Iteration 3:**
 
@@ -727,7 +726,7 @@ maxFlow += 4 => 16 + 4 = 20
 
 **Flow Graph After Iteration 3:**
 
-![ford-fulkerson-dfs-4](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-4.png)
+![ford-fulkerson-dfs-4](Img/ford-fulkerson-dfs-4.png)
 
 **Iteration 4:**
 
@@ -775,7 +774,7 @@ maxFlow += 3 => 20 + 3 = 23
 
 **Flow Graph After Iteration 4:**
 
-![ford-fulkerson-dfs-5](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-5.png)
+![ford-fulkerson-dfs-5](Img/ford-fulkerson-dfs-5.png)
 
 **Iteration 5:**
 
@@ -801,7 +800,7 @@ maxFlow += 3 => 20 + 3 = 23
 
 **Final Flow Graph Structure**
 
-![ford-fulkerson-dfs-5](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-dfs-5.png)
+![ford-fulkerson-dfs-5](Img/ford-fulkerson-dfs-5.png)
 
 #### Program Output
 
