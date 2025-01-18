@@ -409,20 +409,202 @@ A valid **topological sort** ensures that for every directed edge **U → V**, v
 `hello.h`
 
 ```C
+#define MAX_V 100
+
+// Graph representation using adjacency list
+typedef struct Node
+{
+    int vertex;
+    struct Node *next;
+} Node;
+
+typedef struct
+{
+    Node *head[MAX_V]; // Array of pointers to the head nodes of adjacency lists
+    int numVertices;
+} Graph;
+
+// Creates a new graph with a specified number of vertices
+Graph *createGraph(int vertices);
+
+// Creates a new adjacency list node for a given vertex
+Node *createNode(int v);
+
+// Adds a directed edge from 'src' to 'dest' in the graph
+void addEdge(Graph *g, int src, int dest);
+
+// Recursive utility function for topological sort using DFS
+void topologicalSortUtil(Graph *g, int v);
+
+// Performs topological sort on the graph and prints the sorted order
+void topologicalSort(Graph *g);
+
+// Frees all dynamically allocated memory associated with the graph
+void freeGraph(Graph *g);
 ```
 
 `hello.c`
 
 ```c
+int visited[MAX_V]; 
+int stack[MAX_V];
+int top = -1;
+
+// Create a new graph with a given num of vertices
+Graph *createGraph(int vertices)
+{
+    Graph *g = malloc(sizeof(Graph));
+    assert(g);
+    g->numVertices = vertices;
+    for (int i = 0; i < vertices; i++)
+    {
+        g->head[i] = NULL;
+        visited[i] = 0;
+    }
+    return g; // Return the pointer to the newly created graph
+}
+
+// Create a new adjacency list node
+Node *createNode(int v)
+{
+    Node *newNode = malloc(sizeof(Node));
+    assert(newNode);
+    newNode->vertex = v;
+    newNode->next = NULL;
+    return newNode; // Return the pointer to the newly created node
+}
+
+// Add directed edge from src to dest
+void addEdge(Graph *g, int src, int dest)
+{
+    Node *newNode = createNode(dest);
+
+    // Insert the new node at the beginning of the adjacency list for 'src'
+    newNode->next = g->head[src];
+    // Update the head to point to the new node
+    g->head[src] = newNode;
+}
+
+// Recursive util func for topological sort
+void topologicalSortUtil(Graph *g, int v)
+{
+    visited[v] = 1; // Mark the current vertex as visited
+
+    // Traverse all adjacent vertices
+    Node *temp = g->head[v];
+    while (temp != NULL)
+    {
+        int adjVertex = temp->vertex;
+        if (!visited[adjVertex])
+        {
+            topologicalSortUtil(g, adjVertex);
+        }
+        temp = temp->next;
+    }
+
+    // push the current vertex onto the stack after exploring all adjacent vertices
+    stack[++top] = v;
+}
+
+void topologicalSort(Graph *g)
+{
+    // call the recursive helper func to store topological sort starting from all vertices one by one
+    for (int i = 0; i < g->numVertices; i++)
+    {
+        if (!visited[i])
+        {
+            topologicalSortUtil(g, i);
+        }
+    }
+
+    // print the contents of the stack which represents the topological order
+    while (top >= 0)
+    {
+        printf("%d ", stack[top--]);
+    }
+    printf("\n");
+}
+
+void freeGraph(Graph *g)
+{
+    if (g == NULL)
+    {
+        return;
+    }
+
+    // iterate thru each adjacency list
+    for (int i = 0; i < g->numVertices; i++)
+    {
+        Node *current = g->head[i];
+        while (current != NULL)
+        {
+            Node *temp = current;
+            current = current->next;
+            free(temp); // Free each node
+        }
+    }
+    free(g);
+}
 ```
 
 `main.c`
 
 ```c
+int main()
+{
+    int v, e;
+    printf("Enter the number of vertices: ");
+    scanf("%d", &v);
+    printf("Enter the number of edges: ");
+    scanf("%d", &e);
+
+    Graph *g = createGraph(v);
+
+    printf("Enter each edge in the format 'src dest':\n");
+    for (int i = 0; i < e; i++)
+    {
+        int u, v;
+        scanf("%d %d", &u, &v);
+        addEdge(g, u, v);
+    }
+
+    printf("Topological Sort:\n");
+    topologicalSort(g);
+    freeGraph(g);
+    return 0;
+}
 ```
 
 #### Program Output
 
 ```shell
+chan@CMA:~/C_Programming/test$ make valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./final
+==19974== Memcheck, a memory error detector
+==19974== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==19974== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==19974== Command: ./final
+==19974== 
+Enter the number of vertices: 6
+Enter the number of edges: 6
+Enter each edge in the format 'src dest':
+5 2
+5 0
+4 0
+4 1
+2 3
+3 1
+Topological Sort:
+5 4 2 3 1 0 
+==19974== 
+==19974== HEAP SUMMARY:
+==19974==     in use at exit: 0 bytes in 0 blocks
+==19974==   total heap usage: 9 allocs, 9 frees, 2,952 bytes allocated
+==19974== 
+==19974== All heap blocks were freed -- no leaks are possible
+==19974== 
+==19974== For lists of detected and suppressed errors, rerun with: -s
+==19974== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
 ```
 

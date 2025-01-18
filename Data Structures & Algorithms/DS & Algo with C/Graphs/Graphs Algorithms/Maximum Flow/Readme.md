@@ -4,18 +4,7 @@
 - More specificially, the flow comes from a source vertex `s` (source = no incoming but outgoing edges only) and ends up in a sink vertex `t` (sink = no outgoing edges but only incoming edges).
 - Each edge in the graph is defined with a flow and a capacity, where the capacity is the maximum flow that edge can have.
 
-```css
-
-        v1 ------> v3
-	   ↗↑ ↘         ↑ ↘
- 0/3 ↗  |   ↘ 0/4   |    ↘ 0/2
-   ↗    |    ↘      |      ↘
-s       |0/5  ↘     |0/3    t
-  ↘     |      ↘    |      ↗
-    ↘   |       ↘   |    ↗ 0/6
- 0/7  ↘ |         ↘ |  ↗
-       v2 --------> v4
-```
+![max-flow](Img/max-flow.png)
 
 #### Terminology and Concepts
 

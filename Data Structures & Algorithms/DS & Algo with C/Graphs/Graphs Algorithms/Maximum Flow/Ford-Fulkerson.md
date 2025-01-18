@@ -33,70 +33,22 @@ The algorithm follows:
 
 **Note: We can also consider reverse-path if required because if we do not consider them, we may never find a maximum flow.**
 
-```css
-              0/9
-         A  ------>  B
-	   ↗            ↗  ↘
- 0/8 ↗            ↗      ↘ 0/2
-   ↗            ↗          ↘
-S          0/7↗              T
-  ↘         ↗              ↗
-    ↘     ↗              ↗ 0/5
- 0/3  ↘ ↗              ↗
-        D --------> C
-             0/4
-```
+![ford-fulkerson-intro-1](Img/ford-fulkerson-intro-1.png)
 
 1. Select any arbitrary path from S to T. In this step, we have selected path `S-A-B-T`. 
 2. The minimum capacity among the three edges is 2 (`B-T`). Based on this, update the `flow/capacity` for each path.
 
-```css
-             2/9
-         A  ------>  B
-	   ↗            ↗  ↘
- 2/8 ↗            ↗      ↘ 2/2
-   ↗            ↗          ↘
-S          0/7↗              T
-  ↘         ↗              ↗
-    ↘     ↗              ↗ 0/5
- 0/3  ↘ ↗              ↗
-        D --------> C
-             0/4
-```
+![ford-fulkerson-intro-2](Img/ford-fulkerson-intro-2.png)
 
 3. Select another path `S-D-C-T`. The minimum capacity among these edges is 3 (`S-D`). Update the capacities according to this.
 
-```css
-             2/9
-         A  ------>  B
-	   ↗            ↗  ↘
- 2/8 ↗            ↗      ↘ 2/2
-   ↗            ↗          ↘
-S          0/7↗              T
-  ↘         ↗              ↗
-    ↘     ↗              ↗ 3/5
- 3/3  ↘ ↗              ↗
-        D --------> C
-             3/4
-```
+![ford-fulkerson-intro-3](Img/ford-fulkerson-intro-3.png)
 
 4. Now, let's consider the reverse-path `B-D` as well. Selecting path `S-A-B-D-C-T`. The minimum residual capacity among the edges is 1 (`D-C`).
 
 Updating the capacities.
 
-```css
-             3/9
-         A  ------>  B
-	   ↗            ↗  ↘
- 3/8 ↗            ↗      ↘ 2/2
-   ↗            ↗          ↘
-S          1/7↗              T
-  ↘         ↗              ↗
-    ↘     ↗              ↗ 3/5
- 3/3  ↘ ↗              ↗
-        D --------> C
-             4/4
-```
+![ford-fulkerson-intro-4](Img/ford-fulkerson-intro-4.png)
 
 The capacity for forward and reverse paths are considered separately.
 
