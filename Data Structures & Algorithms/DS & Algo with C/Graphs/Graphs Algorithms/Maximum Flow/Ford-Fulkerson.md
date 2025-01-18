@@ -351,8 +351,9 @@ Max Flow: 6
 
 **Num of Vertices (n = 6) && Num of Edges (e = 7)**:
 
-![ford-fulkerson-1](/home/chan/github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-1.png)
+![ford-fulkerson-1](github.com/MyLearningNotes/Data Structures & Algorithms/DS & Algo with C/Graphs/Graphs Algorithms/Maximum Flow/Img/ford-fulkerson-1.png)
 
+![ford-fulkerson-1](/Img/ford-fulkerson-1.png)
 
 
 **Augmenting Path 1:** `0 → 1 → 2 → 5`
