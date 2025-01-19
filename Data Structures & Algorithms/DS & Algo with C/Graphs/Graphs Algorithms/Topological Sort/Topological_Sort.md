@@ -485,7 +485,7 @@ void addEdge(Graph *g, int src, int dest)
     g->head[src] = newNode;
 }
 
-// Recursive util func for topological sort
+// Recursive util func that performs DFS starting from vertex v to aid in topological sort
 void topologicalSortUtil(Graph *g, int v)
 {
     visited[v] = 1; // Mark the current vertex as visited
@@ -497,12 +497,13 @@ void topologicalSortUtil(Graph *g, int v)
         int adjVertex = temp->vertex;
         if (!visited[adjVertex])
         {
+            // recursively visits all unvisited adjacent vertices
             topologicalSortUtil(g, adjVertex);
         }
         temp = temp->next;
     }
 
-    // push the current vertex onto the stack after exploring all adjacent vertices
+    // push the current vertex onto the stack after exploring all reachable adjacent vertices from v
     stack[++top] = v;
 }
 
@@ -513,14 +514,14 @@ void topologicalSort(Graph *g)
     {
         if (!visited[i])
         {
-            topologicalSortUtil(g, i);
+            topologicalSortUtil(g, i); // perform dfs starting from vertex 'i'
         }
     }
 
-    // print the contents of the stack which represents the topological order
+    // after completing DFS for all vertices, prints the vertices in the order they were pushed onto the stack which represents the topological order.
     while (top >= 0)
     {
-        printf("%d ", stack[top--]);
+        printf("%d ", stack[top--]); // Pop from the stack and print
     }
     printf("\n");
 }
@@ -608,3 +609,161 @@ Topological Sort:
 
 ```
 
+#### **Step-by-Step Execution:**
+
+1. **Program Start:**
+
+   - Executable `./final` is run.
+   - Valgrind monitors the execution for memory leaks and errors.
+
+2. **Reading Number of Vertices and Edges:**
+
+   - **Vertices (`v`):** `6`
+   - **Edges (`e`):** `6`
+
+3. **Graph Creation:**
+
+   - `createGraph(6)` is called.
+   - Allocates memory for a `Graph` structure.
+   - Sets `numVertices` to `6`.
+   - Initializes all adjacency list heads to `NULL`.
+   - Marks all vertices as unvisited (`visited[i] = 0;`).
+
+4. **Adding Edges:**
+
+   - Edge 1: `5 2`
+     - Adds a directed edge from vertex `5` to vertex `2`.
+   - Edge 2: `5 0`
+     - Adds a directed edge from vertex `5` to vertex `0`.
+   - Edge 3: `4 0`
+     - Adds a directed edge from vertex `4` to vertex `0`.
+   - Edge 4: `4 1`
+     - Adds a directed edge from vertex `4` to vertex `1`.
+   - Edge 5: `2 3`
+     - Adds a directed edge from vertex `2` to vertex `3`.
+   - Edge 6: `3 1`
+     - Adds a directed edge from vertex `3` to vertex `1`.
+
+   **Adjacency List Representation After Adding Edges:**
+
+```css
+Vertex 0: NULL
+Vertex 1: NULL
+Vertex 2: -> 3
+Vertex 3: -> 1
+Vertex 4: -> 1 -> 0
+Vertex 5: -> 0 -> 2
+```
+
+**Topological Sorting:**
+
+- Calls `topologicalSort(g);`
+
+**Detailed Steps within `topologicalSort`:**
+
+a. **Initialization:**
+
+- Iterates through all vertices (`0` to `5`).
+- For each unvisited vertex, calls `topologicalSortUtil`.
+
+b. **Processing Vertices:**
+
+- **Vertex 0:**
+  - **Check:** `!visited[0]` is `true` (unvisited).
+  - Call: `topologicalSortUtil(g, 0)`;
+    - **Mark as Visited:** `visited[0] = 1;`
+    - **Adjacency List:** `NULL` (no outgoing edges).
+    - **Push to Stack:** `stack[++top] = 0;` → `top = 0`, `stack[0] = 0;`
+- **Vertex 1:**
+  - **Check:** `!visited[1]` is `true`.
+  - Call: `topologicalSortUtil(g, 1)`;
+    - **Mark as Visited:** `visited[1] = 1;`
+    - **Adjacency List:** `NULL`
+    - **Push to Stack:** `stack[++top] = 1;` → `top = 1`, `stack[1] = 1;`
+- **Vertex 2:**
+  - **Check:** `!visited[2]` is `true`.
+  - Call: `topologicalSortUtil(g, 2)`;
+    - **Mark as Visited:** `visited[2] = 1;`
+    - **Adjacency List:** `-> 3`
+    - **Adjacent Vertex 3:**
+      - **Check:** `!visited[3]` is `true`.
+      - Recursive Call: `topologicalSortUtil(g, 3)`;
+        - **Mark as Visited:** `visited[3] = 1;`
+        - **Adjacency List:** `-> 1`
+        - **Adjacent Vertex 1:**
+          - **Check:** `!visited[1]` is `false` (already visited).
+        - **Push to Stack:** `stack[++top] = 3;` → `top = 2`, `stack[2] = 3;`
+    - **Push to Stack:** `stack[++top] = 2;` → `top = 3`, `stack[3] = 2;`
+- **Vertex 3:**
+  - **Check:** `!visited[3]` is `false` (already visited).
+  - **Skip:** No action.
+- **Vertex 4:**
+  - **Check:** `!visited[4]` is `true`.
+  - Call: `topologicalSortUtil(g, 4)`;
+    - **Mark as Visited:** `visited[4] = 1;`
+    - **Adjacency List:** `-> 1 -> 0`
+    - **Adjacent Vertex 1:**
+      - **Check:** `!visited[1]` is `false`.
+    - **Adjacent Vertex 0:**
+      - **Check:** `!visited[0]` is `false`.
+    - **Push to Stack:** `stack[++top] = 4;` → `top = 4`, `stack[4] = 4;`
+- **Vertex 5:**
+  - **Check:** `!visited[5]` is `true`.
+  - Call: `topologicalSortUtil(g, 5)`;
+    - **Mark as Visited:** `visited[5] = 1;`
+    - **Adjacency List:** `-> 0 -> 2`
+    - Adjacent Vertex 0:
+      - **Check:** `!visited[0]` is `false`.
+    - Adjacent Vertex 2:
+      - **Check:** `!visited[2]` is `false`.
+    - **Push to Stack:** `stack[++top] = 5;` → `top = 5`, `stack[5] = 5;`
+
+c. **Final Stack Contents:**
+
+```css
+Index : 0   1   2   3   4   5
+Value : 0 | 1 | 3 | 2 | 4 | 5
+```
+
+- **Printing Topological Order:**
+  - Pops from the stack and prints each vertex:
+    - Pops `5`, prints `5`
+    - Pops `4`, prints `4`
+    - Pops `2`, prints `2`
+    - Pops `3`, prints `3`
+    - Pops `1`, prints `1`
+    - Pops `0`, prints `0`
+  - **Final Output:** `5 4 2 3 1 0`
+- **Memory Cleanup:**
+  - Calls `freeGraph(g);` to free all dynamically allocated memory.
+  - Memory Allocation and Deallocation:
+    - Allocation:
+      - Graph structure (`g`) and adjacency list nodes were allocated using `malloc`.
+    - Deallocation:
+      - All adjacency list nodes and the graph structure were freed using `free`.
+
+**Topological Order Produced:** `5 4 2 3 1 0`
+
+**Validation:**
+
+- **Edge 5 → 2:** `5` appears before `2`.
+- **Edge 5 → 0:** `5` appears before `0`.
+- **Edge 4 → 1:** `4` appears before `1`.
+- **Edge 4 → 0:** `4` appears before `0`.
+- **Edge 2 → 3:** `2` appears before `3`.
+- **Edge 3 → 1:** `3` appears before `1`.
+
+All edges satisfy the topological order constraints, confirming that the output is a **valid topological sort**.
+
+**Graph Structure:**
+
+```css
+Vertex 5: → 2, → 0
+Vertex 4: → 1, → 0
+Vertex 2: → 3
+Vertex 3: → 1
+Vertex 0: (No outgoing edges)
+Vertex 1: (No outgoing edges)
+```
+
+![dfs-g](dfs-g.png)
