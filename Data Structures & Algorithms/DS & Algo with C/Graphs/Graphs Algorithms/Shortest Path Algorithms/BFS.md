@@ -171,16 +171,17 @@ void bfsShortestPath(Graph *g, int startVertex)
             int crawl = i;
             while (crawl != -1)
             {
-                path[pathIdx++] = crawl;
-                crawl = predecessor[crawl];
+                path[pathIdx++] = crawl; // add vertex to path
+                crawl = predecessor[crawl]; // move to predecessor
             }
-
+			
+            // print the path in reverse order
             for (int j = pathIdx - 1; j >= 0; j--)
             {
                 printf("%d", path[j]);
                 if (j > 0)
                 {
-                    printf(" -> ");
+                    printf(" -> "); // print arrow between vertices
                 }
             }
             printf("\n");
@@ -232,8 +233,8 @@ int main()
         int src, dest;
         scanf("%d %d", &src, &dest);
 
-        addEdge(g, src, dest);
-        addEdge(g, dest, src);
+        addEdge(g, src, dest); // Add the edge from src to dest
+        addEdge(g, dest, src); // Add the edge from dest to src to make the graph undirected
     }
 
     int startVertex;

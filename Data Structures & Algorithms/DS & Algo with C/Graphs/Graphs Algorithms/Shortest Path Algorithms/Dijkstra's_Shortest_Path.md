@@ -37,6 +37,8 @@ We'll implement Dijkstra's Algorithm using the following components:
    - Extract the vertex with the smallest distance, and update the distances of its adjacent vertices.
    - Repeat until the Min Heap is empty.
 
+### C Implementation (Min-Heap Optimized)
+
 #### Program Code
 
 `practice.h`
@@ -495,3 +497,153 @@ Vertex 		 Distance from Source
   - Total Weight: `8 (0->7) + 1 (7->6) + 2 (6->5) = 11`
 
 This demonstrates that Dijkstra's algorithm successfully identified the most efficient paths based on the edge weights.
+
+---
+
+### C implementation (O(V<sup>2</sup>))
+
+#### Program Code
+
+`hello.h`
+
+```c
+#define V 6
+
+int minDistance(int dist[], bool sptSet[]);
+void printSolution(int dist[], int parent[]);
+void dijkstra(int graph[V][V], int src);
+
+```
+
+`hello.c`
+
+```c
+int minDistance(int dist[], bool sptSet[])
+{
+    int min = INT_MAX, min_idx;
+
+    for (int v = 0; v < V; v++)
+    {
+        if (!sptSet[v] && dist[v] <= min)
+        {
+            min = dist[v];
+            min_idx = v;
+        }
+    }
+    return min_idx;
+}
+void printSolution(int dist[], int parent[])
+{
+    printf("Vertex\tDistance\tParent\n");
+    for (int i = 0; i < V; i++)
+    {
+        if (dist[i] == INT_MAX)
+        {
+            printf("Infinity\tNo path\n");
+            continue;
+        }
+        printf("%d\t%d\t\t", i, dist[i]);
+        // Reconstruct the path from source to i
+        int path[V];
+        int count = 0;
+        int crawl = i;
+        path[count++] = crawl;
+        while (parent[crawl] != -1)
+        {
+            crawl = parent[crawl];
+            path[count++] = crawl;
+        }
+
+        // Print the path in reverse order
+        for (int j = count - 1; j >= 0; j--)
+        {
+            printf("%d", path[j]);
+            if (j > 0)
+                printf(" -> ");
+            else
+                printf("\n");
+        }
+    }
+}
+void dijkstra(int graph[V][V], int src)
+{
+    int dist[V];    // distance array to store the shortest distance from the source
+    bool sptSet[V]; // shortest path tree set
+    int parent[V];  // array to store the parent of each node
+
+    // initialize all distances as INFINITE and sptSet[] as false
+    for (int i = 0; i < V; i++)
+    {
+        dist[i] = INT_MAX;
+        sptSet[i] = false;
+        parent[i] = -1; // no parent initially
+    }
+
+    // distance of src vertex from itself is always 0
+    dist[src] = 0;
+
+    // find the shortest path for all vertices
+    for (int count = 0; count < V - 1; count++)
+    {
+        int u = minDistance(dist, sptSet); // pick the min distance vertex
+
+        if (u == -1)
+        {
+            break; // no reachable vertex remaining
+        }
+
+        // mark the vertex as processed
+        sptSet[u] = true;
+
+        // Update dist value of the adjacent vertices of the picked vertex.
+        for (int v = 0; v < V; v++)
+        {
+            // Update dist[v] only if there is an edge from u to v,
+            // and total weight of path from src to v through u is smaller than current value of dist[v]
+            if (graph[u][v] != 0 && !sptSet[v] && dist[u] != INT_MAX && dist[u] + graph[u][v] < dist[v])
+            {
+                dist[v] = dist[u] + graph[u][v];
+                parent[v] = u;
+            }
+        }
+    }
+    printSolution(dist, parent);
+}
+```
+
+`main.c`
+
+```c
+int main()
+{
+    int graph[V][V] = {
+        {0, 5, 2, 0, 0, 0},
+        {0, 0, 0, 4, 2, 0},
+        {0, 0, 0, 0, 7, 0},
+        {0, 0, 0, 0, 0, 3},
+        {0, 0, 0, 6, 0, 1},
+        {0, 0, 0, 0, 0, 0},
+    };
+
+    int source = 0; // Starting vertex
+    dijkstra(graph, source);
+    return 0;
+}
+
+```
+
+
+
+#### Program Output
+
+```shell
+chan@CMA:~/C_Programming/test$ ./final
+Vertex	Distance	Parent
+0	0		0
+1	5		0 -> 1
+2	2		0 -> 2
+3	9		0 -> 1 -> 3
+4	7		0 -> 1 -> 4
+5	8		0 -> 1 -> 4 -> 5
+```
+
