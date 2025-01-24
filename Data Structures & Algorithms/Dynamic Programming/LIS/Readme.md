@@ -425,7 +425,7 @@ int main()
 **Step 3: Reconstructing the LIS**
 
 Using the `prev` array, we trace back from the `maxIndex` to identify the LIS elements.
-
+arr[] = {10, 22, 9, 33, 21, 50, 41, 60, 80}
 1. Start at Index 8 (`80`)
    - `prev[8] = 7`
    - **Element**: `80`
