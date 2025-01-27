@@ -22,10 +22,6 @@
 **Possible Common Subsequences:**
 
 - `GTAB`
-- `GTTAB`
-- `GXTAB`
-- `GXTAB`
-- ... and others.
 
 **Longest Common Subsequence:**
 
