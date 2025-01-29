@@ -172,6 +172,10 @@ int johnson(Graph *g, int V, int **all_dist);
 
 // func to print all-pairs shortest paths
 void printAllPairsShortestPaths(int V, int **all_dist);
+
+void freeGraph(Graph *g);
+#endif
+
 ```
 
 `functions.c`
@@ -575,6 +579,12 @@ int main()
 
     // Allocate memory for all_distances
     int **all_distances = (int **)malloc(V * sizeof(int *));
+    if (all_distances == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed for all_distances.\n");
+        freeGraph(graph);
+        return 1;
+    }
 
     // Run Johnson's algorithm
     if (johnson(graph, V, all_distances))
@@ -593,20 +603,10 @@ int main()
     free(all_distances);
 
     // Free the graph
-    for (int u = 0; u < V; u++)
-    {
-        Edge *edge = graph->adj[u];
-        while (edge != NULL)
-        {
-            Edge *temp = edge;
-            edge = edge->next;
-            free(temp);
-        }
-    }
-    free(graph->adj);
-    free(graph);
-}
+    freeGraph(graph);
 
+    return 0;
+}
 ```
 
 
@@ -614,5 +614,43 @@ int main()
 #### Program Output
 
 ```sh
+chan@CMA:~/C_Programming/practice$ make valgrind
+valgrind --leak-check=full ./practice 
+==15806== Memcheck, a memory error detector
+==15806== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==15806== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==15806== Command: ./practice
+==15806== 
+Johnson's All-Pairs Shortest Path Algorithm
+-------------------------------------------
+Enter the number of vertices: 5
+Enter the number of edges: 7
+Enter each edge in the format 'source destination weight':
+(Vertices should be numbered from 0 to 4)
+0 1 -1
+0 2 4
+1 2 3
+1 3 2
+1 4 2
+3 2 5
+3 1 1
+
+All-Pairs Shortest Paths:
+     0   1   2   3   4  
+ 0  0  0  2  1  1  
+ 1  INF 1  3  2  2  
+ 2  INF INF 0  INF INF 
+ 3  INF 2  4  0  3  
+ 4  INF INF INF INF 0  
+==15806== 
+==15806== HEAP SUMMARY:
+==15806==     in use at exit: 0 bytes in 0 blocks
+==15806==   total heap usage: 77 allocs, 77 frees, 3,356 bytes allocated
+==15806== 
+==15806== All heap blocks were freed -- no leaks are possible
+==15806== 
+==15806== For lists of detected and suppressed errors, rerun with: -s
+==15806== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
 ```
 
