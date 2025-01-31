@@ -7,7 +7,7 @@
 
 ## Why Use Johnson's Algorithm?
 
-- **Efficiency on Sparse Graphs:** Johnson's Algorithm runs in `O(V * E+V<sup>2</sup> * log⁡ V) time when implemented with a Fibonacci heap, making it more efficient than Floyd-Warshall's O(V<sup>3</sup>) for sparse graphs.
+- **Efficiency on Sparse Graphs:** Johnson's Algorithm runs in O(V * E+V<sup>2</sup> * log⁡ V) time when implemented with a Fibonacci heap, making it more efficient than Floyd-Warshall's O(V<sup>3</sup>) for sparse graphs.
 - **Handling Negative Weights:** Unlike Dijkstra's Algorithm, which cannot handle negative edge weights, Johnson's Algorithm can process graphs with negative weights by reweighting the edges to eliminate negative weights.
 
 ---
