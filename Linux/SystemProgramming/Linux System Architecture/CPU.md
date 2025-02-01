@@ -1,0 +1,6 @@
+# Central Processing Unit
+
+- The CPU is the heart of the machine – it **reads in, decodes, and executes machine** **instructions**, working on memory and peripherals. It does this by incorporating various stages.
+- Very simplistically, 
+  - In the Instruction Fetch stage, it reads in machine instructions (which we represent in various human-readable ways – in hexadecimal, assembly, and high-level languages) from memory (RAM) or CPU cache. 
+  - Then, in the Instruction Decode phase, it proceeds to decipher the instruction. Along the way, it makes use of the control unit, its register set, ALU, and memory/peripheral interfaces.
