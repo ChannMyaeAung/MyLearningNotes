@@ -1,0 +1,361 @@
+# Getting system-level details when a process crashes
+
+- `SEGV_MAPERR` - the address the process is attempting to access (for read, write, or execute) is invalid.
+  - There is either no **Page Table Entry (PTE)** entry available for it or it refuses to map to any valid address.
+- `SEGV_ACCERR` - the attempted access (read, write or execute) cannot be performed as permission is lacking (e.g. attempting to write to a read-only memory page).
+
+---
+
+## Example Code
+
+```c
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <sys/resource.h>
+#include <sys/mman.h>
+#include <alloca.h>
+#include <malloc.h>
+#include <fcntl.h>
+#include <sys/capability.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <errno.h>
+#include <ctype.h>
+#include "hello.h"
+
+/*---------------- Typedef's, constants, etc ------------------------*/
+typedef unsigned int u32;
+typedef long unsigned int u64;
+
+/*---------------- Macros -------------------------------------------*/
+#define APPNAME "handle_segv"
+
+#define ADDR_FMT "%lx"
+#if __x86_64__ /* 64-bit; __x86_64__ works for gcc */
+#define ADDR_TYPE u64
+static u64 invalid_uaddr = 0xdeadfaceL;
+static u64 invalid_kaddr = 0xffff0b9ffacedeadL;
+#else
+#define ADDR_TYPE u32
+static u32 invalid_uaddr = 0xfacedeadL;
+static u32 invalid_kaddr = 0xdeadfaceL;
+#endif
+
+/*---------------- Functions ----------------------------------------*/
+
+/* ONLY works for x86[_64] */
+// Prints out CPU register values
+static inline void dump_regs(void *ucontext)
+{
+#define FMT "%016llx"
+
+    ucontext_t *uctx = (ucontext_t *)ucontext;
+    fprintf(stderr,
+            " RAX = 0x" FMT "   RBX = 0x" FMT "   RCX = 0x" FMT "\n"
+            " RDX = 0x" FMT "   RSI = 0x" FMT "   RDI = 0x" FMT "\n"
+            " RBP = 0x" FMT "   R8  = 0x" FMT "   R9  = 0x" FMT "\n"
+
+            " R10 = 0x" FMT "   R11 = 0x" FMT "   R12 = 0x" FMT "\n"
+            " R13 = 0x" FMT "   R14 = 0x" FMT "   R15 = 0x" FMT "\n"
+            " RSP = 0x" FMT "\n"
+            "\n RIP = 0x" FMT "   EFLAGS = 0x" FMT "\n"
+
+            " TRAP#  = %02lld                ERROR  = %02lld\n"
+            /* CR[0,1,3,4] unavailable */
+            " CR2 = 0x" FMT "\n"
+
+            ,
+            uctx->uc_mcontext.gregs[REG_RAX], uctx->uc_mcontext.gregs[REG_RBX], uctx->uc_mcontext.gregs[REG_RCX]
+
+            ,
+            uctx->uc_mcontext.gregs[REG_RDX], uctx->uc_mcontext.gregs[REG_RSI], uctx->uc_mcontext.gregs[REG_RDI]
+
+            ,
+            uctx->uc_mcontext.gregs[REG_RBP], uctx->uc_mcontext.gregs[REG_R8], uctx->uc_mcontext.gregs[REG_R9]
+
+            ,
+            uctx->uc_mcontext.gregs[REG_R10], uctx->uc_mcontext.gregs[REG_R11], uctx->uc_mcontext.gregs[REG_R12]
+
+            ,
+            uctx->uc_mcontext.gregs[REG_R13], uctx->uc_mcontext.gregs[REG_R14], uctx->uc_mcontext.gregs[REG_R15]
+
+            ,
+            uctx->uc_mcontext.gregs[REG_RSP], uctx->uc_mcontext.gregs[REG_RIP], uctx->uc_mcontext.gregs[REG_EFL], uctx->uc_mcontext.gregs[REG_TRAPNO], uctx->uc_mcontext.gregs[REG_ERR], uctx->uc_mcontext.gregs[REG_CR2]);
+}
+
+static void myfault(int signum, siginfo_t *si, void *ucontext)
+{
+    fprintf(stderr,
+            "%s:\n------------------- FATAL signal ---------------------------\n",
+            APPNAME);
+    fprintf(stderr, " %s: received signal %d. errno=%d\n"
+                    " Cause/Origin: (si_code=%d): ",
+            __func__, signum, si->si_errno, si->si_code);
+
+    switch (si->si_code)
+    {
+    /* Possible values si_code can have for SIGSEGV */
+    case SEGV_MAPERR:
+        fprintf(stderr, "SEGV_MAPERR: address not mapped to object\n");
+        break;
+    case SEGV_ACCERR:
+        fprintf(stderr, "SEGV_ACCERR: invalid permissions for mapped object\n");
+        break;
+        /* SEGV_BNDERR and SEGV_PKUERR result in compile failure? */
+#if 0
+	case SEGV_BNDERR: /* 3.19 onward */
+		fprintf(stderr,"SEGV_BNDERR: failed address bound checks\n");
+	case SEGV_PKUERR: /* 4.6 onward */
+		fprintf(stderr,"SEGV_PKUERR: access denied by memory-protection keys\n");
+#endif
+    /* Other possibilities for si_code; here just to show them... */
+    case SI_USER:
+        fprintf(stderr, "user\n");
+        break;
+    case SI_KERNEL:
+        fprintf(stderr, "kernel\n");
+        break;
+    case SI_QUEUE:
+        fprintf(stderr, "queue\n");
+        break;
+    case SI_TIMER:
+        fprintf(stderr, "timer\n");
+        break;
+    case SI_MESGQ:
+        fprintf(stderr, "mesgq\n");
+        break;
+    case SI_ASYNCIO:
+        fprintf(stderr, "async io\n");
+        break;
+    case SI_SIGIO:
+        fprintf(stderr, "sigio\n");
+        break;
+    case SI_TKILL:
+        fprintf(stderr, "t[g]kill\n");
+        break;
+    default:
+        fprintf(stderr, "-none-\n");
+    }
+
+    fprintf(stderr, " Faulting instr or address = 0x" ADDR_FMT "\n",
+            (ADDR_TYPE)si->si_addr);
+    fprintf(stderr, " --- Register Dump [x86_64] ---\n");
+    dump_regs(ucontext);
+    fprintf(stderr,
+            "------------------------------------------------------------\n");
+    psiginfo(si, "psiginfo helper");
+    fprintf(stderr,
+            "------------------------------------------------------------\n");
+
+    /*
+     * Placeholders for real-world apps:
+     *  crashed_write_to_log();
+     *  crashed_perform_cleanup();
+     *  crashed_inform_enduser();
+     *
+     * Now have the kernel generate the core dump by:
+     *  Reset the SIGSEGV to kernel default, and,
+     *  Re-raise it!
+     */
+    // we use signal(2) to revert the signal action to the default
+    if (signal(SIGSEGV, SIG_DFL) == SIG_ERR)
+    {
+        perror("signal SIGSEGV failed");
+        exit(1);
+    }
+    // raise a given signal on the calling process.
+    if (raise(SIGSEGV))
+    {
+        perror("raise SIGSEGV failed");
+        exit(1);
+    }
+}
+
+/**
+ * setup_altsigstack - Helper function to set alternate stack for sig-handler
+ * @stack_sz:	required stack size
+ *
+ * Return: 0 on success, -ve errno on failure
+ */
+int setup_altsigstack(size_t stack_sz)
+{
+    stack_t ss;
+
+    printf("Alternate signal stack size = %zu bytes\n", stack_sz);
+    ss.ss_sp = malloc(stack_sz);
+    if (!ss.ss_sp)
+    {
+        printf("malloc(%zu) for alt sig stack failed\n", stack_sz);
+        return -ENOMEM;
+    }
+
+    ss.ss_size = stack_sz;
+    ss.ss_flags = 0;
+    if (sigaltstack(&ss, NULL) == -1)
+    {
+        printf("sigaltstack for size %zu failed!\n", stack_sz);
+        return -errno;
+    }
+    // printf("Alt signal stack uva (user virt addr) = %p\n", ss.ss_sp);
+
+    return 0;
+}
+
+static void usage(char *nm)
+{
+    fprintf(stderr, "Usage: %s u|k r|w\n"
+                    "u => user mode\n"
+                    "k => kernel mode\n"
+                    " r => read attempt\n"
+                    " w => write attempt\n",
+            nm);
+}
+
+int main(int argc, char **argv)
+{
+    struct sigaction act;
+
+    if (argc != 3)
+    {
+        usage(argv[0]);
+        exit(1);
+    }
+
+    /* Use a separate stack for signal handling via the SA_ONSTACK;
+     * This is critical, especially for handling the SIGSEGV; what
+     * if this process crashes due to stack overflow; then it will receive the
+     * SIGSEGV from the kernel (when it attempts to eat into unmapped memory
+     * following the limit, the end of the stack)! The SIGSEGV signal handler
+     * must now run. But where? It cannot on the old stack - it's now corrupt!
+     * Hence, the need for an alternate signal stack !
+     * Here, just as an example, we allocate 10 MB for the alt signal stack.
+     */
+    printf("Setting up an alternate signal stack now...\n");
+    if (setup_altsigstack(10 * 1024 * 1024) < 0)
+    {
+        fprintf(stderr, "%s: setting up alt sig stack failed\n", argv[0]);
+        exit(1);
+    }
+
+    memset(&act, 0, sizeof(act));
+    act.sa_sigaction = myfault;
+    act.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigemptyset(&act.sa_mask);
+    if (sigaction(SIGSEGV, &act, 0) == -1)
+    {
+        perror("sigaction failed");
+        exit(1);
+    }
+
+    if ((tolower(argv[1][0]) == 'u') && tolower(argv[2][0] == 'r'))
+    {
+        ADDR_TYPE *uptr = (ADDR_TYPE *)invalid_uaddr; // arbitrary userspace virtual addr
+        printf("Attempting to read contents of arbitrary usermode va uptr = 0x" ADDR_FMT ":\n",
+               (ADDR_TYPE)uptr);
+        printf("*uptr = 0x" ADDR_FMT "\n", *uptr); // just reading
+    }
+    else if ((tolower(argv[1][0]) == 'u') && tolower(argv[2][0] == 'w'))
+    {
+        ADDR_TYPE *uptr = (ADDR_TYPE *)&main;
+        printf("Attempting to write into arbitrary usermode va uptr (&main actually) = 0x" ADDR_FMT ":\n",
+               (ADDR_TYPE)uptr);
+        *uptr = 0x2A; // writing
+    }
+    else if ((tolower(argv[1][0]) == 'k') && tolower(argv[2][0] == 'r'))
+    {
+        ADDR_TYPE *kptr = (ADDR_TYPE *)invalid_kaddr; // arbitrary kernel virtual addr
+        printf("Attempting to read contents of arbitrary kernel va kptr = 0x" ADDR_FMT ":\n",
+               (ADDR_TYPE)kptr);
+        printf("*kptr = 0x" ADDR_FMT "\n", *kptr); // just reading
+    }
+    else if ((tolower(argv[1][0]) == 'k') && tolower(argv[2][0] == 'w'))
+    {
+        ADDR_TYPE *kptr = (ADDR_TYPE *)invalid_kaddr; // arbitrary kernel virtual addr
+        printf("Attempting to write into arbitrary kernel va kptr = 0x" ADDR_FMT ":\n",
+               (ADDR_TYPE)kptr);
+        *kptr = 0x2A; // writing
+    }
+    else
+    {
+        usage(argv[0]);
+    }
+    exit(0);
+}
+```
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final
+Usage: ./final u|k r|w
+u => user mode
+k => kernel mode
+ r => read attempt
+ w => write attempt
+chan@CMA:~/C_Programming/test$ ./final u r
+Setting up an alternate signal stack now...
+Alternate signal stack size = 10485760 bytes
+Attempting to read contents of arbitrary usermode va uptr = 0xdeadface:
+handle_segv:
+------------------- FATAL signal ---------------------------
+ myfault: received signal 11. errno=0
+ Cause/Origin: (si_code=2): SEGV_ACCERR: invalid permissions for mapped object
+ Faulting instr or address = 0x9bd53f59
+ --- Register Dump [x86_64] ---
+ RAX = 0x000000001bd5bf59   RBX = 0x00007ffe9ae08680   RCX = 0x0000000000000000
+ RDX = 0x0000000000000000   RSI = 0x0000519000000080   RDI = 0x00007ffe9ae08480
+ RBP = 0x00007ffe9ae08820   R8  = 0x0000000000000078   R9  = 0x0000000000000000
+ R10 = 0x0000000000000000   R11 = 0x0000000000000202   R12 = 0x0000000000000003
+ R13 = 0x0000000000000000   R14 = 0x000059cd36c1e580   R15 = 0x00007c27cec4c000
+ RSP = 0x00007ffe9ae08680
+
+ RIP = 0x000059cd36be4de0   EFLAGS = 0x0000000000010217
+ TRAP#  = 14                ERROR  = 04
+ CR2 = 0x000000009bd53f59
+------------------------------------------------------------
+psiginfo helper: Segmentation fault (Invalid permissions for mapped object [0x9bd53f59])
+------------------------------------------------------------
+Segmentation fault (core dumped)
+```
+
+
+
+**With `k` and `w` option:**
+
+```sh
+chan@CMA:~/C_Programming/test$ ./final k w
+Setting up an alternate signal stack now...
+Alternate signal stack size = 10485760 bytes
+Attempting to write into arbitrary kernel va kptr = 0xffff0b9ffacedead:
+handle_segv:
+------------------- FATAL signal ---------------------------
+ myfault: received signal 11. errno=0
+ Cause/Origin: (si_code=128): kernel
+ Faulting instr or address = 0x0
+ --- Register Dump [x86_64] ---
+ RAX = 0x1fffe173ff59dbd5   RBX = 0x00007ffce79d2500   RCX = 0x0000000000000000
+ RDX = 0x0000000000000000   RSI = 0x0000519000000080   RDI = 0x00007ffce79d2300
+ RBP = 0x00007ffce79d2690   R8  = 0x0000000000000078   R9  = 0x0000000000000000
+ R10 = 0x0000000000000000   R11 = 0x0000000000000202   R12 = 0x0000000000000003
+ R13 = 0x0000000000000000   R14 = 0x00005fac5280b580   R15 = 0x000071d009f3e000
+ RSP = 0x00007ffce79d2500
+
+ RIP = 0x00005fac527d2235   EFLAGS = 0x0000000000010213
+ TRAP#  = 13                ERROR  = 00
+ CR2 = 0x0000000000000000
+------------------------------------------------------------
+psiginfo helper: Segmentation fault (Signal sent by the kernel [(nil)])
+------------------------------------------------------------
+Segmentation fault (core dumped)
+
+```
+
+- The trap value is 13, that's the **General Protection Fault (GPF)** on the `x86[_64]` a result of bad access raising this exception which in turn lead to the OS fault handler code running and kill the process via `SIGSEGV`.
+- We have violated a protection rule. "A process or thread running in a higher, more privileged level can always access memory at a lower privilege level but not vice versa."
+- Here, in this case, the process at ring three attempted to access memory at ring zero, thus, the MMU (Memory Management Unit) raised the GPF exception and the OS killed it via the `SIGSEGV`.
+- But, we still get valuable details of other registers. (the instruction and stack pointer values)
