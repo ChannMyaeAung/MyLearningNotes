@@ -169,7 +169,7 @@ When deploying a Node.js/Go backend to an EC2 instance, running it directly in t
    pm2 monit # To monitor processes
    pm2 stop all # Stop all processes
    pm2 delete all # Delete all processes
-   pm2 status # Check status of processes
+   
    ```
 
    
