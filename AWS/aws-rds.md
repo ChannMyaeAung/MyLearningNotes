@@ -129,6 +129,27 @@ In production, you never run a massive web application directly against a standa
     npx prisma migrate dev --name init # if npm
     ```
 
+31. And then we can run the seeding like this
+
+    ```bash
+    pnpm run seed # if pnpm
+    npm run seed # if npm
+    ```
+
+32. After that we run
+
+    ```bash
+    pnpm rum build
+    ```
+
+33. And we can start our pm2 again:
+
+    ```bash
+    pm2 start ecosystem.config.cjs
+    ```
+
+34. If the pm2 shows the application is running successfully, we can copy the public IPv4 address from the EC2 Console, and go to `http://[IPv4Addr-From-EC2]` and check all endpoints to make sure they are all up and running and working successfully.
+
 
 # Debugging AWS RDS Connection Timeouts with Prisma (P1001)
 
