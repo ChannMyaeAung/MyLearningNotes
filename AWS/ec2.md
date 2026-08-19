@@ -173,3 +173,64 @@ When deploying a Node.js/Go backend to an EC2 instance, running it directly in t
    ```
 
    
+
+---
+
+# Things worth Noting
+
+- Upon stopping and restarting any EC2 instance, that EC2 instance will be reassigned a brand new Public IPv4 address.
+
+- If we have any AWS API Gateway running, it will still be configured with the old IP address so it can results in 504 Gateway Timeout on our application.
+
+- Step by Step fix will be the following:
+
+  - Go to the **AWS Console** ➔ **EC2** ➔ **Instances**.
+
+  - Click on the backend instance (`re_ec2`).
+
+  - Copy the new **Public IPv4 address**.
+
+  - Ensure the backend server is running on EC2. We can check this by checking PM2 status via `pm2 status` upon connecting to the EC2 instance via SSH/EC2 instance Connect.
+
+  - If the process is stopped or missing, restart it with:
+
+    ```bash
+    pm2 start dist/index.js --name 
+    # or: pm2 restart all
+    ```
+
+  - Verify it is actively listening on port 80:
+
+    ```bash
+    sudo netstat -tlpn | grep 80
+    ```
+
+  - Next, Update API Gateway with the New EC2 IP Address.
+
+  - Go to **AWS Console** ➔ **API Gateway** ➔ **`re_api_gateway`**.
+
+  - In the left panel, navigate to **Resources**.
+
+  - Select **`/{proxy+}`** ➔ Click the **`ANY`** method.
+
+  - Select the **Integration request** tab and click Edit.
+
+  - Update the Endpoint URL with our newly copied EC2 IP address like this.
+
+    ```bash
+    http://<YOUR-NEW-EC2-PUBLIC-IP>/{proxy}
+    ```
+
+  - Click Save.
+
+  - Click the Deploy API button in the top right. Select the `prod` stage and click Deploy.
+
+- ### Permanent Solution: Allocate an Elastic IP
+
+  To prevent the IP address from changing every time you stop/start the EC2 instance:
+
+  1. In the EC2 console left menu, go to **Network & Security** ➔ **Elastic IPs**.
+  2. Click **Allocate Elastic IP address** ➔ **Allocate**.
+  3. Select the allocated IP ➔ Click **Actions** ➔ **Associate Elastic IP address**.
+  4. Choose your EC2 instance and associate it.
+  5. Set this static Elastic IP in API Gateway once, and it will persist across all future restarts.
