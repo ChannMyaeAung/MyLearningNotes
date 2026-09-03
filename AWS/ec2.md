@@ -167,9 +167,10 @@ When deploying a Node.js/Go backend to an EC2 instance, running it directly in t
 
    ```bash
    pm2 monit # To monitor processes
+   pm2 logs  # To stream live logs (useful for debugging)
+   pm2 save  # Snapshot current process list (required for startup script to persist across reboots)
    pm2 stop all # Stop all processes
    pm2 delete all # Delete all processes
-   
    ```
 
    

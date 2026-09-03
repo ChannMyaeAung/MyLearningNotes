@@ -27,6 +27,12 @@ By putting RDS in a private subnet:
 
 ---
 
+## What About Private Subnet Outbound Internet Access?
+
+If resources in a private subnet (e.g., an RDS instance) need to pull OS updates or connect to external services, you can use a **NAT Gateway** placed in the public subnet. The NAT Gateway allows private subnet resources to initiate outbound internet connections (e.g., for `yum update`) without accepting any inbound connections from the internet. This maintains the security model while allowing necessary maintenance traffic.
+
+---
+
 ## The Architecture Flow
 
 ```text

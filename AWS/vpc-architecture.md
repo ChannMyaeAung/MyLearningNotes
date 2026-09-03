@@ -8,11 +8,27 @@ To deploy a standard web application with a secure database layer, we split the 
 * **Private Subnet 1 (Database):** Used for your primary AWS RDS database instance (e.g., `10.0.1.0/24`).
 * **Private Subnet 2 (Database):** AWS RDS requires at least two private subnets in different Availability Zones (AZs) for high-availability backup and failover purposes (e.g., `10.0.2.0/24`).
 
+**Inside the AWS Console,** 
+
+1. Go to VPC, click "Create a VPC".
+2. After that give it a proper name like `re_public-subnet-1`.
+3. Choose a proper availability zone.
+4. Set IPv4 subnet CIDR block to 10.0.0.0/24.
+5. Then we can proceed with creating a private subnet just below by clicking add subnets.
+6. Give it a name like `re_private-subnet-1`. Choose the same availability zone as the previous one.
+7. Set the IPv4 subnet CIDR block to `10.0.1.0/24`.
+8. Next we will proceed to creating another private subnet with a different Availability Zone because if one of the data centers or servers goes down, our application will still be running. Also we need two private subnets for the database.
+9. Give the third subnet a proper name like `re_private-subnet-2`, choose a different Availability Zone compared to the previous two, and set the IPv4 subnet CIDR block to `10.0.2.0/24`.
+10. Next on the left side panel, click on "Internet gateways" and create a new internet gateway, give it a proper name like `re_internet-gateway` and create it.
+11. Then we can attach it to our VPC.
+
 ---
 
 ## 2. Internet Gateway (IGW)
 An Internet Gateway is the "front door" attached to your VPC. 
 * Its entire purpose is to **allow communication between your VPC and the outside internet**. Without it, nothing inside your network can talk to the public web.
+
+> **Warning:** By default, all subnets in a new VPC are associated with the Main Route Table, which includes a local route but no internet route. However, if you create a VPC using the "VPC and More" wizard, AWS may auto-create public subnets with internet access. Always verify your route table associations manually.
 
 ---
 

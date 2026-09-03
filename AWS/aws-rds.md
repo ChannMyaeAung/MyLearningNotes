@@ -99,7 +99,7 @@ In production, you never run a massive web application directly against a standa
 
 24. Choose Endpoints for "Connect using" and copy the endpoint under "Endpoint & port".
 
-25. Then paste inside any text editor in this format. (DATABASE_URL="DATABASE_URL="postgresql://postgres:[database-password]@[endpoint-copied-from-aws-rds]:5432/[dbname-copied-from-aws-rds]?schema=public").
+25. Then paste inside any text editor in this format. (DATABASE_URL="postgresql://postgres:[database-password]@[endpoint-copied-from-aws-rds]:5432/[dbname-copied-from-aws-rds]?schema=public").
 
     1. The database name can be copied from the Configuration Tabs called "DB name" inside "Databases" tab inside AWS RDS Console.
 
@@ -139,7 +139,7 @@ In production, you never run a massive web application directly against a standa
 32. After that we run
 
     ```bash
-    pnpm rum build
+    pnpm run build
     ```
 
 33. And we can start our pm2 again:
@@ -370,3 +370,5 @@ BASELINE_EXISTING_DB=true pnpm run migrate:db
 * **Don't mistake tool bugs for network bugs:** If `nc` or `telnet` hits a port instantly, your cloud network topology (VPC, Subnets, Security Groups) is healthy. The blockade is application-layer or tool-specific.
 * **Decouple when tools are too rigid:** When a framework's native CLI binary gets in the way of environment-specific handshakes, writing a custom runner script that hooks directly into your verified application driver saves hours of environment headaches.
 * **Baseline early:** Always write database migration steps defensively so they can run idempotently without choking on existing data structures or types.
+
+> **Note:** Database baselining (`BASELINE_EXISTING_DB=true`) is a one-time operation during the initial deployment to an existing database. Once the first migration is marked as applied, you should remove the flag and let subsequent migrations run normally.
