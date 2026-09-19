@@ -1,0 +1,5 @@
+# Structural Best Practices
+
+- **Structure by Feature, Not Layer:** As an application grows, separate your project folders into cohesive business domains (e.g., `/users`, `/billing`) rather than file types (e.g., `/controllers`, `/services`). This keeps pull requests contained and prevents cascading changes across your directory tree.
+- **Isolate DTOs from Database Entities:** Use **DTOs** strictly to validate the incoming API schema via `class-validator`, and keep them separate from **Database Entities** (Prisma models or TypeORM classes). Returning entities directly can leak internal database fields and tie your API schema tightly to your database structure.
+- **Avoid Global Module Overuse:** Use the `@Global()` decorator sparingly (only for core, cross-cutting infrastructure like configurations or logging). Overusing global modules bypasses NestJS's explicit dependency engine, making code harder to read and trace.
